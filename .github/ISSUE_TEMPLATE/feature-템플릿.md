@@ -6,6 +6,7 @@ labels: feature
 assignees: ''
 
 ---
+제목 예시: [type/domain] 제목 -> [feat/order] 주문 생성 시 재고 감소 로직 구현
 
 ## 🤷 어떤 기능을 개발해야 하나요?
 > 개발할 기능에 대해 명확하고 간결하게 설명해주세요.

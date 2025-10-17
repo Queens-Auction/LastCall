@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.user.entity.UserEntity;
+import org.example.lastcall.domain.user.entity.User;
 
 import java.time.LocalDateTime;
 
@@ -53,5 +53,5 @@ public class Auction extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user; // 추후  UserEntity -> User로 변경 예정
+    private User user; // 추후  UserEntity -> User로 변경 예정
 }

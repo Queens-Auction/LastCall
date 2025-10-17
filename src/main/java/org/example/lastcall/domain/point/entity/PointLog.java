@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
-import org.example.lastcall.domain.bid.entity.BidEntity;
+import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.user.entity.UserEntity;
 
 @Entity
@@ -24,7 +24,7 @@ public class PointLog extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bid_id", nullable = false)
-    private BidEntity bid;
+    private Bid bid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -52,7 +52,7 @@ public class PointLog extends BaseEntity {
     @Column(name = "related_auction_id")
     private Long relatedAuctionId;
 
-    
+
     public static PointLog create(Point point, UserEntity user, PointLogType type, String description, Long change) {
         PointLog log = new PointLog();
         log.point = point;

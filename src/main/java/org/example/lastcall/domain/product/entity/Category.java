@@ -1,0 +1,60 @@
+package org.example.lastcall.domain.product.entity;
+
+public enum Category {
+    FASHION_MEN,
+    FASHION_WOMEN,
+    FASHION_KIDS,
+    SHOES,
+    BAG,
+    ACCESSORY,
+    WATCH_JEWELRY,
+
+    SMARTPHONE,
+    TABLET,
+    LAPTOP,
+    DESKTOP,
+    CAMERA,
+    HOME_APPLIANCE,
+    AUDIO,
+
+    SPORTS,
+    GAMES,
+    MUSICAL_INSTRUMENT,
+    FIGURE_COLLECTIBLE,
+
+    ART_PAINTING,
+    ART_SCULPTURE,
+    ART_CRAFT,
+    PHOTOGRAPHY,
+
+    CAR,
+    MOTORCYCLE,
+    CAR_PART,
+
+    FURNITURE,
+    LIGHTING,
+    HOME_DECOR,
+
+    BOOK,
+    CD_DVD,
+
+    KITCHEN,
+    BATH,
+    BEDDING,
+
+    FOOD,
+    SUPPLEMENT,
+    BEVERAGE,
+
+    COLLECTIBLE,
+    ANTIQUE,
+    LIMITED_EDITION,
+
+    TICKET_CONCERT,
+    TICKET_SPORTS,
+    TICKET_EXPERIENCE,
+
+    PET,
+    EDUCATION,
+    DIGITAL
+}

@@ -47,9 +47,6 @@ public class Auction extends BaseEntity {
     @Column(name = "participant_count", nullable = false)
     private Integer participantCount = 0;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;

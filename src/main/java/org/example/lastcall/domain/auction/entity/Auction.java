@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 public class Auction extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "auction_id", nullable = false)
     private Long id;
 
     @Column(name = "start_time", nullable = false)

@@ -1,17 +1,16 @@
-package org.example.lastcall.domain.pointlog;
+package org.example.lastcall.domain.point.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.bid.entity.BidEntity;
-import org.example.lastcall.domain.point.entity.Point;
-import org.example.lastcall.domain.point.entity.PointLogType;
 import org.example.lastcall.domain.user.entity.UserEntity;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "point_logs")
 public class PointLog extends BaseEntity {
 
@@ -52,5 +51,16 @@ public class PointLog extends BaseEntity {
 
     @Column(name = "related_auction_id")
     private Long relatedAuctionId;
+
+    
+    public static PointLog create(Point point, UserEntity user, PointLogType type, String description, Long change) {
+        PointLog log = new PointLog();
+        log.point = point;
+        log.user = user;
+        log.type = type;
+        log.description = description;
+        log.pointChange = change;
+        return log;
+    }
 
 }

@@ -3,13 +3,14 @@ package org.example.lastcall.domain.point.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.user.entity.UserEntity;
 
 @Entity
 @Getter
 @NoArgsConstructor
 @Table(name = "points")
-public class Point {
+public class Point extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

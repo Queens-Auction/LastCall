@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.point.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
@@ -8,7 +9,7 @@ import org.example.lastcall.domain.user.entity.UserEntity;
 
 @Entity
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "points")
 public class Point extends BaseEntity {
     @Id

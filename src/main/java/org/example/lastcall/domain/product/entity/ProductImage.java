@@ -12,6 +12,7 @@ import org.example.lastcall.common.entity.BaseEntity;
 @Entity
 @Table(
         name = "product_image",
+        //한 상품 당 하나의 이미지만 THUMBNAIL이 될 수 있도록 제약
         uniqueConstraints = @UniqueConstraint(
                 columnNames = {"product_id", "image_type"}
         ))

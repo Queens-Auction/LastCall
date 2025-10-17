@@ -15,7 +15,6 @@ import org.example.lastcall.common.entity.BaseEntity;
 @Entity
 @Table(name = "users")
 public class User extends BaseEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

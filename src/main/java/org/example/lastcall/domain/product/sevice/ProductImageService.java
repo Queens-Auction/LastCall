@@ -6,6 +6,7 @@ import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
+import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
@@ -38,8 +39,8 @@ public class ProductImageService implements ProductImageServiceApi {
     //이미지 전체 조회(상품아이디와 썸네일만 "/api/v1/products/image?imageType=Thumbnail")
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductImageReadAllResponse> readAllThumbnailImage(int page, int size) {
-        Page<ProductImage> productImages = productImageRepository.findAll(PageRequest.of(page, size));
+    public PageResponse<ProductImageReadAllResponse> readAllThumbnailImage(ImageType imageType, int page, int size) {
+        Page<ProductImage> productImages = productImageRepository.findAllByImageType(imageType, PageRequest.of(page, size));
         return ProductImageReadAllResponse.from(productImages);
     }
 

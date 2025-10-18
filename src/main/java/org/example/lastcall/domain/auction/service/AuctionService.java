@@ -21,8 +21,14 @@ public class AuctionService {
     private final ProductRepository productRepository;
 
     public AuctionResponse createAuction(Long userId, AuctionCreateRequest request) {
+        // 1. 상품 존재 여부 확인
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new BusinessException(AuctionErrorCode.PRODUCT_NOT_FOUND));
+
+        // 2. 상품 소유자 검증
+        if (!product.getUser().getId().equals(userId)) {
+            throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
+        }
 
         return null; // 임시
     }

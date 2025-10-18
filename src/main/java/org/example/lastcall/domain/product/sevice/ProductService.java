@@ -1,5 +1,6 @@
 package org.example.lastcall.domain.product.sevice;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProductService implements ProductServiceApi {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;

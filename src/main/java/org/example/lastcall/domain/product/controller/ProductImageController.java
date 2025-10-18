@@ -1,6 +1,5 @@
 package org.example.lastcall.domain.product.controller;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
-@Transactional
 public class ProductImageController {
     private final ProductImageServiceApi productImageService;
 

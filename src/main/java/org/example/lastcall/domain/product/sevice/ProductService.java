@@ -1,9 +1,9 @@
 package org.example.lastcall.domain.product.sevice;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
+import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
@@ -11,6 +11,9 @@ import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,5 +29,22 @@ public class ProductService implements ProductServiceApi {
         Product savedProduct = productRepository.save(product);
 
         return ProductResponse.from(savedProduct);
+    }
+
+    //상품 전체 조회(상품 아이디와 상품명만 조회)
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductReadAllResponse> readAllProduct() {
+        List<Product> product = productRepository.findAll();
+        return ProductReadAllResponse.from(product);
+    }
+
+    //상품 단건 조회
+    @Override
+    @Transactional(readOnly = true)
+    public ProductResponse readProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        return ProductResponse.from(product);
     }
 }

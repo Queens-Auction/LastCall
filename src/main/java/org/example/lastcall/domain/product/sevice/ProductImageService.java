@@ -1,9 +1,9 @@
 package org.example.lastcall.domain.product.sevice;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
+import org.example.lastcall.domain.product.dto.response.ProductImageReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
@@ -11,6 +11,9 @@ import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,5 +30,21 @@ public class ProductImageService implements ProductImageServiceApi {
         ProductImage savedProductImage = productImageRepository.save(productImage);
 
         return ProductImageResponse.from(savedProductImage);
+    }
+
+    //이미지 전체 조회(썸네일만 "/api/v1/products/image?imageType=Thumbnail")
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductImageReadAllResponse> readAllThumbnailImage() {
+        List<ProductImage> productImages = productImageRepository.findAll();
+        return ProductImageReadAllResponse.from(productImages);
+    }
+
+    //상품별 이미지 전체 조회
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductImageResponse> readAllProductImage(Long productId) {
+        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
+        return ProductImageResponse.from(productImages);
     }
 }

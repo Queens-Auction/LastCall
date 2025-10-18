@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
+import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.user.entity.User;
 
@@ -72,5 +73,18 @@ public class Auction extends BaseEntity {
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = status;
+    }
+
+    // 정적 팩토리 메서드 (of)
+    public static Auction of(Product product, AuctionCreateRequest request, AuctionStatus status) {
+        return Auction.builder()
+                .product(product)
+                .user(product.getUser())
+                .startingBid(request.getStartingBid())
+                .bidStep(request.getBidStep())
+                .startTime(request.getStartTime())
+                .endTime(request.getEndTime())
+                .status(status)
+                .build();
     }
 }

@@ -5,6 +5,7 @@ import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.ProductImage;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 public class ProductImageResponse {
@@ -32,5 +33,17 @@ public class ProductImageResponse {
                 productImage.getImageUrl(),
                 productImage.getCreatedAt(),
                 productImage.getModifiedAt());
+    }
+
+    public static List<ProductImageResponse> from(List<ProductImage> productImages) {
+        return productImages.stream()
+                .map(productImage -> new ProductImageResponse(
+                        productImage.getId(),
+                        productImage.getProduct().getId(),
+                        productImage.getImageType(),
+                        productImage.getImageUrl(),
+                        productImage.getCreatedAt(),
+                        productImage.getModifiedAt()
+                )).toList();
     }
 }

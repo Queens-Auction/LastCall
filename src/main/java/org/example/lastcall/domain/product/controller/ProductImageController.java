@@ -6,6 +6,7 @@ import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
+import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,9 +30,11 @@ public class ProductImageController {
     }
 
     //이미지 전체 조회(상품아이디와 썸네일만 "/api/v1/products/image?imageType=Thumbnail")
-    @GetMapping("/image?imageType=Thumbnail")
-    public ResponseEntity<ApiResponse<PageResponse<ProductImageReadAllResponse>>> readThumbnailImages(Pageable pageable) {
-        PageResponse<ProductImageReadAllResponse> pageResponse = productImageService.readAllThumbnailImage(pageable.getPageNumber(), pageable.getPageSize());
+    @GetMapping("/image")
+    public ResponseEntity<ApiResponse<PageResponse<ProductImageReadAllResponse>>> readThumbnailImages(
+            @RequestParam ImageType imageType,
+            Pageable pageable) {
+        PageResponse<ProductImageReadAllResponse> pageResponse = productImageService.readAllThumbnailImage(imageType, pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductImageReadAllResponse>> apiResponse = ApiResponse.success("대표 이미지 전체 조회 성공했습니다.", pageResponse);
         return ResponseEntity.ok(apiResponse);
     }
@@ -40,7 +43,7 @@ public class ProductImageController {
     @GetMapping("/{productId}/image")
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> readAllProductImage(@PathVariable Long productId) {
         List<ProductImageResponse> response = productImageService.readAllProductImage(productId);
-        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("", response);
+        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("상품별 이미지 조회에 성공했습니다.", response);
         return ResponseEntity.ok(apiResponse);
     }
 }

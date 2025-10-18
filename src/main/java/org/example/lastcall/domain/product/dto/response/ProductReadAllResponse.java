@@ -1,0 +1,26 @@
+package org.example.lastcall.domain.product.dto.response;
+
+import lombok.Getter;
+import org.example.lastcall.common.response.PageResponse;
+import org.example.lastcall.domain.product.entity.Product;
+import org.springframework.data.domain.Page;
+
+import java.util.List;
+
+@Getter
+public class ProductReadAllResponse {
+    private final Long id;
+    private final String name;
+
+    public ProductReadAllResponse(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public static PageResponse<ProductReadAllResponse> from(Page<Product> products) {
+        List<ProductReadAllResponse> mapped = products.stream()
+                .map(product -> new ProductReadAllResponse(product.getId(), product.getName()))
+                .toList();
+        return PageResponse.of(products, mapped);
+    }
+}

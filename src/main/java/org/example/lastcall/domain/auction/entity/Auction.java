@@ -2,6 +2,7 @@ package org.example.lastcall.domain.auction.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
@@ -53,5 +54,23 @@ public class Auction extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // 추후  UserEntity -> User로 변경 예정
+    private User user;
+
+    // 빌더 생성자
+    @Builder
+    private Auction(Product product,
+                    User user,
+                    Long startingBid,
+                    Long bidStep,
+                    LocalDateTime startTime,
+                    LocalDateTime endTime,
+                    AuctionStatus status) {
+        this.product = product;
+        this.user = user;
+        this.startingBid = startingBid;
+        this.bidStep = bidStep;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.status = status;
+    }
 }

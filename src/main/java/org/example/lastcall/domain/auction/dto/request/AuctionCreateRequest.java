@@ -17,7 +17,7 @@ public class AuctionCreateRequest {
     private Long bidStep;
 
     @NotNull(message = "경매 시작일은 필수 입력값입니다.")
-    private LocalDateTime startingTime;
+    private LocalDateTime startTime;
 
     @NotNull(message = "경매 종료일은 필수 입력값입니다.")
     private LocalDateTime endTime;

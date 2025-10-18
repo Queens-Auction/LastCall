@@ -1,8 +1,10 @@
 package org.example.lastcall.domain.product.dto.response;
 
 import lombok.Getter;
+import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.ProductImage;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -18,12 +20,13 @@ public class ProductImageReadAllResponse {
         this.imageUrl = imageUrl;
     }
 
-    public static List<ProductImageReadAllResponse> from(List<ProductImage> productImages) {
-        return productImages.stream()
+    public static PageResponse<ProductImageReadAllResponse> from(Page<ProductImage> productImages) {
+        List<ProductImageReadAllResponse> mapped = productImages.stream()
                 .map(productImage -> new ProductImageReadAllResponse(
-                        productImage.getId(),
+                        productImage.getProduct().getId(),
                         productImage.getImageType(),
                         productImage.getImageUrl()
                 )).toList();
+        return PageResponse.of(productImages, mapped);
     }
 }

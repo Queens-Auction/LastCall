@@ -2,6 +2,7 @@ package org.example.lastcall.domain.product.sevice;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
@@ -10,6 +11,8 @@ import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,11 +35,11 @@ public class ProductImageService implements ProductImageServiceApi {
         return ProductImageResponse.from(savedProductImage);
     }
 
-    //이미지 전체 조회(썸네일만 "/api/v1/products/image?imageType=Thumbnail")
+    //이미지 전체 조회(상품아이디와 썸네일만 "/api/v1/products/image?imageType=Thumbnail")
     @Override
     @Transactional(readOnly = true)
-    public List<ProductImageReadAllResponse> readAllThumbnailImage() {
-        List<ProductImage> productImages = productImageRepository.findAll();
+    public PageResponse<ProductImageReadAllResponse> readAllThumbnailImage(int page, int size) {
+        Page<ProductImage> productImages = productImageRepository.findAll(PageRequest.of(page, size));
         return ProductImageReadAllResponse.from(productImages);
     }
 

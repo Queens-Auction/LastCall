@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
+import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
@@ -46,6 +47,10 @@ public class AuctionService {
         } else {
             status = AuctionStatus.ONGOING;
         }
+
+        // 4. 경매 등록
+        Auction auction = Auction.of(product, request, status);
+        auctionRepository.save(auction);
 
         return null; // 임시
     }

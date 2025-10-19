@@ -11,17 +11,20 @@ import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
+import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Product;
+import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
 import org.example.lastcall.domain.product.sevice.ProductServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,7 @@ public class AuctionService implements AuctionServiceApi {
     private final ProductServiceApi productService;
     // product 엔티티를 DB 조회 없이 식별자 기반 참조하기 위해 사용 (경매 등록시)
     private final EntityManager em;
+    private final ProductImageServiceApi productImageService;
 
     // 경매 상태 분리
     private AuctionStatus determineStatus(AuctionCreateRequest request) {
@@ -97,7 +101,22 @@ public class AuctionService implements AuctionServiceApi {
         /* findAllByOrderByCreatedAtDesc() 사용하는 이유?
             - JPA 가 쿼리 자동 생성 해줌 (SELECT * FROM auction ORDER BY created_at DESC)
             - 기본 옵션인 최신 등록순으로 경매 목록 조회 가능                                    */
-        Slice<Auction> auctions = auctionRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Page<Auction> auctions = auctionRepository.findAllByOrderByCreatedAtDesc(pageable);
 
+        // 2. 엔티티 -> DTO 변환
+        List<AuctionReadAllResponse> responses = auctions.stream()
+                .map(auction -> {
+                    // 현재 경매에 연결된 상품의 이미지 조회
+                    // 1갠데 List로 쓴 이유는 productImageService 내에 List 형태로 되어있기 때문 (추후 확장 고려)
+                    List<ProductImageResponse> images = productImageService.readAllProductImage(auction.getProduct().getId());
+                    // 이미지 없으면 null, 있으면 첫 번째 이미지(get(0))의 URL 가져옴 -> 대표 이미지 추출
+                    String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
+
+                    return AuctionReadAllResponse.from(auction, imageUrl);
+                })
+                .toList();
+
+        // 3. PageResponse로 변환하여 페이징 응답 반환
+        return PageResponse.of(auctions, responses);
     }
 }

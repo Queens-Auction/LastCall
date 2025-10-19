@@ -25,7 +25,7 @@ public class AuctionCreateResponse {
         return AuctionCreateResponse.builder()
                 .auctionId(auction.getId())
                 .productId(auction.getProduct().getId())
-                .userId(auction.getProduct().getUser().getId())
+                .userId(auction.getUser().getId())
                 .startingBid(auction.getStartingBid())
                 .bidStep(auction.getBidStep())
                 .startTime(auction.getStartTime())

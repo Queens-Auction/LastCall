@@ -4,5 +4,5 @@ import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.response.AuctionCreateResponse;
 
 public interface AuctionServiceApi {
-    AuctionCreateResponse createAuction(Long userId, Long productId, AuctionCreateRequest request);
+    AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request);
 }

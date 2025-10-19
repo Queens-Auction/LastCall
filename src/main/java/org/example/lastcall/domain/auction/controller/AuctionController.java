@@ -35,7 +35,9 @@ public class AuctionController {
     // 경매 전체 조회 //
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> readAllAuctions(
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+            // 기본 정렬값 createdAt, 보조 정렬값 id
+            // - 보조가 없으면 MySQL 이 비슷하거나 동시간대 정렬 구분 못함
+            @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(pageable);

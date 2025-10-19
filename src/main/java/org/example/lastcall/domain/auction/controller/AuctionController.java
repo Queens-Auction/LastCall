@@ -39,8 +39,8 @@ public class AuctionController {
             Pageable pageable
     ) {
         PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(pageable);
-        ApiResponse<PageResponse<AuctionReadAllResponse>> apiResponse = ApiResponse.success("경매를 전체 조회했습니다.", pageResponse);
-
-        return ResponseEntity.ok(apiResponse);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("경매가 전체 조회되었습니다.", pageResponse)
+        );
     }
 }

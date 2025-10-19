@@ -8,6 +8,7 @@ import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.response.AuctionCreateResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
 import org.example.lastcall.domain.auction.service.AuctionService;
+import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -35,12 +36,13 @@ public class AuctionController {
     // 경매 전체 조회 //
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> readAllAuctions(
+            @RequestParam(required = false) Category category,
             // 기본 정렬값 createdAt, 보조 정렬값 id
             // - 보조가 없으면 MySQL 이 비슷하거나 동시간대 정렬 구분 못함
             @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(pageable);
+        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(category, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("경매가 전체 조회되었습니다.", pageResponse)
         );

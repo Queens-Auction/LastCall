@@ -6,7 +6,7 @@ import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import java.time.LocalDateTime;
 
 @Getter
-public class AuctionResponse {
+public class AuctionCreateResponse {
     private Long auctionId;
     private Long productId;
     private Long userId;

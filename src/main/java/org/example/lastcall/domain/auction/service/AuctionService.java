@@ -3,7 +3,7 @@ package org.example.lastcall.domain.auction.service;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
-import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
+import org.example.lastcall.domain.auction.dto.response.AuctionCreateResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
@@ -24,7 +24,8 @@ public class AuctionService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
 
-    public AuctionResponse createAuction(Long userId, AuctionCreateRequest request) {
+    public AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request) {
+
         // 1. 상품 존재 여부 확인
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new BusinessException(AuctionErrorCode.PRODUCT_NOT_FOUND));
@@ -52,6 +53,6 @@ public class AuctionService {
         Auction auction = Auction.of(product, request, status);
         auctionRepository.save(auction);
 
-        return null; // 임시
+        return AuctionCreateResponse.from(auction);
     }
 }

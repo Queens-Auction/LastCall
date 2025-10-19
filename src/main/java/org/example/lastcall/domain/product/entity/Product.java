@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
-import org.example.lastcall.domain.user.entity.UserEntity;
+import org.example.lastcall.domain.user.entity.User;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
@@ -19,7 +19,7 @@ public class Product extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
+    private User user;
 
     @Column(length = 80, nullable = false)
     private String name;
@@ -32,14 +32,14 @@ public class Product extends BaseEntity {
     private String description;
 
     @Builder
-    private Product(UserEntity user, String name, Category category, String description) {
+    private Product(User user, String name, Category category, String description) {
         this.user = user;
         this.name = name;
         this.category = category;
         this.description = description;
     }
 
-    public static Product of(UserEntity user, String name, Category category, String description) {
+    public static Product of(User user, String name, Category category, String description) {
         return Product.builder()
                 .user(user)
                 .name(name)

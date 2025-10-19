@@ -38,8 +38,8 @@ public class AuctionController {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        PageResponse<AuctionReadAllResponse> sliceResponse = auctionService.readAllAuctions(pageable);
-        ApiResponse<PageResponse<AuctionReadAllResponse>> apiResponse = ApiResponse.success("경매를 전체 조회했습니다.", sliceResponse);
+        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(pageable);
+        ApiResponse<PageResponse<AuctionReadAllResponse>> apiResponse = ApiResponse.success("경매를 전체 조회했습니다.", pageResponse);
 
         return ResponseEntity.ok(apiResponse);
     }

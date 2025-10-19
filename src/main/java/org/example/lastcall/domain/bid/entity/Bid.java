@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.bid.entity;
 
 import org.example.lastcall.domain.auction.entity.AuctionEntity;
-import org.example.lastcall.domain.user.entity.UserEntity;
+import org.example.lastcall.domain.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,10 +40,10 @@ public class Bid {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
-	private UserEntity user;          // 나중에 수정된 거 올라오면 User로 수정하기
+	private User user;          // 나중에 수정된 거 올라오면 User로 수정하기
 
 	// 생성자
-	public Bid(Long bidAmount, ResultStatus resultStatus, AuctionEntity auction, UserEntity user) {
+	public Bid(Long bidAmount, ResultStatus resultStatus, AuctionEntity auction, User user) {
 		this.bidAmount = bidAmount;
 		this.resultStatus = resultStatus;
 		this.auction = auction;

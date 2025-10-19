@@ -33,7 +33,7 @@ public class Auction extends BaseEntity {
     @Column(name = "bid_step", nullable = false)
     private Long bidStep;
 
-    @Column(name = "current_bid", nullable = false)
+    @Column(name = "current_bid"/*, nullable = false*/) // 등록값에서는 널 일수 있으므로
     private Long currentBid;
 
     // Enum 매핑 명시 : 가독성 + 안정성

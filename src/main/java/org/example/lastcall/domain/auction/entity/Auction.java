@@ -33,7 +33,7 @@ public class Auction extends BaseEntity {
     @Column(name = "bid_step", nullable = false)
     private Long bidStep;
 
-    @Column(name = "current_bid"/*, nullable = false*/) // 등록값에서는 널 일수 있으므로
+    @Column(name = "current_bid") // 등록값에서는 널 일수 있으므로 null 허용
     private Long currentBid;
 
     // Enum 매핑 명시 : 가독성 + 안정성
@@ -57,17 +57,22 @@ public class Auction extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // 빌더 생성자
+    // 빌더
+    /* 엔티티의 @Builder는 생성자 단위로 붙이는 게 안전함
+         - 클래스 상단에 붙이면 자동생성되는 id 까지 포함되므로 @GeneratedValue 위반 발생
+         - @GeneratedValue : JPA 가 id를 자동 생성 (개발자 수동 세팅 금지)
+         - 개발자가 JPA 관리 영역 침범하므로 정책 위반이 됨
+    */
     @Builder
-    private Auction(Product product,
-                    User user,
+    private Auction(User user,
+                    Product product,
                     Long startingBid,
                     Long bidStep,
                     LocalDateTime startTime,
                     LocalDateTime endTime,
                     AuctionStatus status) {
-        this.product = product;
         this.user = user;
+        this.product = product;
         this.startingBid = startingBid;
         this.bidStep = bidStep;
         this.startTime = startTime;
@@ -76,10 +81,10 @@ public class Auction extends BaseEntity {
     }
 
     // 정적 팩토리 메서드 (of)
-    public static Auction of(Product product, AuctionCreateRequest request, AuctionStatus status) {
+    public static Auction of(User user, Product product, AuctionCreateRequest request, AuctionStatus status) {
         return Auction.builder()
+                .user(user)
                 .product(product)
-                .user(product.getUser())
                 .startingBid(request.getStartingBid())
                 .bidStep(request.getBidStep())
                 .startTime(request.getStartTime())

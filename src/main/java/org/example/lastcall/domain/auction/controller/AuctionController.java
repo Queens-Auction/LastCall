@@ -21,8 +21,9 @@ public class AuctionController {
     public ResponseEntity<ApiResponse<AuctionCreateResponse>> createAuction(@RequestHeader("userId") Long userId,
                                                                             // 시큐리티 적용 후, @AuthenticationPrincipal AuthUser authUser 로 변경 예정
                                                                             @Valid @RequestBody AuctionCreateRequest request) {
+        AuctionCreateResponse response = auctionService.createAuction(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                ApiResponse.success("경매가 등록되었습니다.", auctionService.createAuction(userId, request))
+                ApiResponse.success("경매가 등록되었습니다.", response)
         );
     }
 }

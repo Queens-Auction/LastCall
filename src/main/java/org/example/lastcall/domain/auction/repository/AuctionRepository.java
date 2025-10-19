@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.auction.repository;
 
 import org.example.lastcall.domain.auction.entity.Auction;
+import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,6 +27,9 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     // 경매 전체 조회는 마감된 경매 제외
     @Query("SELECT a " +
             "FROM Auction a " +
-            "WHERE a.status IN('ONGOING', 'SCHEDULED')")
-    Page<Auction> findAllActiveAuctions(Pageable pageable);
+            "WHERE a.status IN('ONGOING', 'SCHEDULED') " +
+            "AND (:category is NULL OR a.product.category = :category)")
+    Page<Auction> findAllActiveAuctionsByCategory(
+            @Param("category") Category category,
+            Pageable pageable);
 }

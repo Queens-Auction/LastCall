@@ -13,6 +13,7 @@ import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
+import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
 import org.example.lastcall.domain.product.sevice.ProductServiceApi;
@@ -95,7 +96,7 @@ public class AuctionService implements AuctionServiceApi {
 
     // 경매 전체 조회 //
     @Transactional(readOnly = true)
-    public PageResponse<AuctionReadAllResponse> readAllAuctions(Pageable pageable) {
+    public PageResponse<AuctionReadAllResponse> readAllAuctions(Category category, Pageable pageable) {
 
         // 1. 경매 목록 조회 (최신순)
         /* findAllByOrderByCreatedAtDesc() 사용하는 이유?
@@ -106,7 +107,7 @@ public class AuctionService implements AuctionServiceApi {
             - 위의 경우는 최신순으로만 조회 시 사용
             - 컨트롤러에서 @PageableDefault 로 기본값(최신순) 지정했으므로 동일한 효과
             - 다양한 정렬이 필요한 경우는 findAll()사용이 유리                                     */
-        Page<Auction> auctions = auctionRepository.findAllActiveAuctions(pageable);
+        Page<Auction> auctions = auctionRepository.findAllActiveAuctionsByCategory(category, pageable);
 
         // 2. 엔티티 -> DTO 변환
         List<AuctionReadAllResponse> responses = auctions.stream()

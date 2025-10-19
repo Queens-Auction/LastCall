@@ -23,5 +23,9 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     // 경매 전체 조회 (기본값(최신순조회), 마감임박순, 인기순, 카테고리순)
     // 추후 Slice 고려
-    Page<Auction> findAll(Pageable pageable);
+    // 경매 전체 조회는 마감된 경매 제외
+    @Query("SELECT a " +
+            "FROM Auction a " +
+            "WHERE a.status IN('ONGOING', 'SCHEDULED')")
+    Page<Auction> findAllActiveAuctions(Pageable pageable);
 }

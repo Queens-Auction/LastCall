@@ -106,7 +106,7 @@ public class AuctionService implements AuctionServiceApi {
             - 위의 경우는 최신순으로만 조회 시 사용
             - 컨트롤러에서 @PageableDefault 로 기본값(최신순) 지정했으므로 동일한 효과
             - 다양한 정렬이 필요한 경우는 findAll()사용이 유리                                     */
-        Page<Auction> auctions = auctionRepository.findAll(pageable);
+        Page<Auction> auctions = auctionRepository.findAllActiveAuctions(pageable);
 
         // 2. 엔티티 -> DTO 변환
         List<AuctionReadAllResponse> responses = auctions.stream()

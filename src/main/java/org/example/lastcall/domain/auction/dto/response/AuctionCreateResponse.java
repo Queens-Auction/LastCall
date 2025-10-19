@@ -12,10 +12,8 @@ public class AuctionCreateResponse {
     private Long userId;
     private Long startingBid;
     private Long bidStep;
-    private Long currentBid;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private AuctionStatus status;
-    private Integer participantCount;
     private LocalDateTime createdAt;
 }

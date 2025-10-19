@@ -28,6 +28,18 @@ public class AuctionService implements AuctionServiceApi {
     private final ProductServiceApi productService;
     private final EntityManager em;
 
+    // 경매 상태 분리
+    private AuctionStatus determineStatus(AuctionCreateRequest request) {
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(request.getStartTime())) {
+            return AuctionStatus.SCHEDULED;
+        } else if (now.isAfter(request.getEndTime())) {
+            return AuctionStatus.CLOSED;
+        } else {
+            return AuctionStatus.ONGOING;
+        }
+    }
+
     public AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request) {
 
         // 1. 상품 존재 여부 확인
@@ -42,18 +54,7 @@ public class AuctionService implements AuctionServiceApi {
         }
 
         // 3. 경매 상태 결정
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startTime = request.getStartTime();
-        LocalDateTime endTime = request.getEndTime();
-
-        AuctionStatus status;
-        if (now.isBefore(startTime)) {
-            status = AuctionStatus.SCHEDULED;
-        } else if (now.isAfter(endTime)) {
-            status = AuctionStatus.CLOSED;
-        } else {
-            status = AuctionStatus.ONGOING;
-        }
+        AuctionStatus status = determineStatus(request);
 
         // 4. User 엔티티 조회
         User user = userRepository.findById(userId).orElseThrow(

@@ -3,8 +3,10 @@ package org.example.lastcall.domain.auction.service;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.response.AuctionCreateResponse;
+import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
@@ -14,6 +16,8 @@ import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.sevice.ProductServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +45,7 @@ public class AuctionService implements AuctionServiceApi {
         }
     }
 
+    // 경매 등록 //
     public AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request) {
 
         // 1. 상품 존재 여부 확인
@@ -82,5 +87,17 @@ public class AuctionService implements AuctionServiceApi {
         auctionRepository.save(auction);
 
         return AuctionCreateResponse.from(auction);
+    }
+
+    // 경매 전체 조회 //
+    @Transactional(readOnly = true)
+    public PageResponse<AuctionReadAllResponse> readAllAuctions(Pageable pageable) {
+
+        // 1. 경매 목록 조회 (최신순)
+        /* findAllByOrderByCreatedAtDesc() 사용하는 이유?
+            - JPA 가 쿼리 자동 생성 해줌 (SELECT * FROM auction ORDER BY created_at DESC)
+            - 기본 옵션인 최신 등록순으로 경매 목록 조회 가능                                    */
+        Slice<Auction> auctions = auctionRepository.findAllByOrderByCreatedAtDesc(pageable);
+
     }
 }

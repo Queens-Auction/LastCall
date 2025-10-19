@@ -26,6 +26,7 @@ public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
     private final ProductServiceApi productService;
+    // product 엔티티를 DB 조회 없이 식별자 기반 참조하기 위해 사용 (경매 등록시)
     private final EntityManager em;
 
     // 경매 상태 분리
@@ -53,19 +54,24 @@ public class AuctionService implements AuctionServiceApi {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
 
-        // 3. 경매 상태 결정
+        // 3. 중복 경매 등록 방지
+        if (auctionRepository.existsActiveAuction(request.getProductId())) {
+            throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
+        }
+
+        // 4. 경매 상태 결정
         AuctionStatus status = determineStatus(request);
 
-        // 4. User 엔티티 조회
+        // 5. User 엔티티 조회
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER)
         );
 
-        // 5. Product 엔티티 조회 없이 참조만 (SELECT X)
+        // 6. Product 엔티티 조회 없이 참조만 (SELECT X)
         // -> Product 엔티티 내 빌더가 id 제외 되어있어서 (클래스 단위 아닌 메서드 단위)
         Product product = em.getReference(Product.class, productResponse.getId());
 
-        // 6. 경매 등록
+        // 7. 경매 등록
         Auction auction = Auction.of(
                 user,
                 product,

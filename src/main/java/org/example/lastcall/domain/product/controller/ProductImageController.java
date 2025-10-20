@@ -31,11 +31,11 @@ public class ProductImageController {
 
     //이미지 전체 조회(상품아이디와 썸네일만 "/api/v1/products/image?imageType=Thumbnail")
     @GetMapping("/image")
-    public ResponseEntity<ApiResponse<PageResponse<ProductImageReadAllResponse>>> readThumbnailImages(
-            @RequestParam ImageType imageType,
-            Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<ProductImageReadAllResponse>>> readThumbnailImages(@RequestParam ImageType imageType,
+                                                                                                      Pageable pageable) {
         PageResponse<ProductImageReadAllResponse> pageResponse = productImageService.readAllThumbnailImage(imageType, pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductImageReadAllResponse>> apiResponse = ApiResponse.success("대표 이미지 전체 조회 성공했습니다.", pageResponse);
+
         return ResponseEntity.ok(apiResponse);
     }
 
@@ -44,6 +44,7 @@ public class ProductImageController {
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> readAllProductImage(@PathVariable Long productId) {
         List<ProductImageResponse> response = productImageService.readAllProductImage(productId);
         ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("상품별 이미지 조회에 성공했습니다.", response);
+
         return ResponseEntity.ok(apiResponse);
     }
 }

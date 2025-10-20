@@ -42,6 +42,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> readProduct(@PathVariable Long productId) {
         ProductResponse response = productService.readProduct(productId);
         ApiResponse<ProductResponse> apiResponse = ApiResponse.success("상품 단건 조회에 성공했습니다.", response);
+
         return ResponseEntity.ok(apiResponse);
     }
 }

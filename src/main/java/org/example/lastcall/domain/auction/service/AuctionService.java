@@ -125,4 +125,17 @@ public class AuctionService implements AuctionServiceApi {
         // 3. PageResponse로 변환하여 페이징 응답 반환
         return PageResponse.of(auctions, responses);
     }
+
+
+    // Override //
+
+    // 특정 상품에 진행 중인 경매 여부 검증
+    @Override
+    public void validateAuctionNotOngoing(Long productId) {
+        boolean hasOngoingAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.ONGOING);
+
+        if (hasOngoingAuction) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
+        }
+    }
 }

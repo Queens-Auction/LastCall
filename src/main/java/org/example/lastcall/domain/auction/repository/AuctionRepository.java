@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.auction.repository;
 
 import org.example.lastcall.domain.auction.entity.Auction;
+import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,4 +33,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     Page<Auction> findAllActiveAuctionsByCategory(
             @Param("category") Category category,
             Pageable pageable);
+
+    // 상품에 진행 중인 경매 존재 여부 검증
+    boolean existsByProductIdAndStatus(Long productId, AuctionStatus status);
 }

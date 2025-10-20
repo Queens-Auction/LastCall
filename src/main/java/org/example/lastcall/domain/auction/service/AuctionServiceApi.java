@@ -1,0 +1,8 @@
+package org.example.lastcall.domain.auction.service;
+
+import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
+import org.example.lastcall.domain.auction.dto.response.AuctionCreateResponse;
+
+public interface AuctionServiceApi {
+    AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request);
+}

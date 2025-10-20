@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class PointService {
+public class PointService implements PointServiceApi {
 
     private final PointRepository pointRepository;
     private final PointLogRepository pointLogRepository;

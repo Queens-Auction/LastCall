@@ -10,7 +10,8 @@ import org.springframework.http.HttpStatus;
 public enum ProductErrorCode implements ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "유저가 존재하지 않습니다."), //추후 유저 도메인 예외 코드로 옮기기
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품이 존재하지 않습니다."),
-    IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "사진이 존재하지 않습니다.");
+    IMAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "사진이 존재하지 않습니다."),
+    TOO_MANY_IMAGES(HttpStatus.BAD_REQUEST, "사진은 최대 10장 첨부할 수 있습니다.");
 
     private final HttpStatus status;
     private final String message;

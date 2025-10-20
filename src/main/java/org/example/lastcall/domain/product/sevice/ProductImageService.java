@@ -27,14 +27,36 @@ public class ProductImageService implements ProductImageServiceApi {
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
 
-    @Override
-    public ProductImageResponse createProductImage(Long productId, ProductImageCreateRequest request) {
+    //이미지 등록 (여러 장 등록)
+    public List<ProductImageResponse> createProductImages(Long productId, List<ProductImageCreateRequest> requests) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        ProductImage productImage = ProductImage.of(product, request.getImageType(), request.getImageUrl());
-        ProductImage savedProductImage = productImageRepository.save(productImage);
 
-        return ProductImageResponse.from(savedProductImage);
+        if (requests.size() > 10) {
+            throw new BusinessException(ProductErrorCode.TOO_MANY_IMAGES);
+        }
+
+        //프론트에서 선택한 이미지(isThumbnail()=true)가 대표 이미지가 되도록 설정
+        List<ProductImage> images = requests.stream()
+                .map(req -> {
+                    ImageType type = (req.getIsThumbnail() != null && req.getIsThumbnail())
+                            ? ImageType.THUMBNAIL
+                            : ImageType.DETAIL;
+                    return ProductImage.of(product, type, req.getImageUrl());
+                })
+                .toList();
+
+        //프론트에서 아무것도 선택하지 않으면 첫 번째 이미지를 대표 이미지로 설정
+        boolean hasThumbnail = images.stream().anyMatch(img -> img.getImageType() == ImageType.THUMBNAIL);
+        if (!hasThumbnail && images.isEmpty()) {
+            images.get(0).markAsThumbnail();
+        }
+
+        List<ProductImage> savedImages = productImageRepository.saveAll(images);
+
+        return savedImages.stream()
+                .map(ProductImageResponse::from)
+                .toList();
     }
 
     //이미지 전체 조회(상품아이디와 썸네일만 "/api/v1/products/image?imageType=Thumbnail")

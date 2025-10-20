@@ -7,6 +7,7 @@ import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.response.AuctionCreateResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
+import org.example.lastcall.domain.auction.dto.response.AuctionReadResponse;
 import org.example.lastcall.domain.auction.service.AuctionService;
 import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Pageable;
@@ -24,9 +25,9 @@ public class AuctionController {
 
     // 경매 등록 //
     @PostMapping
-    public ResponseEntity<ApiResponse<AuctionCreateResponse>> createAuction(@RequestHeader("userId") Long userId,
-                                                                            // 시큐리티 적용 후, @AuthenticationPrincipal AuthUser authUser 로 변경 예정
-                                                                            @Valid @RequestBody AuctionCreateRequest request) {
+    public ResponseEntity<ApiResponse<AuctionCreateResponse>> createAuction(
+            @RequestHeader("userId") Long userId,  // 시큐리티 적용 후, @AuthenticationPrincipal AuthUser authUser 로 변경 예정
+            @Valid @RequestBody AuctionCreateRequest request) {
         AuctionCreateResponse response = auctionService.createAuction(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.success("경매가 등록되었습니다.", response)
@@ -45,6 +46,19 @@ public class AuctionController {
         PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(category, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("경매가 전체 조회되었습니다.", pageResponse)
+        );
+    }
+
+    // 경매 단건 상세 조회 //
+    // required = false : 로그인 안 한 사용자도 접근 가능 (null 가능)
+    @GetMapping("/{auctionId}")
+    public ResponseEntity<ApiResponse<AuctionReadResponse>> readAuction(
+            @PathVariable("auctionId") Long auctionId,
+            @RequestHeader(value = "userId", required = false) Long userId   // 시큐리티 적용 후, @AuthenticationPrincipal AuthUser authUser 로 변경 예정
+    ) {
+        AuctionReadResponse response = auctionService.readAuction(auctionId, userId);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("해당 경매가 조회되었습니다.", response)
         );
     }
 }

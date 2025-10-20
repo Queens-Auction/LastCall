@@ -10,5 +10,4 @@ public class CreatePointRequest {
     private PointLogType type;        // 포인트 변동 유형 (EARN, USE, ect...)
     private String description;       // 변동 사유
     private Long incomePoint;         // 입금된 포인트
-    private Long pointChange;         // 변동된 포인트 값
 }

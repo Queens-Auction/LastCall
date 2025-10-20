@@ -6,12 +6,15 @@ import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.point.dto.CreatePointRequest;
 import org.example.lastcall.domain.point.dto.PointResponse;
 import org.example.lastcall.domain.point.entity.Point;
+import org.example.lastcall.domain.point.entity.PointLog;
+import org.example.lastcall.domain.point.entity.PointLogType;
 import org.example.lastcall.domain.point.repository.PointLogRepository;
 import org.example.lastcall.domain.point.repository.PointRepository;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +32,7 @@ public class PointService {
                 () -> new IllegalArgumentException("User does not exist.")
         );
 
-        Point currentPoint = pointRepository.findById(userId).orElse(null);
+        Point currentPoint = pointRepository.findByUser(user).orElse(null);
 
         Long incomePoint = request.getIncomePoint();
 
@@ -40,7 +43,10 @@ public class PointService {
             currentPoint.updateAvailablePoint(incomePoint);
         }
 
+        PointLog log = pointLogRepository.save(PointLog.create(currentPoint, user, PointLogType.EARN, PointLogType.EARN.getDescription(), incomePoint));
+
         return new PointResponse(user.getId(),
+                currentPoint.getId(),
                 currentPoint.getAvailablePoint(),
                 currentPoint.getDepositPoint(),
                 currentPoint.getSettlementPoint()

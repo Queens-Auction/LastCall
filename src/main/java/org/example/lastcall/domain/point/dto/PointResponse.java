@@ -8,6 +8,7 @@ import lombok.Getter;
 public class PointResponse {
 
     private Long userId;
+    private Long pointId;
     private Long availablePoint;
     private Long depositPoint;
     private Long settlementPoint;

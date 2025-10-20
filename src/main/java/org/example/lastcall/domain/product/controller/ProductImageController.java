@@ -7,7 +7,7 @@ import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest
 import org.example.lastcall.domain.product.dto.response.ProductImageReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.ImageType;
-import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductImageService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
 public class ProductImageController {
-    private final ProductImageServiceApi productImageService;
+    private final ProductImageService productImageService;
 
     @PostMapping("/{productId}/image")
     public ResponseEntity<ApiResponse<ProductImageResponse>> createProductImage(@PathVariable Long productId,
@@ -44,6 +44,16 @@ public class ProductImageController {
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> readAllProductImage(@PathVariable Long productId) {
         List<ProductImageResponse> response = productImageService.readAllProductImage(productId);
         ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("상품별 이미지 조회에 성공했습니다.", response);
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    //상품 대표 이미지 변경 업데이트
+    @PatchMapping("/{productId}/image/{imageId}")
+    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> updateThumbnailImage(@PathVariable Long productId,
+                                                                                        @PathVariable Long imageId) {
+        List<ProductImageResponse> response = productImageService.updateThumbnailImage(productId, imageId);
+        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("대표 이미지 변경에 성공했습니다.", response);
 
         return ResponseEntity.ok(apiResponse);
     }

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
+import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Product;
@@ -46,6 +47,14 @@ public class ProductService implements ProductServiceApi {
     public ProductResponse readProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        return ProductResponse.from(product);
+    }
+
+    //상품 정보 수정
+    public ProductResponse updateProduct(Long productId, ProductUpdateRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
         return ProductResponse.from(product);
     }
 }

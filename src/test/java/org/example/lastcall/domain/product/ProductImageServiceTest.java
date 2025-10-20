@@ -8,6 +8,7 @@ import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.sevice.ProductImageService;
 import org.example.lastcall.domain.user.entity.User;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +31,13 @@ public class ProductImageServiceTest {
     @InjectMocks
     ProductImageService productImageService;
 
-    private Product createTestProduct(Long id) throws Exception {
+    private Product product;
+    private Long productId;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        productId = 1L;
+
         User user = User.builder()
                 .id(1L)
                 .username("testUser")
@@ -43,16 +50,14 @@ public class ProductImageServiceTest {
                 .phoneNumber("010-2345-1234")
                 .build();
 
-        Product product = Product.of(user,
+        product = Product.of(user,
                 "벽돌 1000장",
                 Category.HOME_DECOR,
                 "벽돌 1000장입니다. 울타리 쌓는데에도 좋고 벽 데코에도 아주 좋습니다. 다용도로 유용하게 사용할 수 있습니다. 가격은 오십만원부터 시작합니다.");
 
         Field idField = Product.class.getDeclaredField("id");
         idField.setAccessible(true);
-        idField.set(product, id);
-
-        return product;
+        idField.set(product, productId);
     }
 
     private void setId(Object target, Long id) {
@@ -69,10 +74,7 @@ public class ProductImageServiceTest {
     @DisplayName("대표 이미지 수정 성공")
     void updateThumbnailImage_success() throws Exception {
         //given
-        Long productId = 1L;
         Long newThumbnailId = 20L;
-
-        Product product = createTestProduct(productId);
 
         ProductImage oldThumbnail = ProductImage.of(product, ImageType.THUMBNAIL, "url-1");
         ProductImage newThumbnail = ProductImage.of(product, ImageType.DETAIL, "url-2");

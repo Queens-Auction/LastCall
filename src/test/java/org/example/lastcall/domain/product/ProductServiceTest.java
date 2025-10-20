@@ -7,6 +7,7 @@ import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.product.sevice.ProductService;
 import org.example.lastcall.domain.user.entity.User;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,11 +28,12 @@ public class ProductServiceTest {
     @InjectMocks
     ProductService productService;
 
-    @Test
-    @DisplayName("상품 수정 - 성공")
-    void updateProduct_success() {
-        //given
-        Long productId = 1L;
+    private Long productId;
+    private Product product;
+
+    @BeforeEach
+    void setUp() {
+        productId = 1L;
         User user = User.builder()
                 .id(1L)
                 .username("testUser")
@@ -44,9 +46,23 @@ public class ProductServiceTest {
                 .phoneNumber("010-2345-1234")
                 .build();
 
-        Product product = Product.of(user, "제가 그린 기린 그림", Category.ART_SCULPTURE, "제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다.");
+        product = Product.of(
+                user,
+                "제가 그린 기린 그림",
+                Category.ART_PAINTING,
+                "제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다."
+        );
 
-        ProductUpdateRequest request = new ProductUpdateRequest("내가 그린 기린 그림", Category.ART_PAINTING, "제가 직접 그린 기린 그림 입니다. 저는 네 살 때부터 미술 신동 소리를 드어왔으며 이 그림은 제가 일주일동안 그린 그림입니다.");
+    }
+
+    @Test
+    @DisplayName("상품 수정 - 성공")
+    void updateProduct_success() {
+        //given
+        ProductUpdateRequest request = new ProductUpdateRequest(
+                "내가 그린 기린 그림",
+                Category.ART_CRAFT,
+                "제가 직접 그린 기린 그림 입니다. 저는 네 살 때부터 미술 신동 소리를 드어왔으며 이 그림은 제가 일주일동안 그린 그림입니다.");
 
         given(productRepository.findById(productId)).willReturn(Optional.of(product));
 
@@ -63,26 +79,6 @@ public class ProductServiceTest {
     @DisplayName("상품 수정 - 이름만 수정")
     void updateProduct_onlyName_success() {
         // given
-        Long productId = 1L;
-        User user = User.builder()
-                .id(1L)
-                .username("testUser")
-                .email("test@example.com")
-                .password("encodeed-Password!1")
-                .nickname("tester")
-                .address("Seoul")
-                .postcode("12345")
-                .detailAddress("Apt 101")
-                .phoneNumber("010-2345-1234")
-                .build();
-
-        Product product = Product.of(
-                user,
-                "원래 이름",
-                Category.ART_SCULPTURE,
-                "원래 설명"
-        );
-
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "새로운 이름", null, null
         );

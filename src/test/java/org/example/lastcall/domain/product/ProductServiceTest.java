@@ -62,7 +62,7 @@ public class ProductServiceTest {
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "내가 그린 기린 그림",
                 Category.ART_CRAFT,
-                "제가 직접 그린 기린 그림 입니다. 저는 네 살 때부터 미술 신동 소리를 드어왔으며 이 그림은 제가 일주일동안 그린 그림입니다.");
+                "제가 직접 그린 기린 그림 입니다. 저는 네 살 때부터 미술 신동 소리를 들어왔으며 이 그림은 제가 일주일동안 그린 그림입니다.");
 
         given(productRepository.findById(productId)).willReturn(Optional.of(product));
 
@@ -71,8 +71,8 @@ public class ProductServiceTest {
 
         //then
         assertThat(response.getName()).isEqualTo("내가 그린 기린 그림");
-        assertThat(response.getCategory()).isEqualTo(Category.ART_PAINTING);
-        assertThat(response.getDescription()).isEqualTo("제가 직접 그린 기린 그림 입니다. 저는 네 살 때부터 미술 신동 소리를 드어왔으며 이 그림은 제가 일주일동안 그린 그림입니다.");
+        assertThat(response.getCategory()).isEqualTo(Category.ART_CRAFT);
+        assertThat(response.getDescription()).isEqualTo("제가 직접 그린 기린 그림 입니다. 저는 네 살 때부터 미술 신동 소리를 들어왔으며 이 그림은 제가 일주일동안 그린 그림입니다.");
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ProductServiceTest {
 
         //then
         assertThat(response.getName()).isEqualTo("새로운 이름");
-        assertThat(response.getCategory()).isEqualTo(Category.ART_SCULPTURE); // 기존값 유지
-        assertThat(response.getDescription()).isEqualTo("원래 설명");
+        assertThat(response.getCategory()).isEqualTo(Category.ART_PAINTING); // 기존값 유지
+        assertThat(response.getDescription()).isEqualTo("제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다.");
     }
 }

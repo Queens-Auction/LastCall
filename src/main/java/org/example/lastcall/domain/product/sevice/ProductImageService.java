@@ -11,30 +11,29 @@ import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
-import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class ProductImageService implements ProductImageServiceApi {
-    private final ProductRepository productRepository;
+    private final ProductServiceApi productServiceApi;
     private final ProductImageRepository productImageRepository;
 
     //이미지 등록 (여러 장 등록)
     public List<ProductImageResponse> createProductImages(Long productId, List<ProductImageCreateRequest> requests) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        Product product = productServiceApi.findById(productId);
 
-        if (requests.size() > 10) {
-            throw new BusinessException(ProductErrorCode.TOO_MANY_IMAGES);
-        }
+        validateImageCount(requests);
+        validateDuplicateUrls(requests, productId);
 
         //프론트에서 선택한 이미지(isThumbnail()=true)가 대표 이미지가 되도록 설정
         List<ProductImage> images = requests.stream()
@@ -46,11 +45,7 @@ public class ProductImageService implements ProductImageServiceApi {
                 })
                 .toList();
 
-        //프론트에서 아무것도 선택하지 않으면 첫 번째 이미지를 대표 이미지로 설정
-        boolean hasThumbnail = images.stream().anyMatch(img -> img.getImageType() == ImageType.THUMBNAIL);
-        if (!hasThumbnail && images.isEmpty()) {
-            images.get(0).markAsThumbnail();
-        }
+        ensureSingleThumbnail(images);
 
         List<ProductImage> savedImages = productImageRepository.saveAll(images);
 
@@ -60,7 +55,6 @@ public class ProductImageService implements ProductImageServiceApi {
     }
 
     //이미지 전체 조회(상품아이디와 썸네일만 "/api/v1/products/image?imageType=Thumbnail")
-    @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductImageReadAllResponse> readAllThumbnailImage(ImageType imageType, int page, int size) {
         Page<ProductImage> productImages = productImageRepository.findAllByImageType(imageType, PageRequest.of(page, size));
@@ -68,7 +62,6 @@ public class ProductImageService implements ProductImageServiceApi {
     }
 
     //상품별 이미지 전체 조회
-    @Override
     @Transactional(readOnly = true)
     public List<ProductImageResponse> readAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
@@ -90,6 +83,52 @@ public class ProductImageService implements ProductImageServiceApi {
 
         // 변경 이후의 해당 상품의 전체 이미지 목록 반환
         List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
+
+        // 썸네일 갯수 검사
+        long thumbnailCount = productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
+        if (thumbnailCount > 1) {
+            throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
+        }
+
         return ProductImageResponse.from(productImages);
+    }
+
+    //이미지 갯수 제한 매서드
+    private void validateImageCount(List<ProductImageCreateRequest> requests) {
+        if (requests.size() > 10) {
+            throw new BusinessException(ProductErrorCode.TOO_MANY_IMAGES);
+        }
+    }
+
+    //이미지 중복 검사 메서드
+    private void validateDuplicateUrls(List<ProductImageCreateRequest> requests, Long productId) {
+        //요청 내부 중복 검사
+        Set<String> urlSet = new HashSet<>();
+        for (ProductImageCreateRequest req : requests) {
+            if (!urlSet.add(req.getImageUrl())) {
+                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_REQUEST);
+            }
+        }
+
+        // 같은 상품 내 DB 이미지 중복 검사
+        for (String url : urlSet) {
+            if (productImageRepository.existsByProductIdAndImageUrl(productId, url)) {
+                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
+            }
+        }
+    }
+
+    //대표 썸네일 지정 메서드
+    private void ensureSingleThumbnail(List<ProductImage> images) {
+        long thumbnailCount = images.stream()
+                .filter(img -> img.getImageType() == ImageType.THUMBNAIL)
+                .count();
+        if (thumbnailCount > 1) {
+            throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
+        }
+        //썸네일 없을 경우 첫 번째 이미지로 결정
+        if (thumbnailCount == 0 && !images.isEmpty()) {
+            images.get(0).markAsThumbnail();
+        }
     }
 }

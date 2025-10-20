@@ -7,8 +7,8 @@ import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
-import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.product.sevice.ProductImageService;
+import org.example.lastcall.domain.product.sevice.ProductServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,8 +29,9 @@ import static org.mockito.BDDMockito.given;
 public class ProductImageServiceTest {
     @Mock
     ProductImageRepository productImageRepository;
+
     @Mock
-    ProductRepository productRepository;
+    ProductServiceApi productServiceApi;
 
     @InjectMocks
     ProductImageService productImageService;
@@ -78,11 +79,11 @@ public class ProductImageServiceTest {
     @DisplayName("이미지 등록 성공")
     void createImages_success() throws Exception {
         //given
-        ProductImageCreateRequest request1 = new ProductImageCreateRequest(false, "url-1");
-        ProductImageCreateRequest request2 = new ProductImageCreateRequest(true, "url-2");
-        ProductImageCreateRequest request3 = new ProductImageCreateRequest(false, "url-3");
-
-        List<ProductImageCreateRequest> requests = List.of(request1, request2, request3);
+        List<ProductImageCreateRequest> requests = List.of(
+                new ProductImageCreateRequest(false, "url-1"),
+                new ProductImageCreateRequest(true, "url-2"),
+                new ProductImageCreateRequest(false, "url-3")
+        );
 
         //Repository SaveAll Mocking
         List<ProductImage> savedImages = List.of(
@@ -96,7 +97,7 @@ public class ProductImageServiceTest {
         setId(savedImages.get(1), 2L);
         setId(savedImages.get(2), 3L);
 
-        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productServiceApi.findById(productId)).willReturn(product);
         given(productImageRepository.saveAll(org.mockito.ArgumentMatchers.anyList())).willReturn(savedImages);
 
         //when

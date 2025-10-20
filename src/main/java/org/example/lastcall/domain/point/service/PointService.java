@@ -45,7 +45,8 @@ public class PointService implements PointServiceApi {
 
         PointLog log = pointLogRepository.save(PointLog.create(currentPoint, user, PointLogType.EARN, PointLogType.EARN.getDescription(), incomePoint));
 
-        return new PointResponse(user.getId(),
+        return new PointResponse(
+                user.getId(),
                 currentPoint.getId(),
                 currentPoint.getAvailablePoint(),
                 currentPoint.getDepositPoint(),
@@ -53,4 +54,22 @@ public class PointService implements PointServiceApi {
         );
     }
 
+    public PointResponse getUserPoint(Long userId) {
+
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new IllegalArgumentException("User does not exist.")
+        );
+
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new IllegalArgumentException("Point record not found for this user.")
+        );
+
+        return new PointResponse(
+                user.getId(),
+                point.getId(),
+                point.getAvailablePoint(),
+                point.getDepositPoint(),
+                point.getSettlementPoint()
+        );
+    }
 }

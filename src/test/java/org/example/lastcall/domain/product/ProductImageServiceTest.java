@@ -1,11 +1,13 @@
 package org.example.lastcall.domain.product;
 
+import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
+import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.product.sevice.ProductImageService;
 import org.example.lastcall.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,8 @@ import static org.mockito.BDDMockito.given;
 public class ProductImageServiceTest {
     @Mock
     ProductImageRepository productImageRepository;
+    @Mock
+    ProductRepository productRepository;
 
     @InjectMocks
     ProductImageService productImageService;
@@ -68,6 +72,41 @@ public class ProductImageServiceTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Test
+    @DisplayName("이미지 등록 성공")
+    void createImages_success() throws Exception {
+        //given
+        ProductImageCreateRequest request1 = new ProductImageCreateRequest(false, "url-1");
+        ProductImageCreateRequest request2 = new ProductImageCreateRequest(true, "url-2");
+        ProductImageCreateRequest request3 = new ProductImageCreateRequest(false, "url-3");
+
+        List<ProductImageCreateRequest> requests = List.of(request1, request2, request3);
+
+        //Repository SaveAll Mocking
+        List<ProductImage> savedImages = List.of(
+                ProductImage.of(product, ImageType.DETAIL, "url-1"),
+                ProductImage.of(product, ImageType.THUMBNAIL, "url-2"),
+                ProductImage.of(product, ImageType.DETAIL, "url-3")
+        );
+
+        //id 강제 설정
+        setId(savedImages.get(0), 1L);
+        setId(savedImages.get(1), 2L);
+        setId(savedImages.get(2), 3L);
+
+        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productImageRepository.saveAll(org.mockito.ArgumentMatchers.anyList())).willReturn(savedImages);
+
+        //when
+        List<ProductImageResponse> responses = productImageService.createProductImages(productId, requests);
+
+        //then
+        assertThat(responses).hasSize(3);
+        assertThat(responses.get(0).getImageType()).isEqualTo(ImageType.DETAIL);
+        assertThat(responses.get(1).getImageType()).isEqualTo(ImageType.THUMBNAIL);
+        assertThat(responses.get(2).getImageType()).isEqualTo(ImageType.DETAIL);
     }
 
     @Test

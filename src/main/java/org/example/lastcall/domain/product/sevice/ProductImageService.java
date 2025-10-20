@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +49,24 @@ public class ProductImageService implements ProductImageServiceApi {
     @Override
     @Transactional(readOnly = true)
     public List<ProductImageResponse> readAllProductImage(Long productId) {
+        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
+        return ProductImageResponse.from(productImages);
+    }
+
+    //썸네일 이미지 변경
+    public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {
+        //기존 썸네일 찾기
+        Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL);
+
+        //기존 썸네일이 있으면 일반 이미지로 변경하기
+        currentThumbnail.ifPresent(image -> image.updateImageType(ImageType.DETAIL));
+
+        //새로 선택한 이미지를 썸네일로 변경
+        ProductImage newThumbnail = productImageRepository.findById(newThumbnailImageId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
+        newThumbnail.updateImageType(ImageType.THUMBNAIL);
+
+        // 변경 이후의 해당 상품의 전체 이미지 목록 반환
         List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
         return ProductImageResponse.from(productImages);
     }

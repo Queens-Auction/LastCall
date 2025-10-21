@@ -54,6 +54,7 @@ public class ProductService implements ProductServiceApi {
 
     //상품 정보 수정
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request) {
+        auctionServiceApi.validateAuctionScheduled(productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
@@ -62,8 +63,8 @@ public class ProductService implements ProductServiceApi {
 
     //상품 삭제
     public void deleteProduct(Long productId) {
-        //경매 중, 경매 완료인 상품은 삭제 불가능 - 추후 AuctionServiceApi 메서드 구현 시 적용
-        //auctionServiceApi.validateAuctionScheduled(productId);
+        //경매 중, 경매 완료인 상품은 삭제 불가능
+        auctionServiceApi.validateAuctionScheduled(productId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));

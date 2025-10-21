@@ -87,9 +87,14 @@ public class PointService implements PointServiceApi {
         }
     }
 
+    // 입찰 포인트를 예치 포인트로 이동 후 포인트 로그에 기록
     @Override
     public void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId) {
-        
+
+        // 포인트 조회
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new IllegalArgumentException("User does not have a point account yet.")
+        );
     }
 
 }

@@ -17,4 +17,6 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 
 	@EntityGraph(attributePaths = {"user"})
 	Page<Bid> findAllByAuction(Auction auction, Pageable pageable);
+
+	boolean existsByAuctionIdAndUserId(Long auctionId, Long userId);
 }

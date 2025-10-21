@@ -61,4 +61,12 @@ public class BidService implements BidServiceApi {
 
 		return PageResponse.of(bidPage.map(BidGetAllResponse::from));
 	}
+
+	@Override
+	public boolean existsByAuctionIdAndUserId(Long auctionId, Long userId) {
+		// if (auctionId == null || userId == null) {
+		// 	throw new BusinessException(BidErrorCode.INVALID_BID_CHECK_REQUEST);
+		// }
+		return bidRepository.existsByAuctionIdAndUserId(auctionId, userId);
+	}
 }

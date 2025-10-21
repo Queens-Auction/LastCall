@@ -26,4 +26,13 @@ public class PointController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(pointResponse);
     }
+
+    // 유저 포인트 조회
+    @GetMapping("/users/{userId}/points")
+    public ResponseEntity<PointResponse> getUserPoint(@PathVariable Long userId) {
+
+        PointResponse pointResponse = pointService.getUserPoint(userId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(pointResponse);
+    }
 }

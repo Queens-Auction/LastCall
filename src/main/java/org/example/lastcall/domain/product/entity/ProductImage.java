@@ -53,4 +53,8 @@ public class ProductImage extends BaseEntity {
     public void updateImageType(ImageType imageType) {
         this.imageType = imageType;
     }
+
+    public void markAsThumbnail() {
+        this.imageType = ImageType.THUMBNAIL;
+    }
 }

@@ -41,6 +41,7 @@ public class AuctionService implements AuctionServiceApi {
         }
     }
 
+    // 경매 등록 //
     public AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request) {
 
         // 1. 상품 존재 여부 확인
@@ -82,5 +83,36 @@ public class AuctionService implements AuctionServiceApi {
         auctionRepository.save(auction);
 
         return AuctionCreateResponse.from(auction);
+    }
+
+    // 특정 상품에 진행 중인 경매 여부 검증
+    @Override
+    public void validateAuctionScheduled(Long productId) {
+        boolean isScheduledAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.SCHEDULED);
+
+        if (!isScheduledAuction) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
+        }
+    }
+
+    // 입찰 가능한 경매 여부 검증
+    @Override
+    public Auction getBiddableAuction(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        if (auction.getStatus() == AuctionStatus.SCHEDULED
+                || auction.getStatus() == AuctionStatus.CLOSED) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
+        }
+        return auction;
+    }
+
+    // 경매 ID로 경매 조회
+    @Override
+    public Auction findById(Long auctionId) {
+        return auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND)
+        );
     }
 }

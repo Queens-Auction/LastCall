@@ -2,17 +2,13 @@ package org.example.lastcall.domain.product.sevice;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
-import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
-import org.example.lastcall.domain.product.dto.response.ProductImageReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,14 +50,17 @@ public class ProductImageService implements ProductImageServiceApi {
                 .toList();
     }
 
-    //이미지 전체 조회(상품아이디와 썸네일만 "/api/v1/products/image?imageType=Thumbnail")
+    //대표이미지 조회
+    @Override
     @Transactional(readOnly = true)
-    public PageResponse<ProductImageReadAllResponse> readAllThumbnailImage(ImageType imageType, int page, int size) {
-        Page<ProductImage> productImages = productImageRepository.findAllByImageType(imageType, PageRequest.of(page, size));
-        return ProductImageReadAllResponse.from(productImages);
+    public ProductImageResponse readThumbnailImage(Long productId) {
+        ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
+        return ProductImageResponse.from(thumbnailImage);
     }
 
     //상품별 이미지 전체 조회
+    @Override
     @Transactional(readOnly = true)
     public List<ProductImageResponse> readAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);

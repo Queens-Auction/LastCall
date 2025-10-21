@@ -36,4 +36,8 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     // 상품에 진행 중인 경매 존재 여부 검증
     boolean existsByProductIdAndStatus(Long productId, AuctionStatus status);
+
+    // 특정 이메일을 가진 판매자가 등록한 경매 목록 조회 (우선 이메일로)
+    // 추후 findBySellerId(Long sellerId, Pageable pageable); 로 변경 예정
+    Page<Auction> findBySellerEmail(String email, Pageable pageable);
 }

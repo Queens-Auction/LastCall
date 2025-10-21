@@ -3,10 +3,15 @@ package org.example.lastcall.domain.bid.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
+import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.repository.BidRepository;
@@ -19,6 +24,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -122,5 +132,51 @@ class BidServiceTest {
 		verify(pointServiceApi, times(1)).validateSufficientPoints(eq(userId), eq(bidAmount));
 		verify(bidRepository, times(1)).save(any(Bid.class));
 		verify(pointServiceApi, times(1)).updateDepositPoint(eq(auctionId), eq(bidId), eq(bidAmount), eq(userId));
+	}
+
+	@Test
+	@DisplayName("경매별 전체 입찰 내역 조회 성공 (최신순)")
+	void getAllBids_경매별_전체_입찰_내역_조회에_성공한다() {
+		// given
+		Long auctionId = 10L;
+		Pageable pageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+		Auction auction = mock(Auction.class);    //  가짜 객체 생성
+
+		given(auctionServiceApi.findById(auctionId)).willReturn(auction);
+
+		// Mock 데이터 준비 (Page<Bid> 객체)
+		User user1 = mock(User.class);
+		given(user1.getNickname()).willReturn("귀염둥이");
+		Bid bid1 = new Bid(11000L, auction, user1);
+		ReflectionTestUtils.setField(bid1, "createdAt", LocalDateTime.now()); // 시간 설정
+
+		User user2 = mock(User.class);
+		given(user2.getNickname()).willReturn("냥냥");
+		Bid bid2 = new Bid(10000L, auction, user2);
+		ReflectionTestUtils.setField(bid2, "createdAt", LocalDateTime.now().minusMinutes(1)); // 이전 시간
+
+		List<Bid> bidList = Arrays.asList(bid1, bid2); // Mock Bid 리스트
+		Page<Bid> bidPage = new PageImpl<>(bidList, pageable, bidList.size()); // Mock Page 객체 생성
+
+		// Repository가 Mock Page 객체를 반환하도록 설정
+		given(bidRepository.findAllByAuction(auction, pageable)).willReturn(bidPage);
+
+		// when
+		PageResponse<BidGetAllResponse> bids = bidService.getAllBids(auctionId, pageable);
+
+		// then
+		assertThat(bids).isNotNull();
+		assertThat(bids.getContent()).hasSize(2); // 내용물이 2개인지 확인
+		assertThat(bids.getNumber()).isEqualTo(0); // 현재 페이지 번호 확인
+		assertThat(bids.getTotalElements()).isEqualTo(2); // 전체 요소 개수 확인
+
+		// 첫 번째 요소(최신)의 내용 검증 (DTO 변환 확인)
+		BidGetAllResponse firstBidDto = bids.getContent().get(0);
+		assertThat(firstBidDto.getBidAmount()).isEqualTo(11000L);
+		assertThat(firstBidDto.getNickname()).isEqualTo("귀염둥이");
+
+		// Repository 메서드가 정확히 1번 호출되었는지 검증
+		verify(bidRepository, times(1)).findAllByAuction(eq(auction), eq(pageable));
 	}
 }

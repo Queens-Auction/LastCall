@@ -1,13 +1,17 @@
 package org.example.lastcall.domain.bid.service;
 
+import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.repository.BidRepository;
 import org.example.lastcall.domain.point.service.PointServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,5 +50,15 @@ public class BidService implements BidServiceApi {
 		pointServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), bidAmount, userId);
 
 		return BidResponse.from(savedBid);
+	}
+
+	// 경매별 전체 입찰 내역 조회
+	@Transactional(readOnly = true)
+	public PageResponse<BidGetAllResponse> getAllBids(Long auctionId, Pageable pageable) {
+		Auction auction = auctionServiceApi.findById(auctionId);
+
+		Page<Bid> bidPage = bidRepository.findAllByAuction(auction, pageable);
+
+		return PageResponse.of(bidPage.map(BidGetAllResponse::from));
 	}
 }

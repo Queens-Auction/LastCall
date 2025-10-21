@@ -50,11 +50,18 @@ public class ProductController {
     //상품 업데이트
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(@PathVariable Long productId,
-                                                                      @Valid @RequestBody ProductUpdateRequest request
-    ) {
+                                                                      @Valid @RequestBody ProductUpdateRequest request) {
         ProductResponse response = productService.updateProduct(productId, request);
         ApiResponse<ProductResponse> apiResponse = ApiResponse.success("상품 정보 업데이트에 성공했습니다.", response);
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    //상품 삭제
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long productId) {
+        productService.deleteProduct(productId);
+
+        return ResponseEntity.ok(ApiResponse.success("상품이 삭제되었습니다."));
     }
 }

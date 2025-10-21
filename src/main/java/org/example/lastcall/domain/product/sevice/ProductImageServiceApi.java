@@ -1,10 +1,7 @@
 package org.example.lastcall.domain.product.sevice;
 
-import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
-
-import java.util.List;
-
 public interface ProductImageServiceApi {
+    void softDeleteByProductId(Long productId);
     // 대표 이미지(썸네일) 조회
     ProductImageResponse readThumbnailImage(Long productId);
 

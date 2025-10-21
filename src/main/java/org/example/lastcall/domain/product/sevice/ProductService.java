@@ -3,6 +3,7 @@ package org.example.lastcall.domain.product.sevice;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
+import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
@@ -22,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ProductService implements ProductServiceApi {
     private final ProductRepository productRepository;
+    private final ProductImageServiceApi productImageServiceApi;
+    private final AuctionServiceApi auctionServiceApi;
     private final UserRepository userRepository;
 
     public ProductResponse createProduct(Long userId, ProductCreateRequest request) {
@@ -55,6 +58,19 @@ public class ProductService implements ProductServiceApi {
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
         return ProductResponse.from(product);
+    }
+
+    //상품 삭제
+    public void deleteProduct(Long productId) {
+        //경매 중, 경매 완료인 상품은 삭제 불가능 - 추후 AuctionServiceApi 메서드 구현 시 적용
+        //auctionServiceApi.validateAuctionScheduled(productId);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        product.softDelete();
+
+        //상품에 연결된 이미지까지 soft delete
+        productImageServiceApi.softDeleteByProductId(productId);
     }
 
     @Override

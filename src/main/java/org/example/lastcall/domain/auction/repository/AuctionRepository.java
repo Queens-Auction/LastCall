@@ -2,6 +2,9 @@ package org.example.lastcall.domain.auction.repository;
 
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
+import org.example.lastcall.domain.product.entity.Category;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +22,17 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
             " )"
     )
     boolean existsActiveAuction(@Param("productId") Long productId);
+
+    // 경매 전체 조회 (기본값(최신순조회), 마감임박순, 인기순, 카테고리순)
+    // 추후 Slice 고려
+    // 경매 전체 조회는 마감된 경매 제외
+    @Query("SELECT a " +
+            "FROM Auction a " +
+            "WHERE a.status IN('ONGOING', 'SCHEDULED') " +
+            "AND (:category is NULL OR a.product.category = :category)")
+    Page<Auction> findAllActiveAuctionsByCategory(
+            @Param("category") Category category,
+            Pageable pageable);
 
     // 상품에 진행 중인 경매 존재 여부 검증
     boolean existsByProductIdAndStatus(Long productId, AuctionStatus status);

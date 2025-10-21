@@ -12,8 +12,6 @@ import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
-import org.example.lastcall.domain.bid.service.BidServiceApi;
-import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
@@ -160,11 +158,32 @@ public class AuctionService implements AuctionServiceApi {
 
     // 특정 상품에 진행 중인 경매 여부 검증
     @Override
-    public void validateAuctionNotOngoing(Long productId) {
-        boolean hasOngoingAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.ONGOING);
+    public void validateAuctionScheduled(Long productId) {
+        boolean isScheduledAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.SCHEDULED);
 
-        if (hasOngoingAuction) {
+        if (!isScheduledAuction) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
         }
+    }
+
+    // 입찰 가능한 경매 여부 검증
+    @Override
+    public Auction getBiddableAuction(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        if (auction.getStatus() == AuctionStatus.SCHEDULED
+                || auction.getStatus() == AuctionStatus.CLOSED) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
+        }
+        return auction;
+    }
+
+    // 경매 ID로 경매 조회
+    @Override
+    public Auction findById(Long auctionId) {
+        return auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND)
+        );
     }
 }

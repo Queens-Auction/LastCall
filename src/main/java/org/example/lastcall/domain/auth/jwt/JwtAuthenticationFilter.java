@@ -61,13 +61,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    // /api/v1/auth/**, /actuator 등은 필터 스킵
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest req) {
-        String uri = req.getRequestURI();
-        return uri.startsWith("/api/v1/auth/") || uri.startsWith("/api/v1/email-verifications");
-    }
-
     // Authorization 헤더(Bearer) 우선, 없으면 access_token 쿠키
     private String resolveToken(HttpServletRequest req) {
         String h = req.getHeader("Authorization");

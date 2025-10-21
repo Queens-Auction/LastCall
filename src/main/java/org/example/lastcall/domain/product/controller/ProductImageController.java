@@ -21,11 +21,13 @@ import java.util.List;
 public class ProductImageController {
     private final ProductImageService productImageService;
 
-    @PostMapping("/{productId}/image")
-    public ResponseEntity<ApiResponse<ProductImageResponse>> createProductImage(@PathVariable Long productId,
-                                                                                @RequestBody ProductImageCreateRequest request) {
+    @PostMapping("/{productId}/images")
+    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> createProductImage(@PathVariable Long productId,
+                                                                                      @RequestBody List<ProductImageCreateRequest> requests) {
+        List<ProductImageResponse> response = productImageService.createProductImages(productId, requests);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                ApiResponse.success("상품 이미지를 등록했습니다.", productImageService.createProductImage(productId, request))
+                ApiResponse.success("상품 이미지를 등록했습니다.", response)
         );
     }
 

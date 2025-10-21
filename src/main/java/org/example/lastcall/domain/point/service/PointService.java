@@ -100,6 +100,9 @@ public class PointService implements PointServiceApi {
         if (point.getAvailablePoint() < bidAmount) {
             throw new IllegalArgumentException("Insufficient available points.");
         }
+
+        // 포인트 이동 (가용 -> 예치)
+        point.updateDepositPoint(bidAmount);
     }
 
 }

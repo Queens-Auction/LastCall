@@ -20,5 +20,5 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     @Modifying
     @Query("UPDATE ProductImage i SET i.deleted = true WHERE i.product.id = :productId")
-    void softDeleteByproductId(Long productId);
+    void softDeleteByProductId(Long productId);
 }

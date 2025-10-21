@@ -8,7 +8,6 @@ import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.sevice.ProductImageService;
-import org.example.lastcall.domain.product.sevice.ProductServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,16 +24,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductImageServiceTest {
     @Mock
     ProductImageRepository productImageRepository;
 
-    @Mock
-    ProductServiceApi productServiceApi;
-
+    //    @Mock
+//    ProductCommandServiceApi productServiceApi;
+//
     @InjectMocks
     ProductImageService productImageService;
 
@@ -99,18 +101,21 @@ public class ProductImageServiceTest {
         setId(savedImages.get(0), 1L);
         setId(savedImages.get(1), 2L);
         setId(savedImages.get(2), 3L);
-
-        given(productServiceApi.findById(productId)).willReturn(product);
-        given(productImageRepository.saveAll(org.mockito.ArgumentMatchers.anyList())).willReturn(savedImages);
+        /* 불필요한 Mocking 제거!
+            ProductServiceApi를 호출하는 로직이 이 서비스에서 제거되었으므로, 이 Mocking은 필요 없음.*/
+//        given(productServiceApi.findById(productId)).willReturn(product);
+        given(productImageRepository.saveAll(anyList())).willReturn(savedImages);
 
         //when
-        List<ProductImageResponse> responses = productImageService.createProductImages(productId, requests);
+        List<ProductImageResponse> responses = productImageService.createProductImages(product, requests);
 
         //then
         assertThat(responses).hasSize(3);
         assertThat(responses.get(0).getImageType()).isEqualTo(ImageType.DETAIL);
         assertThat(responses.get(1).getImageType()).isEqualTo(ImageType.THUMBNAIL);
         assertThat(responses.get(2).getImageType()).isEqualTo(ImageType.DETAIL);
+        //추가 검증: saveAll이 Product 엔티티를 포함하는 ProductImage 객체 리스트로 호출되었는지 확인
+        verify(productImageRepository, times(1)).saveAll(anyList());
     }
 
     @Test

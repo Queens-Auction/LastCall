@@ -8,8 +8,8 @@ import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.repository.ProductRepository;
+import org.example.lastcall.domain.product.sevice.ProductCommandService;
 import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
-import org.example.lastcall.domain.product.sevice.ProductService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +33,9 @@ public class ProductServiceTest {
     @Mock
     ProductRepository productRepository;
     @InjectMocks
-    ProductService productService;
+    ProductCommandService productService;
+    //    @Mock
+//    private ProductImageViewServiceApi productImageServiceApi;
     @Mock
     private ProductImageServiceApi productImageServiceApi;
     @Mock

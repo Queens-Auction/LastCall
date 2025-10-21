@@ -3,8 +3,9 @@ package org.example.lastcall.domain.auth.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
+import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
-import org.example.lastcall.domain.auth.dto.request.UserLoginDto;
+import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.service.AuthService;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.springframework.http.HttpStatus;
@@ -31,8 +32,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Void> userLogin(@Valid @RequestBody UserLoginDto.Request request) {
-        UserLoginDto.Response loginResponse = authService.userLogin(request);
+    public ResponseEntity<Void> LoginRequest(@Valid @RequestBody LoginRequest request) {
+        LoginResponse loginResponse = authService.userLogin(request);
 
         ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(loginResponse.accessToken());
         ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(loginResponse.refreshToken());

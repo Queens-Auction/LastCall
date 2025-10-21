@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.domain.auth.utils.CookieUtil; // ACCESS_COOKIE 상수 사용 시
+import org.example.lastcall.domain.user.enums.Role;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,9 +47,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtUtil.validateAndGetClaims(token);
 
             UUID userPublicId = UUID.fromString(claims.getSubject());
-            String grade = claims.get("grade", String.class);
+            String roleName = claims.get("role", String.class);
 
-            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + grade));
+            Role role = Role.valueOf(roleName);
+
+            var authorities = List.of(new SimpleGrantedAuthority(role.getKey()));
             var authentication = new UsernamePasswordAuthenticationToken(userPublicId, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
 

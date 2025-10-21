@@ -15,4 +15,8 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
     Page<ProductImage> findAllByImageType(ImageType imageType, Pageable pageable);
 
     Optional<ProductImage> findByProductIdAndImageType(Long productId, ImageType imageType);
+
+    boolean existsByProductIdAndImageUrl(Long productId, String url);
+
+    long countByProductIdAndImageType(Long productId, ImageType imageType);
 }

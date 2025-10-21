@@ -22,9 +22,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "bids")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)    // 외부에서 new Bid() 하는 것을 막기 위함
 public class Bid extends BaseEntity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;    // 입찰 ID
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;    // 입찰 ID
 
 	@Column(name = "bid_amount", nullable = false)
 	private Long bidAmount;    // 입찰가

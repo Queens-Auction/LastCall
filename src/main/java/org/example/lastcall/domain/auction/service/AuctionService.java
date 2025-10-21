@@ -12,6 +12,8 @@ import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
+import org.example.lastcall.domain.bid.service.BidServiceApi;
+import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
@@ -100,26 +102,15 @@ public class AuctionService implements AuctionServiceApi {
     public PageResponse<AuctionReadAllResponse> readAllAuctions(Category category, Pageable pageable) {
 
         // 1. 경매 목록 조회 (최신순)
-        /* findAllByOrderByCreatedAtDesc() 사용하는 이유?
-            - JPA 가 쿼리 자동 생성 해줌 (SELECT * FROM auction ORDER BY created_at DESC)
-            - 기본 옵션인 최신 등록순으로 경매 목록 조회 가능
-
-           findAll() 로 변경한 이유?
-            - 위의 경우는 최신순으로만 조회 시 사용
-            - 컨트롤러에서 @PageableDefault 로 기본값(최신순) 지정했으므로 동일한 효과
-            - 다양한 정렬이 필요한 경우는 findAll()사용이 유리                                     */
         Page<Auction> auctions = auctionRepository.findAllActiveAuctionsByCategory(category, pageable);
 
         // 2. 엔티티 -> DTO 변환
         List<AuctionReadAllResponse> responses = auctions.stream()
                 .map(auction -> {
                     // 현재 경매에 연결된 상품의 이미지 조회
-                    // 1갠데 List로 쓴 이유는 productImageService 내에 List 형태로 되어있기 때문 (추후 확장 고려)
-                    List<ProductImageResponse> images = productImageService.readAllProductImage(auction.getProduct().getId());
-                    // 이미지 없으면 null, 있으면 첫 번째 이미지(get(0))의 URL 가져옴 -> 대표 이미지 추출
-                    String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
+                    ProductImageResponse image = productImageService.readThumbnailImage(auction.getProduct().getId());
 
-                    return AuctionReadAllResponse.from(auction, imageUrl);
+                    return AuctionReadAllResponse.from(auction, image.getImageUrl());
                 })
                 .toList();
 
@@ -141,9 +132,10 @@ public class AuctionService implements AuctionServiceApi {
 
         // 3. 경매에 내 참여 여부 조회 - 입찰 도메인 호출
         boolean myParicipsted = false;
-        if (userId != null) {
-            myParicipsted = bidService.existsByAuctionIdAndUserId(auctionId, userId);
-        }
+        // 비즈 서비스 api에 existsByAuctionIdAndUserId 추가되면 주석풀기
+        //if (userId != null) {
+        //    myParicipsted = bidService.existsByAuctionIdAndUserId(auctionId, userId);
+        //}
 
         return AuctionReadResponse.from(
                 auction,
@@ -152,7 +144,6 @@ public class AuctionService implements AuctionServiceApi {
                 myParicipsted
         );
     }
-
 
     // Override //
 

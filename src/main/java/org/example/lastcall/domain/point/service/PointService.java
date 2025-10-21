@@ -72,4 +72,48 @@ public class PointService implements PointServiceApi {
                 point.getSettlementPoint()
         );
     }
+
+    @Override
+
+    // 현재 보유 포인트로 입찰이 가능한지 확인하는 메서드
+    public void validateSufficientPoints(Long userId, Long requiredAmount) {
+
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new IllegalArgumentException("User does not have a point account yet.")
+        );
+
+        if (point.getAvailablePoint() < requiredAmount) {
+            throw new IllegalArgumentException("Insufficient available points.");
+        }
+    }
+
+    // 입찰 포인트를 예치 포인트로 이동 후 포인트 로그에 기록
+    @Override
+    public void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId) {
+
+        // 포인트 조회
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new IllegalArgumentException("User does not have a point account yet.")
+        );
+
+        // 가용 포인트가 충분한지 검증
+        if (point.getAvailablePoint() < bidAmount) {
+            throw new IllegalArgumentException("Insufficient available points.");
+        }
+
+        // 포인트 이동 (가용 -> 예치)
+        point.updateDepositPoint(bidAmount);
+
+        // 포인트 로그에 기록
+        PointLog log = PointLog.create(
+                point,
+                point.getUser(),
+                PointLogType.DEPOSIT,
+                "입찰금 예치 처리",
+                bidAmount
+        );
+
+        pointLogRepository.save(log);
+    }
+
 }

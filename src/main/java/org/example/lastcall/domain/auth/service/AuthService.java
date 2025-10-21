@@ -6,8 +6,10 @@ import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.util.DateTimeUtil;
 import org.example.lastcall.common.util.GeneratorUtil;
+import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
 import org.example.lastcall.domain.auth.dto.request.UserLoginDto;
+import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.email.entity.EmailVerification;
 import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;
 import org.example.lastcall.domain.auth.email.repository.EmailVerificationRepository;
@@ -72,7 +74,7 @@ public class AuthService {
     }
 
     @Transactional
-    public UserLoginDto.Response userLogin(final UserLoginDto.Request request) {
+    public LoginResponse userLogin(final LoginRequest request) {
         User user = userRepository.findByEmailAndDeletedFalse(request.email().trim())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
 
@@ -97,7 +99,7 @@ public class AuthService {
 
         refreshTokenRepository.save(newRefreshToken);
 
-        return new UserLoginDto.Response(accessToken, refreshToken);
+        return new LoginResponse(accessToken, refreshToken);
     }
 
     private RefreshToken validateRefreshToken(String requestedRefreshToken) {

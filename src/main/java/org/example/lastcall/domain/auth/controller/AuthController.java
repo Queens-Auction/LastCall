@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
-import org.example.lastcall.domain.auth.dto.request.UserLoginDto;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.service.AuthService;
 import org.example.lastcall.domain.auth.utils.CookieUtil;

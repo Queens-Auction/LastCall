@@ -41,6 +41,7 @@ public class AuctionService implements AuctionServiceApi {
         }
     }
 
+    // 경매 등록 //
     public AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request) {
 
         // 1. 상품 존재 여부 확인
@@ -82,5 +83,15 @@ public class AuctionService implements AuctionServiceApi {
         auctionRepository.save(auction);
 
         return AuctionCreateResponse.from(auction);
+    }
+
+    // 특정 상품에 진행 중인 경매 여부 검증
+    @Override
+    public void validateAuctionScheduled(Long productId) {
+        boolean hasOngoingAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.SCHEDULED);
+
+        if (hasOngoingAuction) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
+        }
     }
 }

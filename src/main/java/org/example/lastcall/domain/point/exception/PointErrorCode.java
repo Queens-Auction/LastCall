@@ -9,10 +9,10 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum PointErrorCode implements ErrorCode {
 
-    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "Insufficient available points."),
-    POINT_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "User does not have a point account yet."),
-    POINT_RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "Point record not found for this user."),
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "User does not exist.");
+    INSUFFICIENT_POINT(HttpStatus.BAD_REQUEST, "가용 포인트가 부족합니다."),
+    POINT_ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 사용자의 포인트 계좌가 존재하지 않습니다."),
+    POINT_RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 사용자의 포인트 기록을 찾을 수 없습니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 사용자를 찾을 수 없습니다.");
 
 
     private final HttpStatus status;

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.entity.BaseEntity;
+import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.example.lastcall.domain.user.enums.Role;
 
 import java.util.UUID;
@@ -70,7 +72,7 @@ public class User extends BaseEntity {
 
     public void validatePassword(PasswordEncoder passwordEncoder, String requestedPassword) {
         if (!passwordEncoder.matches(requestedPassword, password)) {
-            throw new RuntimeException("인증에 실패하였습니다.");
+            throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
         }
     }
 }

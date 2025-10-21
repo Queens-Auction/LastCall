@@ -10,6 +10,7 @@ import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.sevice.ProductImageService;
 import org.example.lastcall.domain.product.sevice.ProductServiceApi;
 import org.example.lastcall.domain.user.entity.User;
+import org.example.lastcall.domain.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -43,17 +45,18 @@ public class ProductImageServiceTest {
     void setUp() throws Exception {
         productId = 1L;
 
-        User user = User.builder()
-                .id(1L)
-                .username("testUser")
-                .email("test@example.com")
-                .password("encodeed-Password!1")
-                .nickname("tester")
-                .address("Seoul")
-                .postcode("12345")
-                .detailAddress("Apt 101")
-                .phoneNumber("010-2345-1234")
-                .build();
+        User user = User.createForSignUp(
+                UUID.randomUUID(),
+                "testUser",
+                "tester",
+                "test123@example.com",
+                "encoded-Password1!",
+                "Seoul",
+                "12345",
+                "Apt 101",
+                "010-0000-0000",
+                Role.USER
+        );
 
         product = Product.of(user,
                 "벽돌 1000장",

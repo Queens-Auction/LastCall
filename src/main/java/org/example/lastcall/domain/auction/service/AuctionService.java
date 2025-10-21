@@ -88,9 +88,9 @@ public class AuctionService implements AuctionServiceApi {
     // 특정 상품에 진행 중인 경매 여부 검증
     @Override
     public void validateAuctionScheduled(Long productId) {
-        boolean hasOngoingAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.SCHEDULED);
+        boolean isScheduledAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.SCHEDULED);
 
-        if (hasOngoingAuction) {
+        if (!isScheduledAuction) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
         }
     }
@@ -105,7 +105,14 @@ public class AuctionService implements AuctionServiceApi {
                 || auction.getStatus() == AuctionStatus.CLOSED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
         }
-
         return auction;
+    }
+
+    // 경매 ID로 경매 조회
+    @Override
+    public Auction findById(Long auctionId) {
+        return auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND)
+        );
     }
 }

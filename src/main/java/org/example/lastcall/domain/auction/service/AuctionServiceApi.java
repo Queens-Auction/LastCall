@@ -12,4 +12,7 @@ public interface AuctionServiceApi {
 
     // 입찰 가능한 경매 여부 검증
     Auction getBiddableAuction(Long auctionId);
+
+    // 경매 ID로 경매 조회
+    Auction findById(Long auctionId);
 }

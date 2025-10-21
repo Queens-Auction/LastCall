@@ -34,7 +34,6 @@ public class ProductService implements ProductServiceApi {
     }
 
     //상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)
-    @Override
     @Transactional(readOnly = true)
     public PageResponse<ProductReadAllResponse> readAllProduct(int page, int size) {
         Page<Product> products = productRepository.findAll(PageRequest.of(page, size));
@@ -56,5 +55,11 @@ public class ProductService implements ProductServiceApi {
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
         return ProductResponse.from(product);
+    }
+
+    @Override
+    public Product findById(Long productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
     }
 }

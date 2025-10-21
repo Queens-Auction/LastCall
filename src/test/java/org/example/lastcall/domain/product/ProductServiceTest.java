@@ -1,6 +1,8 @@
 package org.example.lastcall.domain.product;
 
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
+import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
@@ -22,8 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -35,6 +36,8 @@ public class ProductServiceTest {
     ProductService productService;
     @Mock
     private ProductImageServiceApi productImageServiceApi;
+    @Mock
+    private AuctionServiceApi auctionServiceApi;
     private Long productId;
     private Product product;
 
@@ -107,6 +110,7 @@ public class ProductServiceTest {
     void deleteProduct_success() {
         //given
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        doNothing().when(auctionServiceApi).validateAuctionScheduled(productId);
 
         //when
         productService.deleteProduct(productId);
@@ -125,5 +129,23 @@ public class ProductServiceTest {
         //when&then
         assertThrows(BusinessException.class, () -> productService.deleteProduct(productId));
         verify(productImageServiceApi, never()).softDeleteByProductId(any());
+    }
+
+    @Test
+    @DisplayName("경매 전 상태가 아니면 삭제 불가 예외 발생")
+    void deleteProduct_auctionNotScheduled() {
+        //given: 실제 deleteProduct 호출 시 validateAuctionScheduled가 예외를 던지도록 Mock 구성
+        //when(productRepository.findById(productId)).thenReturn(Optional.of(product)); 호출되지 않으므로 Mock 설정 제거
+        doThrow(
+                new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION))
+                .when(auctionServiceApi).validateAuctionScheduled(productId);
+
+        //when&then: deleteProduct 호출 → 예외 발생 확인
+        BusinessException exception = assertThrows(BusinessException.class, () -> productService.deleteProduct(productId));
+
+        assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
+        verify(productRepository, never()).findById(any());
+        verify(productImageServiceApi, never()).softDeleteByProductId(any());
+        verify(auctionServiceApi, times(1)).validateAuctionScheduled(productId);
     }
 }

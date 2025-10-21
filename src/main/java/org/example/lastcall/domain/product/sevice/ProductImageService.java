@@ -21,15 +21,16 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Transactional
 public class ProductImageService implements ProductImageServiceApi {
-    private final ProductServiceApi productServiceApi;
+    // private final ProductCommandServiceApi productServiceApi;
+    // private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
 
     //이미지 등록 (여러 장 등록)
-    public List<ProductImageResponse> createProductImages(Long productId, List<ProductImageCreateRequest> requests) {
-        Product product = productServiceApi.findById(productId);
+    @Override
+    public List<ProductImageResponse> createProductImages(Product product, List<ProductImageCreateRequest> requests) {
 
         validateImageCount(requests);
-        validateDuplicateUrls(requests, productId);
+        validateDuplicateUrls(requests, product.getId());
 
         //프론트에서 선택한 이미지(isThumbnail()=true)가 대표 이미지가 되도록 설정
         List<ProductImage> images = requests.stream()
@@ -133,6 +134,6 @@ public class ProductImageService implements ProductImageServiceApi {
 
     @Override
     public void softDeleteByProductId(Long productId) {
-        productImageRepository.softDeleteByproductId(productId);
+        productImageRepository.softDeleteByProductId(productId);
     }
 }

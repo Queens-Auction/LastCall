@@ -8,7 +8,6 @@ import org.example.lastcall.common.util.DateTimeUtil;
 import org.example.lastcall.common.util.GeneratorUtil;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
-import org.example.lastcall.domain.auth.dto.request.UserLoginDto;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.email.entity.EmailVerification;
 import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;

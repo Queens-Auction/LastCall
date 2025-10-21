@@ -130,4 +130,9 @@ public class ProductImageService implements ProductImageServiceApi {
             images.get(0).markAsThumbnail();
         }
     }
+
+    @Override
+    public void softDeleteByProductId(Long productId) {
+        productImageRepository.softDeleteByproductId(productId);
+    }
 }

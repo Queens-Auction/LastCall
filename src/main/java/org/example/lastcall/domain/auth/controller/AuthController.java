@@ -11,10 +11,7 @@ import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,6 +39,20 @@ public class AuthController {
                 .headers(httpHeaders -> {
                     httpHeaders.add("Set-Cookie", accessCookie.toString());
                     httpHeaders.add("Set-Cookie", refreshCookie.toString());
+                })
+                .build();
+    }
+
+    @DeleteMapping("/tokens")
+    public ResponseEntity<Void> userLogout(@CookieValue(name = CookieUtil.REFRESH_COOKIE) String refreshToken) {
+        authService.userLogout(refreshToken);
+        ResponseCookie deleteAccessCookie = cookieUtil.deleteCookieOfAccessToken();
+        ResponseCookie deleteRefreshCookie = cookieUtil.deleteCookieOfRefreshToken();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .headers(httpHeaders -> {
+                    httpHeaders.add("Set-Cookie", deleteAccessCookie.toString());
+                    httpHeaders.add("Set-Cookie", deleteRefreshCookie.toString());
                 })
                 .build();
     }

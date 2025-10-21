@@ -19,6 +19,4 @@ public class UserService implements UserServiceApi {
         return userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
     }
-
 }
-

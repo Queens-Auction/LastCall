@@ -2,12 +2,14 @@ package org.example.lastcall.domain.point.service;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.point.dto.CreatePointRequest;
 import org.example.lastcall.domain.point.dto.PointResponse;
 import org.example.lastcall.domain.point.entity.Point;
 import org.example.lastcall.domain.point.entity.PointLog;
 import org.example.lastcall.domain.point.entity.PointLogType;
+import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.point.repository.PointLogRepository;
 import org.example.lastcall.domain.point.repository.PointRepository;
 import org.example.lastcall.domain.user.entity.User;
@@ -29,7 +31,7 @@ public class PointService implements PointServiceApi {
     public PointResponse createPoint(Long userId, @Valid CreatePointRequest request) {
 
         User user = userRepository.findById(userId).orElseThrow(
-                () -> new IllegalArgumentException("User does not exist.")
+                () -> new BusinessException(PointErrorCode.USER_NOT_FOUND)
         );
 
         Point currentPoint = pointRepository.findByUser(user).orElse(null);
@@ -57,11 +59,11 @@ public class PointService implements PointServiceApi {
     public PointResponse getUserPoint(Long userId) {
 
         User user = userRepository.findById(userId).orElseThrow(
-                () -> new IllegalArgumentException("User does not exist.")
+                () -> new BusinessException(PointErrorCode.USER_NOT_FOUND)
         );
 
         Point point = pointRepository.findByUserId(userId).orElseThrow(
-                () -> new IllegalArgumentException("Point record not found for this user.")
+                () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
         );
 
         return new PointResponse(
@@ -79,11 +81,11 @@ public class PointService implements PointServiceApi {
     public void validateSufficientPoints(Long userId, Long requiredAmount) {
 
         Point point = pointRepository.findByUserId(userId).orElseThrow(
-                () -> new IllegalArgumentException("User does not have a point account yet.")
+                () -> new BusinessException(PointErrorCode.POINT_ACCOUNT_NOT_FOUND)
         );
 
         if (point.getAvailablePoint() < requiredAmount) {
-            throw new IllegalArgumentException("Insufficient available points.");
+            throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
         }
     }
 
@@ -93,12 +95,12 @@ public class PointService implements PointServiceApi {
 
         // 포인트 조회
         Point point = pointRepository.findByUserId(userId).orElseThrow(
-                () -> new IllegalArgumentException("User does not have a point account yet.")
+                () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
         );
 
         // 가용 포인트가 충분한지 검증
         if (point.getAvailablePoint() < bidAmount) {
-            throw new IllegalArgumentException("Insufficient available points.");
+            throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
         }
 
         // 포인트 이동 (가용 -> 예치)

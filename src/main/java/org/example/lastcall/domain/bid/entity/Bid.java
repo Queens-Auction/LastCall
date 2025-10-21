@@ -36,11 +36,11 @@ public class Bid {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "auction_id", nullable = false)
-	private Auction auction;    // 나중에 수정된 거 올라오면 Auction으로 수정하기
+	private Auction auction;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
-	private User user;          // 나중에 수정된 거 올라오면 User로 수정하기
+	private User user;
 
 	// 생성자
 	public Bid(Long bidAmount, ResultStatus resultStatus, Auction auction, User user) {

@@ -95,6 +95,11 @@ public class PointService implements PointServiceApi {
         Point point = pointRepository.findByUserId(userId).orElseThrow(
                 () -> new IllegalArgumentException("User does not have a point account yet.")
         );
+
+        // 가용 포인트가 충분한지 검증
+        if (point.getAvailablePoint() < bidAmount) {
+            throw new IllegalArgumentException("Insufficient available points.");
+        }
     }
 
 }

@@ -94,4 +94,18 @@ public class AuctionService implements AuctionServiceApi {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
         }
     }
+
+    // 입찰 가능한 경매 여부 검증
+    @Override
+    public Auction getBiddableAuction(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        if (auction.getStatus() == AuctionStatus.SCHEDULED
+                || auction.getStatus() == AuctionStatus.CLOSED) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
+        }
+
+        return auction;
+    }
 }

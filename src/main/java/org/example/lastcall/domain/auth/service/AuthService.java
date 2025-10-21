@@ -113,4 +113,17 @@ public class AuthService {
 
         return refreshToken;
     }
+
+    @Transactional
+    public void userLogout(final String requestedRefreshToken) {
+        // refresh token 유효성 검증 및 조회
+        RefreshToken refreshToken = validateRefreshToken(requestedRefreshToken);
+
+        // 해당 사용자의 모든 활성 refresh token 무효화 (REVOKED)
+        List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndStatus(
+                refreshToken.getUserId(),
+                RefreshTokenStatus.ACTIVE
+        );
+        activeTokens.forEach(RefreshToken::revoke);
+    }
 }

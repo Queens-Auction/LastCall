@@ -8,7 +8,7 @@ import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MyAuctionService {
 
     private final AuctionRepository auctionRepository;
-    private final ProductImageServiceApi productImageService;
+    private final ProductImageViewServiceApi productImageService;
 
     // 내가 판매한 경매 목록 조회 //
     @Transactional(readOnly = true)

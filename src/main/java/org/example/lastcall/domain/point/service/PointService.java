@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
+import org.example.lastcall.domain.bid.entity.Bid;
+import org.example.lastcall.domain.bid.repository.BidRepository;
 import org.example.lastcall.domain.point.dto.CreatePointRequest;
 import org.example.lastcall.domain.point.dto.PointResponse;
 import org.example.lastcall.domain.point.entity.Point;
@@ -17,6 +19,8 @@ import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class PointService implements PointServiceApi {
     private final PointLogRepository pointLogRepository;
     private final UserRepository userRepository;
     private final AuctionRepository auctionRepository;
+    private final BidRepository bidRepository;
 
     public PointResponse createPoint(Long userId, @Valid CreatePointRequest request) {
 
@@ -89,9 +94,38 @@ public class PointService implements PointServiceApi {
         }
     }
 
-    // 입찰 포인트를 예치 포인트로 이동 후 포인트 로그에 기록
+    // 입찰 발생 시 포인트 예치 관련 변경 메서드
     @Override
     public void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId) {
+
+        // 기존 최고 입찰자 찾기
+        Optional<Bid> previousHighestBid = bidRepository.findMaxBidAmountByAuction(auctionId);
+
+        if (previousHighestBid.isPresent()) {
+            Bid priviousBid = previousHighestBid.get();
+            Long previousUserId = priviousBid.getUser().getId();
+            Long previousBidAmount = priviousBid.getBidAmount();
+
+            // 기존 최고 입찰자의 포인트 조회
+            Point previousPoint = pointRepository.findByUserId(previousUserId).orElseThrow(
+                    () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
+            );
+
+            // 예치 -> 가용 포인트로 이동
+            previousPoint.refundDepositPoint(previousBidAmount);
+
+            // 포인트 로그에 기록
+            PointLog log = PointLog.create(
+                    previousPoint,
+                    previousPoint.getUser(),
+                    PointLogType.REFUND,
+                    "기존 최고 입찰자의 예치 포인트 반환",
+                    previousBidAmount
+            );
+
+            pointLogRepository.save(log);
+        }
+
 
         // 포인트 조회
         Point point = pointRepository.findByUserId(userId).orElseThrow(

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class MyAuctionReadAllResponse {
+public class MySellingAuctionResponse {
     private Long id;
     private String imageUrl;
     private String productName;
@@ -21,13 +21,13 @@ public class MyAuctionReadAllResponse {
     private LocalDateTime endTime;
 
     // 정적 팩토리 메서드 (from)
-    public static MyAuctionReadAllResponse from(
+    public static MySellingAuctionResponse from(
             Auction auction,
             Product product,
             String imageUrl,
             int currentBid
     ) {
-        return MyAuctionReadAllResponse.builder()
+        return MySellingAuctionResponse.builder()
                 .id(auction.getId())
                 .imageUrl(imageUrl)
                 .productName(product.getName())

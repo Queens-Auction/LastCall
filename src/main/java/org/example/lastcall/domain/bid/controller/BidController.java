@@ -2,6 +2,8 @@ package org.example.lastcall.domain.bid.controller;
 
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
+import org.example.lastcall.common.security.Auth;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.service.BidService;
@@ -26,8 +28,8 @@ public class BidController {
 
 	// 입찰 등록
 	@PostMapping
-	public ResponseEntity<ApiResponse<BidResponse>> createBid(@PathVariable Long auctionId, Long userId) {
-		BidResponse bid = bidService.createBid(auctionId, userId);
+	public ResponseEntity<ApiResponse<BidResponse>> createBid(@PathVariable Long auctionId, @Auth AuthUser authUser) {
+		BidResponse bid = bidService.createBid(auctionId, authUser);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("입찰이 완료되었습니다.", bid));
 	}

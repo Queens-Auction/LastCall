@@ -158,4 +158,29 @@ public class PointService implements PointServiceApi {
         pointLogRepository.save(log);
     }
 
+    // 경매 종료 후 입찰 확정시 예치 포인트를 정산포인트로 이동
+    @Override
+    public void DepositToSettlement(Long userId, Long amount) {
+
+        // 낙찰자의 포인트 계좌 조회
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new BusinessException(PointErrorCode.POINT_ACCOUNT_NOT_FOUND)
+        );
+
+        // 예치 포인트 -> 정산 포인트로 이동
+        point.DepositToSettlement(amount);
+
+        // 변경사항 저장
+        pointRepository.save(point);
+
+        // 포인트 로그에 기록
+        PointLog log = PointLog.create(
+                point,
+                point.getUser(),
+                PointLogType.SETTLEMENT,
+                "입찰 확정으로 인한 정산 포인트 이동",
+                amount
+        );
+    }
+
 }

@@ -6,5 +6,5 @@ public interface PointServiceApi {
 
     void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId);
 
-    void settleAuction(Long actionId);
+    void DepositToSettlement(Long userId, Long amount);
 }

@@ -75,4 +75,11 @@ public class BidService implements BidServiceApi {
 		// }
 		return bidRepository.existsByAuctionIdAndUserId(auctionId, userId);
 	}
+
+	@Override
+	public Long getCurrentBidAmount(Long auctionId) {
+		Auction auction = auctionServiceApi.findById(auctionId);
+
+		return bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
+	}
 }

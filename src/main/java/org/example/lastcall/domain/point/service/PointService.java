@@ -98,41 +98,46 @@ public class PointService implements PointServiceApi {
     @Override
     public void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId) {
 
-        // 기존 최고 입찰자 찾기
-        Optional<Bid> previousHighestBid = bidRepository.findMaxBidAmountByAuction(auctionId);
-
-        if (previousHighestBid.isPresent()) {
-            Bid priviousBid = previousHighestBid.get();
-            Long previousUserId = priviousBid.getUser().getId();
-            Long previousBidAmount = priviousBid.getBidAmount();
-
-            // 기존 최고 입찰자의 포인트 조회
-            Point previousPoint = pointRepository.findByUserId(previousUserId).orElseThrow(
-                    () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
-            );
-
-            // 예치 -> 가용 포인트로 이동
-            previousPoint.refundDepositPoint(previousBidAmount);
-
-            // 포인트 로그에 기록
-            PointLog log = PointLog.create(
-                    previousPoint,
-                    previousPoint.getUser(),
-                    PointLogType.REFUND,
-                    "기존 최고 입찰자의 예치 포인트 반환",
-                    previousBidAmount
-            );
-
-            pointLogRepository.save(log);
-        }
-
-
         // 포인트 조회
         Point point = pointRepository.findByUserId(userId).orElseThrow(
                 () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
         );
 
-        // 가용 포인트가 충분한지 검증
+        // 이전 입찰 조회 (해당 유저가 이미 입찰했는지)
+        Optional<Bid> existingBid = bidRepository.findByAuctionIdAndUserId(auctionId, userId);
+
+        if (existingBid.isPresent()) {
+            Bid previousBid = existingBid.get();
+            Long previousBidAmount = previousBid.getBidAmount();
+
+            // 새 금액이 이전 금액보다 큰 경우(금액 올릴 때)
+            if (bidAmount > previousBidAmount) {
+                Long difference = bidAmount - previousBidAmount;
+
+                // 근데 추가하려는 금액보다 가용 포인트가 적을 경우
+                if (point.getAvailablePoint() < difference) {
+                    throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
+                }
+
+                // 그렇지 않다면 가용 포인트에서 차액만큼 차감
+                point.decreaseAvailablePoint(difference);
+
+                // 예치 포인트에 차액만큼 추가
+                point.increaseDepositPoint(difference);
+
+                // 포인트 로그에 기록
+                PointLog log = PointLog.create(
+                        point,
+                        point.getUser(),
+                        PointLogType.ADDITIONAL_DIPOSIT,
+                        "입찰 금액 증가로 인한 추가 예치 처리",
+                        difference
+                );
+            }
+        }
+
+
+        // 처음 입찰하는 경우 (전체 금액 예치)
         if (point.getAvailablePoint() < bidAmount) {
             throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
         }

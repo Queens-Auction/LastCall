@@ -130,7 +130,7 @@ public class PointService implements PointServiceApi {
                 PointLog log = PointLog.create(
                         point,
                         point.getUser(),
-                        PointLogType.ADDITIONAL_DIPOSIT,
+                        PointLogType.ADDITIONAL_DEPOSIT,
                         "입찰 금액 증가로 인한 추가 예치 처리",
                         difference
                 );

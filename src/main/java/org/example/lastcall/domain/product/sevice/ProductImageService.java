@@ -2,6 +2,7 @@ package org.example.lastcall.domain.product.sevice;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.ImageType;
@@ -21,9 +22,10 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Transactional
 public class ProductImageService implements ProductImageServiceApi {
-    // private final ProductCommandServiceApi productServiceApi;
-    // private final ProductRepository productRepository;
+    // private final ProductCommandServiceApi productServiceApi; -> 이거 쓰면 순환 참조 문제 발생
+//    private final ProductRepository productRepository; -> 이거 직접 갖다쓰면 컨벤션을 안지키는 것..
     private final ProductImageRepository productImageRepository;
+    private final AuctionServiceApi auctionServiceApi;
 
     //이미지 등록 (여러 장 등록)
     @Override
@@ -51,22 +53,6 @@ public class ProductImageService implements ProductImageServiceApi {
                 .toList();
     }
 
-    //대표이미지 조회
-    @Override
-    @Transactional(readOnly = true)
-    public ProductImageResponse readThumbnailImage(Long productId) {
-        ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL)
-                .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
-        return ProductImageResponse.from(thumbnailImage);
-    }
-
-    //상품별 이미지 전체 조회
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductImageResponse> readAllProductImage(Long productId) {
-        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
-        return ProductImageResponse.from(productImages);
-    }
 
     //썸네일 이미지 변경
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {
@@ -91,6 +77,16 @@ public class ProductImageService implements ProductImageServiceApi {
         }
 
         return ProductImageResponse.from(productImages);
+    }
+
+    //이미지 삭제
+    public void deleteProductImage(Long productId, Long imageId) {
+        auctionServiceApi.validateAuctionScheduled(productId);
+        ProductImage productImage = productImageRepository.findById(imageId).orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
+        if (!productImage.getProduct().getId().equals(productId)) {
+            throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);
+        }
+        productImage.softDelete();
     }
 
     //이미지 갯수 제한 매서드

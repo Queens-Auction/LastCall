@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.common.security.Auth;
+import org.example.lastcall.domain.auction.dto.response.MyParticipatedResponse;
 import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.service.MyAuctionService;
 import org.example.lastcall.domain.auth.model.AuthUser;
@@ -41,6 +42,17 @@ public class MyAuctionController {
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("내가 판매한 경매 중 해당 경매가 조회되었습니다.", response)
+        );
+    }
+
+    // 내가 참여한 경매 전체 조회 //
+    @GetMapping("/participated")
+    public ResponseEntity<ApiResponse<PageResponse<MyParticipatedResponse>>> getMyParticipatedAuctions(@Auth AuthUser authUser,
+                                                                                                       Pageable pageable) {
+        PageResponse<MyParticipatedResponse> pageResponse = myAuctionService.getMyParticipatedAuctions(authUser.userId(), pageable);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 참여한 경매 목록이 조회되었습니다.", pageResponse)
         );
     }
 }

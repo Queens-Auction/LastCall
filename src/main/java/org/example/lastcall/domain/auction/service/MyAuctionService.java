@@ -3,6 +3,7 @@ package org.example.lastcall.domain.auction.service;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
+import org.example.lastcall.domain.auction.dto.response.MyParticipatedResponse;
 import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -22,7 +25,7 @@ public class MyAuctionService {
 
     private final AuctionRepository auctionRepository;
     private final ProductImageViewServiceApi productImageService;
-    private final BidServiceApi bidService; // 추가
+    private final BidServiceApi bidService; //
 
     // 내가 판매한 경매 목록 조회 //
     @Transactional(readOnly = true)
@@ -75,5 +78,34 @@ public class MyAuctionService {
                 imageUrl,
                 currentBid
         );
+    }
+
+    // 내가 참여한 경매 전체 조회 //
+    public PageResponse<MyParticipatedResponse> getMyParticipatedAuctions(Long userId, Pageable pageable) {
+        // 사용자가 입찰한 경매 ID 목록 조회
+        List<Long> auctionIds = bidService.getParticipatedAuctionIds(userId);
+        // 경매 ID 목록으로 해당 경매 페이지로 나눠 조회
+        Page<Auction> auctions = auctionRepository.findByIdIn(auctionIds, pageable);
+        // 각 경매에 대한 상품, 이미지, 최고 입찰가, 내 최고 입찰 여부 등 정보매핑
+        Page<MyParticipatedResponse> responses = auctions.map(auction -> {
+            Product product = auction.getProduct();
+            String imageUrl = productImageService
+                    .readThumbnailImage(product.getId())
+                    .getImageUrl();
+
+            // 최고 입찰가 조회
+            Long currentBid = bidService.getCurrentBidAmount(auction.getId());
+            // 내가 최고입찰자인지 여부 확인
+            Boolean isLeading = bidService.isUserLeading(auction.getId(), userId);
+
+            return MyParticipatedResponse.from(
+                    auction,
+                    product,
+                    imageUrl,
+                    currentBid,
+                    isLeading
+            );
+        });
+        return PageResponse.of(responses);
     }
 }

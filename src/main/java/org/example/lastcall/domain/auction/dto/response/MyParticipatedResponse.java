@@ -22,7 +22,7 @@ public class MyParticipatedResponse {
     private Long myBidAmount;  // 내가 해당 경매에서 넣은 최고 입찰가 (단건 조회시에만 표시)
     private Boolean isLeading; // 경매종료 -> 나의 낙찰 여부 / 경매진행중 -> 나의 현재 최고 입찰자 여부
 
-    // 내가 참여한 목록 조회
+    // 내가 참여한 경매 목록 조회 (전체)
     public static MyParticipatedResponse from(Auction auction, Product product, String imageUrl, Long currentBid, Boolean isLeading) {
         return MyParticipatedResponse.builder()
                 .id(auction.getId())
@@ -33,6 +33,22 @@ public class MyParticipatedResponse {
                 .status(auction.getStatus())
                 .startTime(auction.getStartTime())
                 .endTime(auction.getEndTime())
+                .isLeading(isLeading)
+                .build();
+    }
+
+    // 내가 참여한 경매 상세 조회 (단건)
+    public static MyParticipatedResponse fromDetail(Auction auction, Product product, String imageUrl, Long currentBid, Long myBidAmount, Boolean isLeading) {
+        return MyParticipatedResponse.builder()
+                .id(auction.getId())
+                .imageUrl(imageUrl)
+                .productName(product.getName())
+                .productDescription(product.getDescription())
+                .currentBid(currentBid)
+                .status(auction.getStatus())
+                .startTime(auction.getStartTime())
+                .endTime(auction.getEndTime())
+                .myBidAmount(myBidAmount)
                 .isLeading(isLeading)
                 .build();
     }

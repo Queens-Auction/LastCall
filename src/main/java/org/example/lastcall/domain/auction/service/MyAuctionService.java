@@ -1,9 +1,11 @@
 package org.example.lastcall.domain.auction.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.dto.response.MySellingAuctionResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
+import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
@@ -48,5 +50,32 @@ public class MyAuctionService {
             );
         });
         return PageResponse.of(responses);
+    }
+
+    // 내가 판매한 경매 상세 조회 //
+    public MySellingAuctionResponse getMySellingDetailAuction(Long userId, Long auctionId) {
+
+        // 본인이 등록한 경매 중 해당 ID 찾기
+        Auction auction = auctionRepository.findBySellerIdAndAuctionId(userId, auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        // 상품 정보 가져오기
+        Product product = auction.getProduct();
+
+        // 썸네일 가져오기
+        String imageUrl = productImageService
+                .readThumbnailImage(product.getId())
+                .getImageUrl();
+
+        // 최고 입찰가
+        // int currentBid = bidService.getCurrentBidAmount(auction.getId());
+        int currentBid = 0; // 임시값
+
+        return MySellingAuctionResponse.from(
+                auction,
+                product,
+                imageUrl,
+                currentBid
+        );
     }
 }

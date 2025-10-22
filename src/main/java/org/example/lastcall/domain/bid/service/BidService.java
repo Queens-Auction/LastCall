@@ -1,5 +1,7 @@
 package org.example.lastcall.domain.bid.service;
 
+import java.util.Optional;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
@@ -80,5 +82,10 @@ public class BidService implements BidServiceApi {
 		Auction auction = auctionServiceApi.findById(auctionId);
 
 		return bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
+	}
+
+	@Override
+	public Optional<Bid> findPreviousHighestBidByAuction(Auction auction) {
+		return bidRepository.findPreviousHighestBidByAuction(auction);
 	}
 }

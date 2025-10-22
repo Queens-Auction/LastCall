@@ -73,6 +73,17 @@ public class Point extends BaseEntity {
         this.depositPoint -= amount;
         this.settlementPoint += amount;
     }
+
+    public void decreaseAvailablePoint(Long amount) {
+        if (this.availablePoint < amount) {
+            throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
+        }
+        this.availablePoint -= amount;
+    }
+
+    public void increaseDepositPoint(Long amount) {
+        this.depositPoint += amount;
+    }
 }
 
 /*

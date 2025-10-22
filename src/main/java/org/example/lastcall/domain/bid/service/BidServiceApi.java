@@ -2,6 +2,7 @@ package org.example.lastcall.domain.bid.service;
 
 import java.util.Optional;
 
+import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.bid.entity.Bid;
 
 public interface BidServiceApi {
@@ -12,8 +13,8 @@ public interface BidServiceApi {
 	Long getCurrentBidAmount(Long auctionId);
 
 	// 이전 최고 입찰자, 최고 입찰가를 찾는 로직
-	Optional<Bid> findPreviousHighestBidByAuction(Long auctionId);
+	Optional<Bid> findPreviousHighestBidByAuction(Auction auction);
 
 	// 최고 입찰자, 최고가 입찰가를 찾는 로직
-	Optional<Bid> findTopByAuctionIdOrderByBidAmountDesc(Long auctionId);
+	Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction);
 }

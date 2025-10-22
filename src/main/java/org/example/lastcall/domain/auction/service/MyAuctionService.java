@@ -25,23 +25,20 @@ public class MyAuctionService {
 
     private final AuctionRepository auctionRepository;
     private final ProductImageViewServiceApi productImageService;
-    private final BidServiceApi bidService; //
+    private final BidServiceApi bidService;
 
     // 내가 판매한 경매 목록 조회 //
     @Transactional(readOnly = true)
     public PageResponse<MySellingResponse> getMySellingAuctions(Long userId, Pageable pageable) {
         // 1. 경매 목록 조회
         Page<Auction> auctions = auctionRepository.findBySellerId(userId, pageable);
-
         // 2. DTO 변환
         Page<MySellingResponse> responses = auctions.map(auction -> {
             Product product = auction.getProduct();
-
             // 썸네일 이미지 조회
             String imageUrl = productImageService
                     .readThumbnailImage(product.getId())
                     .getImageUrl();
-
             // 최고 입찰가 조회
             Long currentBid = bidService.getCurrentBidAmount(auction.getId());
 
@@ -60,15 +57,12 @@ public class MyAuctionService {
         // 본인이 등록한 경매 중 해당 ID 찾기
         Auction auction = auctionRepository.findBySellerIdAndAuctionId(userId, auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-
         // 상품 정보 가져오기
         Product product = auction.getProduct();
-
         // 썸네일 가져오기
         String imageUrl = productImageService
                 .readThumbnailImage(product.getId())
                 .getImageUrl();
-
         // 최고 입찰가
         Long currentBid = bidService.getCurrentBidAmount(auction.getId());
 
@@ -92,7 +86,6 @@ public class MyAuctionService {
             String imageUrl = productImageService
                     .readThumbnailImage(product.getId())
                     .getImageUrl();
-
             // 최고 입찰가 조회
             Long currentBid = bidService.getCurrentBidAmount(auction.getId());
             // 내가 최고입찰자인지 여부 확인
@@ -107,5 +100,32 @@ public class MyAuctionService {
             );
         });
         return PageResponse.of(responses);
+    }
+
+    // 내가 참여한 경매 단건 조회 //
+    public MyParticipatedResponse getMyParticipatedDetailAuction(Long userId, Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND)
+        );
+        Product product = auction.getProduct();
+
+        String imageUrl = productImageService
+                .readThumbnailImage(product.getId())
+                .getImageUrl();
+
+        Long currentBid = bidService.getCurrentBidAmount(auction.getId());
+
+        Boolean isLeading = bidService.isUserLeading(auction.getId(), userId);
+
+        Long myBidAmount = bidService.getMyBidAmount(auction.getId(), userId);
+
+        return MyParticipatedResponse.fromDetail(
+                auction,
+                product,
+                imageUrl,
+                currentBid,
+                myBidAmount,
+                isLeading
+        );
     }
 }

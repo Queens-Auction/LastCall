@@ -134,6 +134,9 @@ public class PointService implements PointServiceApi {
                         "입찰 금액 증가로 인한 추가 예치 처리",
                         difference
                 );
+
+                // 포인트 로그에 저장
+                pointLogRepository.save(log);
             }
         }
 
@@ -181,6 +184,9 @@ public class PointService implements PointServiceApi {
                 "입찰 확정으로 인한 정산 포인트 이동",
                 amount
         );
+
+        // 포인트 로그에 저장
+        pointLogRepository.save(log);
     }
 
 }

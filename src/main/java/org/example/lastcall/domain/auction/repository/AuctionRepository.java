@@ -38,6 +38,12 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     boolean existsByProductIdAndStatus(Long productId, AuctionStatus status);
 
     // 특정 이메일을 가진 판매자가 등록한 경매 목록 조회 (우선 이메일로)
-    // 추후 findBySellerId(Long sellerId, Pageable pageable); 로 변경 예정
-    Page<Auction> findBySellerEmail(String email, Pageable pageable);
+    // -> 테스트 코드 수정하면서 삭제 예정
+    Page<Auction> findByUserEmail(String email, Pageable pageable);
+
+    // 판매자 기준으로 경매 조회
+    @Query("SELECT a " +
+            "FROM Auction a " +
+            "WHERE a.user.id = :userId")
+    Page<Auction> findBySellerId(Long userId, Pageable pageable);
 }

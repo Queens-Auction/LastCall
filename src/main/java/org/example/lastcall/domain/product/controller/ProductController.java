@@ -8,7 +8,8 @@ import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
-import org.example.lastcall.domain.product.sevice.ProductService;
+import org.example.lastcall.domain.product.sevice.ProductCommandService;
+import org.example.lastcall.domain.product.sevice.ProductViewService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
 public class ProductController {
-    private final ProductService productService;
+    private final ProductCommandService productService;
+    private final ProductViewService productViewService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(Long userId,  // 임시 유저 아이디
@@ -32,7 +34,7 @@ public class ProductController {
     //상품 전체 조회(상품 아이디와 상품명만 조회)
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> readAllProduct(Pageable pageable) {
-        PageResponse<ProductReadAllResponse> pageResponse = productService.readAllProduct(pageable.getPageNumber(), pageable.getPageSize());
+        PageResponse<ProductReadAllResponse> pageResponse = productViewService.readAllProduct(pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductReadAllResponse>> apiResponse = ApiResponse.success("상품을 전체 조회했습니다.", pageResponse);
 
         return ResponseEntity.ok(apiResponse);
@@ -41,7 +43,7 @@ public class ProductController {
     //상품 단건 조회
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> readProduct(@PathVariable Long productId) {
-        ProductResponse response = productService.readProduct(productId);
+        ProductResponse response = productViewService.readProduct(productId);
         ApiResponse<ProductResponse> apiResponse = ApiResponse.success("상품 단건 조회에 성공했습니다.", response);
 
         return ResponseEntity.ok(apiResponse);
@@ -50,11 +52,18 @@ public class ProductController {
     //상품 업데이트
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(@PathVariable Long productId,
-                                                                      @Valid @RequestBody ProductUpdateRequest request
-    ) {
+                                                                      @Valid @RequestBody ProductUpdateRequest request) {
         ProductResponse response = productService.updateProduct(productId, request);
         ApiResponse<ProductResponse> apiResponse = ApiResponse.success("상품 정보 업데이트에 성공했습니다.", response);
 
         return ResponseEntity.ok(apiResponse);
+    }
+
+    //상품 삭제
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long productId) {
+        productService.deleteProduct(productId);
+
+        return ResponseEntity.ok(ApiResponse.success("상품이 삭제되었습니다."));
     }
 }

@@ -59,11 +59,6 @@ public class Point extends BaseEntity {
         this.depositPoint += amount;
     }
 
-    public void refundDepositPoint(Long amount) {
-        this.depositPoint -= amount;
-        this.availablePoint += amount;
-    }
-
     public void DepositToSettlement(Long amount) {
 
         if (this.depositPoint < amount) {

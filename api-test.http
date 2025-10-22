@@ -1,0 +1,107 @@
+### 환경 변수 설정
+@host = localhost:8080
+@baseUrl = http://{{host}}/api/v1
+
+### ===== 회원가입 플로우 =====
+
+### 1. 이메일 인증번호 발송
+POST {{baseUrl}}/email-verifications
+Content-Type: application/json
+
+{
+  "email": "eunjin0468@naver.com"
+}
+
+### 2. 이메일 인증번호 검증
+# 위 요청으로 받은 인증번호를 입력하세요
+PUT {{baseUrl}}/email-verifications/status
+Content-Type: application/json
+
+{
+  "email": "eunjin0468@naver.com",
+  "verificationCode": "738094"
+}
+
+### 3. 회원가입
+# 이메일 인증 완료 후 회원가입
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+  "verificationPublicId": "eb064d0e-a60d-49c8-9d5b-678350a5b003",
+  "username": "이은진",
+  "nickname": "이은진11",
+  "password": "Password123!@#",
+  "address": "서울특별시 강남구 테헤란로 123",
+  "postcode": "06234",
+  "detailAddress": "456호",
+  "phoneNumber": "01012345678"
+}
+
+### ===== 로그인 플로우 =====
+
+### 4. 로그인
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "eunjin0468@naver.com",
+  "password": "Password123!@#"
+}
+
+### 5. 로그아웃
+POST {{baseUrl}}/auth/logout
+
+### ===== 토큰 재발급 =====
+
+### 6. Access Token 재발급
+# Refresh Token이 쿠키에 있어야 합니다
+POST {{baseUrl}}/auth/tokens
+
+### ===== 다른 사용자 테스트 =====
+
+### 이메일 인증번호 발송 (사용자 2)
+POST {{baseUrl}}/email-verifications
+Content-Type: application/json
+
+{
+  "email": "user2@example.com"
+}
+
+### 이메일 인증번호 검증 (사용자 2)
+PUT {{baseUrl}}/email-verifications/status
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "code": "123456"
+}
+
+### 회원가입 (사용자 2)
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "password": "password456!",
+  "nickname": "테스트유저2"
+}
+
+### 로그인 (사용자 2)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "password": "password456!"
+}
+
+
+
+
+
+
+
+
+
+

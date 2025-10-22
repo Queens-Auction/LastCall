@@ -57,4 +57,13 @@ public class ProductImageController {
 
         return ResponseEntity.ok(apiResponse);
     }
+
+    //이미지 삭제
+    @DeleteMapping("/{productId}/image/{imageId}")
+    public ResponseEntity<ApiResponse<Void>> deleteProductImage(@PathVariable Long productId,
+                                                                @PathVariable Long imageId) {
+        productImageService.deleteProductImage(productId, imageId);
+
+        return ResponseEntity.ok(ApiResponse.success("이미지 삭제에 성공했습니다."));
+    }
 }

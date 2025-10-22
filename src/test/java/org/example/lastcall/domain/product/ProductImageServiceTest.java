@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.product;
 
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Category;
@@ -35,6 +36,8 @@ import static org.mockito.Mockito.*;
 public class ProductImageServiceTest {
     @Mock
     ProductImageRepository productImageRepository;
+    @Mock
+    AuctionServiceApi auctionServiceApi;
 
     //    @Mock
 //    ProductCommandServiceApi productServiceApi;
@@ -158,6 +161,7 @@ public class ProductImageServiceTest {
         setId(productImage, imageId);
 
         when(productImageRepository.findById(imageId)).thenReturn(Optional.of(productImage));
+        doNothing().when(auctionServiceApi).validateAuctionScheduled(productId);
 
         //when
         productImageService.deleteProductImage(productId, imageId);
@@ -165,6 +169,7 @@ public class ProductImageServiceTest {
         //then
         assertTrue(productImage.isDeleted());
         verify(productImageRepository, times(1)).findById(imageId);
+        verify(auctionServiceApi, times(1)).validateAuctionScheduled(productId);
     }
 
     @Test
@@ -179,12 +184,14 @@ public class ProductImageServiceTest {
         setId(productImage, imageId);
 
         when(productImageRepository.findById(imageId)).thenReturn(Optional.of(productImage));
+        doNothing().when(auctionServiceApi).validateAuctionScheduled(productId);
 
         //when&then
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productImageService.deleteProductImage(productId, imageId));
 
         assertEquals(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT, exception.getErrorCode());
+        verify(auctionServiceApi, times(1)).validateAuctionScheduled(productId);
     }
 
 }

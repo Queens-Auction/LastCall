@@ -53,22 +53,6 @@ public class ProductImageService implements ProductImageServiceApi {
                 .toList();
     }
 
-    //대표이미지 조회
-    @Override
-    @Transactional(readOnly = true)
-    public ProductImageResponse readThumbnailImage(Long productId) {
-        ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL)
-                .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
-        return ProductImageResponse.from(thumbnailImage);
-    }
-
-    //상품별 이미지 전체 조회
-    @Override
-    @Transactional(readOnly = true)
-    public List<ProductImageResponse> readAllProductImage(Long productId) {
-        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
-        return ProductImageResponse.from(productImages);
-    }
 
     //썸네일 이미지 변경
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {

@@ -8,6 +8,7 @@ import org.example.lastcall.common.util.DateTimeUtil;
 import org.example.lastcall.common.util.GeneratorUtil;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
+import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.email.entity.EmailVerification;
 import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;
@@ -28,6 +29,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_NOT_FOUND;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,6 +41,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
 
     private void validateEmailVerifiedStatus(final EmailVerificationStatus status) {
         if (!Objects.equals(status, EmailVerificationStatus.VERIFIED)) {
@@ -125,5 +130,20 @@ public class AuthService {
                 RefreshTokenStatus.ACTIVE
         );
         activeTokens.forEach(RefreshToken::revoke);
+    }
+
+    @Transactional
+    public void withdraw(Long userId, WithdrawRequest request) {
+        // 1) 사용자 조회(삭제 안 된 사용자만) + 비밀번호 검증
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
+        if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
+        user.validatePassword(passwordEncoder, request.password());
+
+        // 2) soft delete
+        user.softDelete();
+
+        // 3) 해당 사용자의 모든 활성 RT 무효화
+        refreshTokenRepository.revokeAllActiveByUserId(user.getId(), RefreshTokenStatus.ACTIVE, RefreshTokenStatus.REVOKED);
     }
 }

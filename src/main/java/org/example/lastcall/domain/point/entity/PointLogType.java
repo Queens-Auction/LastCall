@@ -8,7 +8,7 @@ public enum PointLogType {
     EARN("포인트 결제로 인한 충전"),
     WITHDRAW("경매 유찰된 포인트"),
     DEPOSIT("경매 참여 중인 포인트"),
-    ADDITIONAL_DIPOSIT("입찰 금액 증가로 인한 추가 예치 처리"),
+    ADDITIONAL_DEPOSIT("입찰 금액 증가로 인한 추가 예치 처리"),
     SETTLEMENT("경매 낙찰 확정 후 결제된 포인트"),
     REFUND("경매 취소 & 환불로 인한 포인트 리펀");
 

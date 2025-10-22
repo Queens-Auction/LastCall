@@ -7,6 +7,7 @@ import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
+import org.example.lastcall.domain.bid.service.BidServiceApi;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
 import org.springframework.data.domain.Page;
@@ -21,11 +22,11 @@ public class MyAuctionService {
 
     private final AuctionRepository auctionRepository;
     private final ProductImageViewServiceApi productImageService;
+    private final BidServiceApi bidService; // 추가
 
     // 내가 판매한 경매 목록 조회 //
     @Transactional(readOnly = true)
     public PageResponse<MySellingResponse> getMySellingAuctions(Long userId, Pageable pageable) {
-
         // 1. 경매 목록 조회
         Page<Auction> auctions = auctionRepository.findBySellerId(userId, pageable);
 
@@ -39,8 +40,7 @@ public class MyAuctionService {
                     .getImageUrl();
 
             // 최고 입찰가 조회
-            int currentBid = 0;  // 임시값
-            // 추후 변경 -> bidService.getCurrentBidAmount(auction.getId());
+            Long currentBid = bidService.getCurrentBidAmount(auction.getId());
 
             return MySellingResponse.from(
                     auction,
@@ -54,7 +54,6 @@ public class MyAuctionService {
 
     // 내가 판매한 경매 상세 조회 //
     public MySellingResponse getMySellingDetailAuction(Long userId, Long auctionId) {
-
         // 본인이 등록한 경매 중 해당 ID 찾기
         Auction auction = auctionRepository.findBySellerIdAndAuctionId(userId, auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
@@ -68,8 +67,7 @@ public class MyAuctionService {
                 .getImageUrl();
 
         // 최고 입찰가
-        // int currentBid = bidService.getCurrentBidAmount(auction.getId());
-        int currentBid = 0; // 임시값
+        Long currentBid = bidService.getCurrentBidAmount(auction.getId());
 
         return MySellingResponse.from(
                 auction,

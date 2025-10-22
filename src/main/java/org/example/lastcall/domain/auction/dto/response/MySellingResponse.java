@@ -15,18 +15,13 @@ public class MySellingResponse {
     private String imageUrl;
     private String productName;
     private String productDescription;
-    private int currentBid;
+    private Long currentBid;
     private AuctionStatus status;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
     // 정적 팩토리 메서드 (from)
-    public static MySellingResponse from(
-            Auction auction,
-            Product product,
-            String imageUrl,
-            int currentBid
-    ) {
+    public static MySellingResponse from(Auction auction, Product product, String imageUrl, Long currentBid) {
         return MySellingResponse.builder()
                 .id(auction.getId())
                 .imageUrl(imageUrl)

@@ -7,6 +7,7 @@ import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.user.entity.User;
+import org.example.lastcall.domain.user.enums.Role;
 import org.example.lastcall.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -42,16 +45,18 @@ public class ProductImageControllerIntegrationTest {
         productRepository.deleteAll();
 
         //테스트용 유저 생성
-        User user = User.builder()
-                .username("tester")
-                .email("test@exampl.com")
-                .password("password1!")
-                .nickname("테스터")
-                .address("서울시 종로구")
-                .postcode("12345")
-                .detailAddress("101동 101호")
-                .phoneNumber("010-0101-0101")
-                .build();
+        User user = User.createForSignUp(
+                UUID.randomUUID(),
+                "testUser",
+                "tester",
+                "test123@example.com",
+                "encoded-Password1!",
+                "Seoul",
+                "12345",
+                "Apt 101",
+                "010-0000-0000",
+                Role.USER
+        );
 
         User savedUser = userRepository.saveAndFlush(user);
 

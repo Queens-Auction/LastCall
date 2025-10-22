@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ProductViewService implements ProductServiceApi {
+public class ProductViewService implements ProductViewServiceApi {
     private final ProductRepository productRepository;
 
     //상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)

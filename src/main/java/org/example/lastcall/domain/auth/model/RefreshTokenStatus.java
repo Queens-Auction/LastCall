@@ -7,7 +7,8 @@ public enum RefreshTokenStatus {
 
     private final String status;
 
-    RefreshTokenStatus(String status) {
+    RefreshTokenStatus(String status)
+    {
         this.status = status;
     }
 }

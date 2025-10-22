@@ -28,6 +28,10 @@ public class RefreshToken extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private RefreshTokenStatus status;
 
+    public boolean isRevoked() {
+        return this.status == RefreshTokenStatus.REVOKED;
+    }
+
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt;
 

@@ -3,7 +3,7 @@ package org.example.lastcall.domain.auction.service;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.domain.auction.dto.response.MySellingAuctionResponse;
+import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
@@ -24,13 +24,13 @@ public class MyAuctionService {
 
     // 내가 판매한 경매 목록 조회 //
     @Transactional(readOnly = true)
-    public PageResponse<MySellingAuctionResponse> getMySellingAuctions(Long userId, Pageable pageable) {
+    public PageResponse<MySellingResponse> getMySellingAuctions(Long userId, Pageable pageable) {
 
         // 1. 경매 목록 조회
         Page<Auction> auctions = auctionRepository.findBySellerId(userId, pageable);
 
         // 2. DTO 변환
-        Page<MySellingAuctionResponse> responses = auctions.map(auction -> {
+        Page<MySellingResponse> responses = auctions.map(auction -> {
             Product product = auction.getProduct();
 
             // 썸네일 이미지 조회
@@ -42,7 +42,7 @@ public class MyAuctionService {
             int currentBid = 0;  // 임시값
             // 추후 변경 -> bidService.getCurrentBidAmount(auction.getId());
 
-            return MySellingAuctionResponse.from(
+            return MySellingResponse.from(
                     auction,
                     product,
                     imageUrl,
@@ -53,7 +53,7 @@ public class MyAuctionService {
     }
 
     // 내가 판매한 경매 상세 조회 //
-    public MySellingAuctionResponse getMySellingDetailAuction(Long userId, Long auctionId) {
+    public MySellingResponse getMySellingDetailAuction(Long userId, Long auctionId) {
 
         // 본인이 등록한 경매 중 해당 ID 찾기
         Auction auction = auctionRepository.findBySellerIdAndAuctionId(userId, auctionId).orElseThrow(
@@ -71,7 +71,7 @@ public class MyAuctionService {
         // int currentBid = bidService.getCurrentBidAmount(auction.getId());
         int currentBid = 0; // 임시값
 
-        return MySellingAuctionResponse.from(
+        return MySellingResponse.from(
                 auction,
                 product,
                 imageUrl,

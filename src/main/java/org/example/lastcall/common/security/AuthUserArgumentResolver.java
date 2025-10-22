@@ -20,7 +20,7 @@ public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getPrincipal() == null)
-            return null; // 혹은 예외
+            return null;
         Object principal = auth.getPrincipal();
         if (principal instanceof AuthUser au) return au;
         throw new IllegalStateException("Unsupported principal type: " + principal.getClass());

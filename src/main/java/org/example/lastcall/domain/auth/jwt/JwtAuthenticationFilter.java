@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // sub = UUID
             String publicId = claims.getSubject();
 
-            // uid = Long PK, role
+            // uid = PK(Long), role
             Number uidNum = claims.get("uid", Number.class);
             Long userId = (uidNum != null) ? uidNum.longValue() : null;
 

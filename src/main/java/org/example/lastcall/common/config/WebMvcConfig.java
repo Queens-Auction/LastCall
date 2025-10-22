@@ -11,7 +11,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-        // AuthUserArgumentResolver를 Spring MVC에 등록
         resolvers.add(new AuthUserArgumentResolver());
     }
 }

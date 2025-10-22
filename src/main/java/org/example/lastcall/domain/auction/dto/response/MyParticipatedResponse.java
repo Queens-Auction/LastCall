@@ -30,7 +30,7 @@ public class MyParticipatedResponse {
                 .productName(product.getName())
                 .productDescription(product.getDescription())
                 .currentBid(currentBid)
-                .status(auction.getStatus())
+                .status(auction.getDynamicStatus()) // 조회 시점 상태 계산
                 .startTime(auction.getStartTime())
                 .endTime(auction.getEndTime())
                 .isLeading(isLeading)
@@ -45,7 +45,7 @@ public class MyParticipatedResponse {
                 .productName(product.getName())
                 .productDescription(product.getDescription())
                 .currentBid(currentBid)
-                .status(auction.getStatus())
+                .status(auction.getDynamicStatus()) // 조회 시점 상태 계산
                 .startTime(auction.getStartTime())
                 .endTime(auction.getEndTime())
                 .myBidAmount(myBidAmount)

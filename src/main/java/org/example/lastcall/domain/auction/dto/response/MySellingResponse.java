@@ -28,7 +28,7 @@ public class MySellingResponse {
                 .productName(product.getName())
                 .productDescription(product.getDescription())
                 .currentBid(currentBid)
-                .status(auction.getStatus())
+                .status(auction.getDynamicStatus()) // 조회 시점 상태 계산
                 .startTime(auction.getStartTime())
                 .endTime(auction.getEndTime())
                 .build();

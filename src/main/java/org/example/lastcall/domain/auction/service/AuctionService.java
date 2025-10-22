@@ -16,8 +16,8 @@ import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
-import org.example.lastcall.domain.product.sevice.ProductServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductViewServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -34,10 +34,10 @@ import java.util.List;
 public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
-    private final ProductServiceApi productService;
+    private final ProductViewServiceApi productService;
     // product 엔티티를 DB 조회 없이 식별자 기반 참조하기 위해 사용 (경매 등록시)
     private final EntityManager em;
-    private final ProductImageServiceApi productImageService;
+    private final ProductImageViewServiceApi productImageService;
 
     // 경매 상태 분리
     private AuctionStatus determineStatus(AuctionCreateRequest request) {

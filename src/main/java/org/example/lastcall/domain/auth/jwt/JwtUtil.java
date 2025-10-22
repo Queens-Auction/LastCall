@@ -38,7 +38,8 @@ public class JwtUtil {
         Instant now = Instant.now();
 
         return Jwts.builder()
-                .subject(user.getPublicId().toString())
+                .subject(user.getPublicId().toString()) //UUID
+                .claim("uid", user.getId()) //id(Long)
                 .claim("role", user.getUserRole().name())
                 .issuer("Queens-Auction")
                 .issuedAt(Date.from(now))

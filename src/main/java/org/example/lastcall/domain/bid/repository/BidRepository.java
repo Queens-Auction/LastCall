@@ -20,6 +20,10 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 
 	boolean existsByAuctionIdAndUserId(Long auctionId, Long userId);
 
-	@Query("SELECT b FROM Bid b WHERE b.auction = :auction ORDER BY b.bidAmount DESC LIMIT 1 OFFSET 1")
-	Optional<Bid> findPreviousHighestBidByAuction(@Param("auction") Auction auction);
+	@Query("SELECT b FROM Bid b WHERE b.auction.id = :auctionId ORDER BY b.bidAmount DESC LIMIT 1 OFFSET 1")
+	Optional<Bid> findPreviousHighestBidByAuction(@Param("auctionId") Long auctionId);
+
+	// @Query("SELECT b FROM Bid b WHERE b.auction = :auction ORDER BY b.bidAmount DESC LIMIT 1")
+	// TODO: 이후에 주석 삭제
+	Optional<Bid> findTopByAuctionIdOrderByBidAmountDesc(Long auctionId);
 }

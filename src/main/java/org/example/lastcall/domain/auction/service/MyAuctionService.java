@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -77,7 +78,8 @@ public class MyAuctionService {
     // 내가 참여한 경매 전체 조회 //
     public PageResponse<MyParticipatedResponse> getMyParticipatedAuctions(Long userId, Pageable pageable) {
         // 사용자가 입찰한 경매 ID 목록 조회
-        List<Long> auctionIds = bidService.getParticipatedAuctionIds(userId);
+        // List<Long> auctionIds = bidService.getParticipatedAuctionIds(userId); 주석풀기
+        List<Long> auctionIds = Collections.emptyList(); // 추후 삭제
         // 경매 ID 목록으로 해당 경매 페이지로 나눠 조회
         Page<Auction> auctions = auctionRepository.findByIdIn(auctionIds, pageable);
         // 각 경매에 대한 상품, 이미지, 최고 입찰가, 내 최고 입찰 여부 등 정보매핑
@@ -89,7 +91,8 @@ public class MyAuctionService {
             // 최고 입찰가 조회
             Long currentBid = bidService.getCurrentBidAmount(auction.getId());
             // 내가 최고입찰자인지 여부 확인
-            Boolean isLeading = bidService.isUserLeading(auction.getId(), userId);
+            // Boolean isLeading = bidService.isUserLeading(auction.getId(), userId); 주석 풀기
+            Boolean isLeading = false; // 추후 삭제
 
             return MyParticipatedResponse.from(
                     auction,
@@ -115,9 +118,11 @@ public class MyAuctionService {
 
         Long currentBid = bidService.getCurrentBidAmount(auction.getId());
 
-        Boolean isLeading = bidService.isUserLeading(auction.getId(), userId);
+        // Boolean isLeading = bidService.isUserLeading(auction.getId(), userId); 주석 풀기
+        Boolean isLeading = false; // 추후 삭제
 
-        Long myBidAmount = bidService.getMyBidAmount(auction.getId(), userId);
+        // Long myBidAmount = bidService.getMyBidAmount(auction.getId(), userId); 주석 풀기
+        Long myBidAmount = null; // 추후 삭
 
         return MyParticipatedResponse.fromDetail(
                 auction,

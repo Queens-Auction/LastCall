@@ -61,6 +61,7 @@ public class PointService implements PointServiceApi {
         );
     }
 
+    // 유저 포인트 조회
     public PointResponse getUserPoint(Long userId) {
 
         User user = userRepository.findById(userId).orElseThrow(

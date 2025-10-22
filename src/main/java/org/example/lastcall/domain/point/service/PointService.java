@@ -138,27 +138,26 @@ public class PointService implements PointServiceApi {
                 // 포인트 로그에 저장
                 pointLogRepository.save(log);
             }
+        } else {
+            // 처음 입찰하는 경우 (전체 금액 예치)
+            if (point.getAvailablePoint() < bidAmount) {
+                throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
+            }
+
+            // 포인트 이동 (가용 -> 예치)
+            point.updateDepositPoint(bidAmount);
+
+            // 포인트 로그에 기록
+            PointLog log = PointLog.create(
+                    point,
+                    point.getUser(),
+                    PointLogType.DEPOSIT,
+                    "입찰금 예치 처리",
+                    bidAmount
+            );
+
+            pointLogRepository.save(log);
         }
-
-
-        // 처음 입찰하는 경우 (전체 금액 예치)
-        if (point.getAvailablePoint() < bidAmount) {
-            throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
-        }
-
-        // 포인트 이동 (가용 -> 예치)
-        point.updateDepositPoint(bidAmount);
-
-        // 포인트 로그에 기록
-        PointLog log = PointLog.create(
-                point,
-                point.getUser(),
-                PointLogType.DEPOSIT,
-                "입찰금 예치 처리",
-                bidAmount
-        );
-
-        pointLogRepository.save(log);
     }
 
     // 경매 종료 후 입찰 확정시 예치 포인트를 정산포인트로 이동

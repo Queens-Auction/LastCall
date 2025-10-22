@@ -1,11 +1,13 @@
 package org.example.lastcall.domain.product;
 
+import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
+import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.sevice.ProductImageService;
 import org.example.lastcall.domain.user.entity.User;
@@ -24,10 +26,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductImageServiceTest {
@@ -146,4 +148,43 @@ public class ProductImageServiceTest {
         assertThat(newThumbnail.getImageType()).isEqualTo(ImageType.THUMBNAIL);
         assertThat(responses).hasSize(2);
     }
+
+    @Test
+    @DisplayName("이미지 삭제 성공")
+    void deleteProductImage_success() {
+        //given
+        Long imageId = 1L;
+        ProductImage productImage = ProductImage.of(product, ImageType.DETAIL, "image1.jpg");
+        setId(productImage, imageId);
+
+        when(productImageRepository.findById(imageId)).thenReturn(Optional.of(productImage));
+
+        //when
+        productImageService.deleteProductImage(productId, imageId);
+
+        //then
+        assertTrue(productImage.isDeleted());
+        verify(productImageRepository, times(1)).findById(imageId);
+    }
+
+    @Test
+    @DisplayName("이미지 삭제 - 예외")
+    void deleteProductImage_ThrowsException_WhenImageNotBelongsToProduct() {
+        //given
+        Long imageId = 1L;
+        Product anotherProduct = Product.of(product.getUser(), "다른 상품", Category.BEDDING, "다른 상품입니다.");
+        setId(anotherProduct, 999L);
+
+        ProductImage productImage = ProductImage.of(anotherProduct, ImageType.DETAIL, "image100.jpg");
+        setId(productImage, imageId);
+
+        when(productImageRepository.findById(imageId)).thenReturn(Optional.of(productImage));
+
+        //when&then
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> productImageService.deleteProductImage(productId, imageId));
+
+        assertEquals(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT, exception.getErrorCode());
+    }
+
 }

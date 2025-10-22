@@ -12,13 +12,12 @@ import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
-import org.example.lastcall.domain.bid.service.BidServiceApi;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
-import org.example.lastcall.domain.product.sevice.ProductServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductViewServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -35,11 +34,12 @@ import java.util.List;
 public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
-    private final ProductServiceApi productService;
+    private final ProductViewServiceApi productService;
     // product 엔티티를 DB 조회 없이 식별자 기반 참조하기 위해 사용 (경매 등록시)
     private final EntityManager em;
     private final ProductImageServiceApi productImageService;
     //private final BidServiceApi bidService;
+    private final ProductImageViewServiceApi productImageService;
 
     // 경매 상태 분리
     private AuctionStatus determineStatus(AuctionCreateRequest request) {
@@ -118,7 +118,10 @@ public class AuctionService implements AuctionServiceApi {
         return PageResponse.of(auctions, responses);
     }
 
-    // 경매 단건 상세 조회 //
+    // 경매 단건 상세 조회 - 공개용 //
+    // 로그인 하지 않은 사용자도 접근 가능
+    // 공개용 , 로그인 전용 API 분리한 이유 : 순환 참조 방지
+    // 여기서 bidService 호출 시 순환참조 발생
     @Transactional(readOnly = true)
     public AuctionReadResponse readAuction(Long auctionId, Long userId) {
 
@@ -130,18 +133,11 @@ public class AuctionService implements AuctionServiceApi {
         List<ProductImageResponse> images = productImageService.readAllProductImage(auction.getProduct().getId());
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 
-        // 3. 경매에 내 참여 여부 조회 - 입찰 도메인 호출
-        boolean myParicipsted = false;
-        // 비즈 서비스 api에 existsByAuctionIdAndUserId 추가되면 주석풀기
-        //if (userId != null) {
-        //    myParicipsted = bidService.existsByAuctionIdAndUserId(auctionId, userId);
-        //}
-
         return AuctionReadResponse.from(
                 auction,
                 auction.getProduct(),
                 imageUrl,
-                myParicipsted
+                false // 항상 false 로 전달 -> 공개용 임을 명시
         );
     }
 

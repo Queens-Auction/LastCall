@@ -4,12 +4,18 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
+import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
+import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
+import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
+import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.product.sevice.ProductCommandService;
 import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
+import org.example.lastcall.domain.product.sevice.ProductViewService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +26,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,12 +42,15 @@ public class ProductServiceTest {
     ProductRepository productRepository;
     @InjectMocks
     ProductCommandService productService;
-    //    @Mock
-//    private ProductImageViewServiceApi productImageServiceApi;
+    @InjectMocks
+    ProductViewService productViewService;
     @Mock
     private ProductImageServiceApi productImageServiceApi;
     @Mock
+    private ProductImageViewServiceApi productImageViewServiceApi;
+    @Mock
     private AuctionServiceApi auctionServiceApi;
+
     private Long productId;
     private Product product;
 
@@ -66,6 +77,49 @@ public class ProductServiceTest {
                 "제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다."
         );
 
+    }
+
+    @Test
+    @DisplayName("상품 단건 조회 성공")
+    void readProduct_success() {
+        //given
+        List<ProductImageResponse> images = List.of(
+                new ProductImageResponse(1L, productId, ImageType.THUMBNAIL, "imageUrl1.jpg", LocalDateTime.now(), LocalDateTime.now()),
+                new ProductImageResponse(2L, productId, ImageType.DETAIL, "imageUrl2.jpg", LocalDateTime.now(), LocalDateTime.now())
+        );
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productImageViewServiceApi.readAllProductImage(productId)).thenReturn(images);
+
+        //when
+        ProductReadOneResponse response = productViewService.readProduct(productId);
+
+        //then
+        assertNotNull(response);
+        assertEquals(product.getId(), response.getId());
+        assertEquals(product.getUser().getId(), response.getUserId());
+        assertEquals(product.getName(), response.getName());
+        assertEquals(2, response.getImages().size());
+        assertEquals("imageUrl1.jpg", response.getImages().get(0).getImageUrl());
+
+        verify(productRepository, times(1)).findById(productId);
+        verify(productImageViewServiceApi, times(1)).readAllProductImage(productId);
+    }
+
+    @Test
+    @DisplayName("상품 단건 조회 - 상품 없음")
+    void readProduct_throwsException_whenProductNotFound() {
+        //given
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        //when&then
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> productViewService.readProduct(productId));
+
+        assertEquals(ProductErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
+
+        verify(productRepository, times(1)).findById(productId);
+        verifyNoInteractions(productImageServiceApi);
     }
 
     @Test

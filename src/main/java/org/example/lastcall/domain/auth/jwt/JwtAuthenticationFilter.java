@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.example.lastcall.domain.auth.utils.CookieUtil; // ACCESS_COOKIE 상수 사용 시
 import org.example.lastcall.domain.user.enums.Role;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -46,15 +47,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             Claims claims = jwtUtil.validateAndGetClaims(token);
 
-            UUID userPublicId = UUID.fromString(claims.getSubject());
-            String roleName = claims.get("role", String.class);
+            // sub = publicId(UUID as String)
+            String publicIdStr = claims.getSubject();
+            UUID publicId = UUID.fromString(publicIdStr);
 
+            // uid = Long PK, role = 권한
+            Long userId   = claims.get("uid", Long.class);    // 새 토큰에 포함된 내부 PK
+            String roleName = claims.get("role", String.class);
             Role role = Role.valueOf(roleName);
 
-            var authorities = List.of(new SimpleGrantedAuthority(role.getKey()));
-            var authentication = new UsernamePasswordAuthenticationToken(userPublicId, null, authorities);
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+            // principal을 AuthUser로 (Long PK 중심)
+            AuthUser authUser = new AuthUser(userId, publicIdStr, roleName);
 
+            var authorities = List.of(new SimpleGrantedAuthority(role.getKey()));
+            var authentication = new UsernamePasswordAuthenticationToken(authUser, null, authorities);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception e) {
             log.warn("JWT 인증 실패: {}", e.getMessage());

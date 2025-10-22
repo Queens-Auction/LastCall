@@ -15,6 +15,7 @@ import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;
 import org.example.lastcall.domain.auth.email.repository.EmailVerificationRepository;
 import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
 import org.example.lastcall.domain.auth.entity.RefreshToken;
+import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.example.lastcall.domain.auth.jwt.JwtUtil;
 import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
@@ -59,7 +60,7 @@ public class AuthService {
         // 검증 상태 확인
         validateEmailVerifiedStatus(emailVerification.getStatus()); // VERIFIED 아니면 예외
 
-        // 4) 인증 기록 소비 처리
+        // 인증 기록 소비 처리
         emailVerification.updateStatus(EmailVerificationStatus.CONSUMED);
 
         User user = User.createForSignUp(
@@ -79,10 +80,21 @@ public class AuthService {
 
     @Transactional
     public LoginResponse userLogin(final LoginRequest request) {
-        User user = userRepository.findByEmailAndDeletedFalse(request.email().trim())
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+        String email = request.email().trim();
 
-        user.validatePassword(passwordEncoder, request.password());
+        // 1) 이메일 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_CREDENTIALS));
+
+        // 2) 탈퇴 계정 차단
+        if (user.isDeleted()) {
+            throw new BusinessException(AuthErrorCode.ACCOUNT_DELETED);
+        }
+
+        // 3) 비밀번호 검증
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
+        }
 
         String accessToken = jwtUtil.createAccessToken(user);
         String refreshToken = jwtUtil.createRefreshToken(user);
@@ -107,13 +119,17 @@ public class AuthService {
     }
 
     private RefreshToken validateRefreshToken(String requestedRefreshToken) {
-        RefreshToken refreshToken =
-                refreshTokenRepository.findByTokenAndStatus(requestedRefreshToken, RefreshTokenStatus.ACTIVE)
-                        .orElseThrow(() -> new RuntimeException("유효하지 않은 토큰입니다."));
+        RefreshToken refreshToken = refreshTokenRepository
+                .findByTokenAndStatus(requestedRefreshToken, RefreshTokenStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
 
         final LocalDateTime now = LocalDateTime.now();
         if (refreshToken.getExpiredAt().isBefore(now)) {
-            throw new RuntimeException("만료된 토큰입니다.");
+            throw new BusinessException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
+        }
+
+        if (refreshToken.isRevoked()) {
+            throw new BusinessException(AuthErrorCode.REVOKED_REFRESH_TOKEN);
         }
 
         return refreshToken;

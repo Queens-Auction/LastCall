@@ -1,15 +1,18 @@
 package org.example.lastcall.domain.product;
 
+import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
+import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.sevice.ProductImageService;
-import org.example.lastcall.domain.product.sevice.ProductServiceApi;
 import org.example.lastcall.domain.user.entity.User;
+import org.example.lastcall.domain.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,18 +24,24 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductImageServiceTest {
     @Mock
     ProductImageRepository productImageRepository;
-
     @Mock
-    ProductServiceApi productServiceApi;
+    AuctionServiceApi auctionServiceApi;
 
+    //    @Mock
+//    ProductCommandServiceApi productServiceApi;
+//
     @InjectMocks
     ProductImageService productImageService;
 
@@ -43,17 +52,18 @@ public class ProductImageServiceTest {
     void setUp() throws Exception {
         productId = 1L;
 
-        User user = User.builder()
-                .id(1L)
-                .username("testUser")
-                .email("test@example.com")
-                .password("encodeed-Password!1")
-                .nickname("tester")
-                .address("Seoul")
-                .postcode("12345")
-                .detailAddress("Apt 101")
-                .phoneNumber("010-2345-1234")
-                .build();
+        User user = User.createForSignUp(
+                UUID.randomUUID(),
+                "testUser",
+                "tester",
+                "test123@example.com",
+                "encoded-Password1!",
+                "Seoul",
+                "12345",
+                "Apt 101",
+                "010-0000-0000",
+                Role.USER
+        );
 
         product = Product.of(user,
                 "벽돌 1000장",
@@ -96,18 +106,21 @@ public class ProductImageServiceTest {
         setId(savedImages.get(0), 1L);
         setId(savedImages.get(1), 2L);
         setId(savedImages.get(2), 3L);
-
-        given(productServiceApi.findById(productId)).willReturn(product);
-        given(productImageRepository.saveAll(org.mockito.ArgumentMatchers.anyList())).willReturn(savedImages);
+        /* 불필요한 Mocking 제거!
+            ProductServiceApi를 호출하는 로직이 이 서비스에서 제거되었으므로, 이 Mocking은 필요 없음.*/
+//        given(productServiceApi.findById(productId)).willReturn(product);
+        given(productImageRepository.saveAll(anyList())).willReturn(savedImages);
 
         //when
-        List<ProductImageResponse> responses = productImageService.createProductImages(productId, requests);
+        List<ProductImageResponse> responses = productImageService.createProductImages(product, requests);
 
         //then
         assertThat(responses).hasSize(3);
         assertThat(responses.get(0).getImageType()).isEqualTo(ImageType.DETAIL);
         assertThat(responses.get(1).getImageType()).isEqualTo(ImageType.THUMBNAIL);
         assertThat(responses.get(2).getImageType()).isEqualTo(ImageType.DETAIL);
+        //추가 검증: saveAll이 Product 엔티티를 포함하는 ProductImage 객체 리스트로 호출되었는지 확인
+        verify(productImageRepository, times(1)).saveAll(anyList());
     }
 
     @Test
@@ -138,4 +151,47 @@ public class ProductImageServiceTest {
         assertThat(newThumbnail.getImageType()).isEqualTo(ImageType.THUMBNAIL);
         assertThat(responses).hasSize(2);
     }
+
+    @Test
+    @DisplayName("이미지 삭제 성공")
+    void deleteProductImage_success() {
+        //given
+        Long imageId = 1L;
+        ProductImage productImage = ProductImage.of(product, ImageType.DETAIL, "image1.jpg");
+        setId(productImage, imageId);
+
+        when(productImageRepository.findById(imageId)).thenReturn(Optional.of(productImage));
+        doNothing().when(auctionServiceApi).validateAuctionScheduled(productId);
+
+        //when
+        productImageService.deleteProductImage(productId, imageId);
+
+        //then
+        assertTrue(productImage.isDeleted());
+        verify(productImageRepository, times(1)).findById(imageId);
+        verify(auctionServiceApi, times(1)).validateAuctionScheduled(productId);
+    }
+
+    @Test
+    @DisplayName("이미지 삭제 - 예외")
+    void deleteProductImage_ThrowsException_WhenImageNotBelongsToProduct() {
+        //given
+        Long imageId = 1L;
+        Product anotherProduct = Product.of(product.getUser(), "다른 상품", Category.BEDDING, "다른 상품입니다.");
+        setId(anotherProduct, 999L);
+
+        ProductImage productImage = ProductImage.of(anotherProduct, ImageType.DETAIL, "image100.jpg");
+        setId(productImage, imageId);
+
+        when(productImageRepository.findById(imageId)).thenReturn(Optional.of(productImage));
+        doNothing().when(auctionServiceApi).validateAuctionScheduled(productId);
+
+        //when&then
+        BusinessException exception = assertThrows(BusinessException.class,
+                () -> productImageService.deleteProductImage(productId, imageId));
+
+        assertEquals(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT, exception.getErrorCode());
+        verify(auctionServiceApi, times(1)).validateAuctionScheduled(productId);
+    }
+
 }

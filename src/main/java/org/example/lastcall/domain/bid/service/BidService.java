@@ -1,11 +1,13 @@
 package org.example.lastcall.domain.bid.service;
 
+import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
+import org.example.lastcall.domain.bid.exception.BidErrorCode;
 import org.example.lastcall.domain.bid.repository.BidRepository;
 import org.example.lastcall.domain.point.service.PointServiceApi;
 import org.example.lastcall.domain.user.entity.User;
@@ -29,18 +31,22 @@ public class BidService implements BidServiceApi {
 	// 입찰 등록
 	// userId는 인증/인가 구현 완료되면 이후 수정하기 (@Auth AuthUser authUser)
 	public BidResponse createBid(Long auctionId, Long userId) {
-		// 입찰이 가능한 경매인지 확인하고, 경매를 받아옴. findById?
+		// 입찰이 가능한 경매인지 확인하고, 경매를 받아옴
 		Auction auction = auctionServiceApi.getBiddableAuction(auctionId);
 
-		User user = userRepository.findById(userId)    // 만들어주시면 수정하기!
+		if (auction.getUser().getId().equals(userId)) {
+			throw new BusinessException(BidErrorCode.SELLER_CANNOT_BID);
+		}
+
+		User user = userRepository.findById(userId)    // 구현 완료해주셔서 이번 PR 이후 수정 예정입니다!
 			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
 
-		// orElse: Optional 객체가 비어있을 경우, 해당 값(시작 값)을 반환해라.
+		// orElse: Optional 객체가 비어있을 경우, 해당 값(시작 값)을 반환함
 		Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
 
 		Long bidAmount = currentMaxBid + auction.getBidStep();
 
-		// 경매에 참여할만큼 포인트가 충분한 지 검증
+		// 경매에 참여할만큼 포인트가 충분한 지 검증함
 		pointServiceApi.validateSufficientPoints(userId, bidAmount);
 
 		Bid bid = new Bid(bidAmount, auction, user);
@@ -68,5 +74,12 @@ public class BidService implements BidServiceApi {
 		// 	throw new BusinessException(BidErrorCode.INVALID_BID_CHECK_REQUEST);
 		// }
 		return bidRepository.existsByAuctionIdAndUserId(auctionId, userId);
+	}
+
+	@Override
+	public Long getCurrentBidAmount(Long auctionId) {
+		Auction auction = auctionServiceApi.findById(auctionId);
+
+		return bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
 	}
 }

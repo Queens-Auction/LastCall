@@ -41,14 +41,14 @@ public class ProductImageController {
 //        return ResponseEntity.ok(apiResponse);
 //    }
 
-    //상품별 이미지 전체 조회
-    @GetMapping("/{productId}/image")
-    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> readAllProductImage(@PathVariable Long productId) {
-        List<ProductImageResponse> response = productImageViewService.readAllProductImage(productId);
-        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("상품별 이미지 조회에 성공했습니다.", response);
-
-        return ResponseEntity.ok(apiResponse);
-    }
+//    //상품별 이미지 전체 조회
+//    @GetMapping("/{productId}/image")
+//    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> readAllProductImage(@PathVariable Long productId) {
+//        List<ProductImageResponse> response = productImageViewService.readAllProductImage(productId);
+//        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("상품별 이미지 조회에 성공했습니다.", response);
+//
+//        return ResponseEntity.ok(apiResponse);
+//    }
 
     //상품 대표 이미지 변경 업데이트
     @PatchMapping("/{productId}/image/{imageId}")

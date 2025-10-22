@@ -7,6 +7,7 @@ import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
+import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.sevice.ProductCommandService;
 import org.example.lastcall.domain.product.sevice.ProductViewService;
@@ -40,11 +41,11 @@ public class ProductController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    //상품 단건 조회
+    //상품 단건 조회(상품 이미지 목록도 응답값에 포함)
     @GetMapping("/{productId}")
-    public ResponseEntity<ApiResponse<ProductResponse>> readProduct(@PathVariable Long productId) {
-        ProductResponse response = productViewService.readProduct(productId);
-        ApiResponse<ProductResponse> apiResponse = ApiResponse.success("상품 단건 조회에 성공했습니다.", response);
+    public ResponseEntity<ApiResponse<ProductReadOneResponse>> readProduct(@PathVariable Long productId) {
+        ProductReadOneResponse response = productViewService.readProduct(productId);
+        ApiResponse<ProductReadOneResponse> apiResponse = ApiResponse.success("상품 단건 조회에 성공했습니다.", response);
 
         return ResponseEntity.ok(apiResponse);
     }

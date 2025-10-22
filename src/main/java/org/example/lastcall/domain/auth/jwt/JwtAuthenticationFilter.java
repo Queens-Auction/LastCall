@@ -47,27 +47,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             Claims claims = jwtUtil.validateAndGetClaims(token);
 
-            // sub = publicId(UUID as String)
-            String publicIdStr = claims.getSubject();
-            UUID publicId = UUID.fromString(publicIdStr);
+            // sub = UUID
+            String publicId = claims.getSubject();
 
-            // uid = Long PK, role = 권한
-            Long userId   = claims.get("uid", Long.class);    // 새 토큰에 포함된 내부 PK
+            // uid = Long PK, role
+            Number uidNum = claims.get("uid", Number.class);
+            Long userId = (uidNum != null) ? uidNum.longValue() : null;
+
             String roleName = claims.get("role", String.class);
             Role role = Role.valueOf(roleName);
 
             // principal을 AuthUser로 (Long PK 중심)
-            AuthUser authUser = new AuthUser(userId, publicIdStr, roleName);
+            AuthUser authUser = new AuthUser(userId, publicId, roleName);
 
             var authorities = List.of(new SimpleGrantedAuthority(role.getKey()));
             var authentication = new UsernamePasswordAuthenticationToken(authUser, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.warn("JWT 만료: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.warn("JWT 서명 불일치: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
         } catch (Exception e) {
             log.warn("JWT 인증 실패: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
-
         chain.doFilter(req, res);
     }
 

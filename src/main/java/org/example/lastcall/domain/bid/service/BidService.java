@@ -85,12 +85,12 @@ public class BidService implements BidServiceApi {
 	}
 
 	@Override
-	public Optional<Bid> findPreviousHighestBidByAuction(Long auctionId) {
-		return bidRepository.findPreviousHighestBidByAuction(auctionId);
+	public Optional<Bid> findPreviousHighestBidByAuction(Auction auction) {
+		return bidRepository.findPreviousHighestBidByAuction(auction);
 	}
 
 	@Override
-	public Optional<Bid> findTopByAuctionIdOrderByBidAmountDesc(Long auctionId) {
-		return bidRepository.findTopByAuctionIdOrderByBidAmountDesc(auctionId);
+	public Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction) {
+		return bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
 	}
 }

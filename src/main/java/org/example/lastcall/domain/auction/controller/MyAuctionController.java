@@ -55,4 +55,15 @@ public class MyAuctionController {
                 ApiResponse.success("내가 참여한 경매 목록이 조회되었습니다.", pageResponse)
         );
     }
+
+    // 내가 참여한 경매 단건 조회 //
+    @GetMapping("/participated/{auctionId}")
+    public ResponseEntity<ApiResponse<MyParticipatedResponse>> getMyParticipatedDetailAuction(@Auth AuthUser authUser,
+                                                                                              @PathVariable Long auctionId) {
+        MyParticipatedResponse response = myAuctionService.getMyParticipatedDetailAuction(authUser.userId(), auctionId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 참여한 경매 중 해당 경매가 조회되었습니다.", response)
+        );
+    }
 }

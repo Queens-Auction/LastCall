@@ -2,7 +2,7 @@ package org.example.lastcall.domain.auction.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.domain.auction.dto.response.MyAuctionReadAllResponse;
+import org.example.lastcall.domain.auction.dto.response.MySellingAuctionResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.entity.Product;
@@ -22,13 +22,13 @@ public class MyAuctionService {
 
     // 내가 판매한 경매 목록 조회 //
     @Transactional(readOnly = true)
-    public PageResponse<MyAuctionReadAllResponse> getMySellingAuctions(Long userId, Pageable pageable) {
+    public PageResponse<MySellingAuctionResponse> getMySellingAuctions(Long userId, Pageable pageable) {
 
         // 1. 경매 목록 조회
         Page<Auction> auctions = auctionRepository.findBySellerId(userId, pageable);
 
         // 2. DTO 변환
-        Page<MyAuctionReadAllResponse> responses = auctions.map(auction -> {
+        Page<MySellingAuctionResponse> responses = auctions.map(auction -> {
             Product product = auction.getProduct();
 
             // 썸네일 이미지 조회
@@ -40,7 +40,7 @@ public class MyAuctionService {
             int currentBid = 0;  // 임시값
             // 추후 변경 -> bidService.getCurrentBidAmount(auction.getId());
 
-            return MyAuctionReadAllResponse.from(
+            return MySellingAuctionResponse.from(
                     auction,
                     product,
                     imageUrl,

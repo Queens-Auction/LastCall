@@ -39,6 +39,7 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .subject(user.getPublicId().toString())
+                .claim("uid", user.getId())
                 .claim("role", user.getUserRole().name())
                 .issuer("Queens-Auction")
                 .issuedAt(Date.from(now))

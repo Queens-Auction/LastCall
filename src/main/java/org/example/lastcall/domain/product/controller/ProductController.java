@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
+import org.example.lastcall.common.security.Auth;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
@@ -32,10 +34,11 @@ public class ProductController {
         );
     }
 
-    //상품 전체 조회(상품 아이디와 상품명만 조회)
-    @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> readAllProduct(Pageable pageable) {
-        PageResponse<ProductReadAllResponse> pageResponse = productViewService.readAllProduct(pageable.getPageNumber(), pageable.getPageSize());
+    //나의 상품 전체 조회(상품 아이디와 상품명만 조회+ 대표 이미지 + 내 상품만 전체조회)
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> readAllProduct(@Auth AuthUser authUser,
+                                                                                            Pageable pageable) {
+        PageResponse<ProductReadAllResponse> pageResponse = productViewService.readAllProduct(authUser.userId(), pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductReadAllResponse>> apiResponse = ApiResponse.success("상품을 전체 조회했습니다.", pageResponse);
 
         return ResponseEntity.ok(apiResponse);

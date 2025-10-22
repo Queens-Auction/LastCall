@@ -1,0 +1,52 @@
+package org.example.lastcall.domain.auction.service;
+
+import lombok.RequiredArgsConstructor;
+import org.example.lastcall.common.response.PageResponse;
+import org.example.lastcall.domain.auction.dto.response.MyAuctionReadAllResponse;
+import org.example.lastcall.domain.auction.entity.Auction;
+import org.example.lastcall.domain.auction.repository.AuctionRepository;
+import org.example.lastcall.domain.product.entity.Product;
+import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class MyAuctionService {
+
+    private final AuctionRepository auctionRepository;
+    private final ProductImageServiceApi productImageService;
+
+    // 내가 판매한 경매 목록 조회 //
+    @Transactional(readOnly = true)
+    public PageResponse<MyAuctionReadAllResponse> getMySellingAuctions(Long userId, Pageable pageable) {
+
+        // 1. 경매 목록 조회
+        Page<Auction> auctions = auctionRepository.findBySellerId(userId, pageable);
+
+        // 2. DTO 변환
+        Page<MyAuctionReadAllResponse> responses = auctions.map(auction -> {
+            Product product = auction.getProduct();
+
+            // 썸네일 이미지 조회
+            String imageUrl = productImageService
+                    .readThumbnailImage(product.getId())
+                    .getImageUrl();
+
+            // 최고 입찰가 조회
+            int currentBid = 0;  // 임시값
+            // 추후 변경 -> bidService.getCurrentBidAmount(auction.getId());
+
+            return MyAuctionReadAllResponse.from(
+                    auction,
+                    product,
+                    imageUrl,
+                    currentBid
+            );
+        });
+        return PageResponse.of(responses);
+    }
+}

@@ -22,8 +22,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Transactional
 public class ProductImageService implements ProductImageServiceApi {
-    // private final ProductCommandServiceApi productServiceApi; -> 이거 쓰면 순환 참조 문제 발생
-//    private final ProductRepository productRepository; -> 이거 직접 갖다쓰면 컨벤션을 안지키는 것..
+    // private final ProductCommandServiceApi productServiceApi; -> 순환 참조 문제 발생
     private final ProductImageRepository productImageRepository;
     private final AuctionServiceApi auctionServiceApi;
 

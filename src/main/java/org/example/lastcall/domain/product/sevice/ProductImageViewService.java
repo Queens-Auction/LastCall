@@ -34,4 +34,10 @@ public class ProductImageViewService implements ProductImageViewServiceApi {
         List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
         return ProductImageResponse.from(productImages);
     }
+
+    //대표 이미지 목록 조회 메서드 구현
+    @Override
+    public List<ProductImage> findAllThumbnailsByProductIds(List<Long> productIds) {
+        return productImageRepository.findAllThumbnailsByProductIds(productIds);
+    }
 }

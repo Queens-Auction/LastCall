@@ -26,4 +26,6 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 	// @Query("SELECT b FROM Bid b WHERE b.auction = :auction ORDER BY b.bidAmount DESC LIMIT 1")
 	// TODO: 이후에 주석 삭제
 	Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction);
+
+	Optional<Bid> findTopByAuctionIdAndUserIdOrderByBidAmountDesc(Long auctionId, Long userId);
 }

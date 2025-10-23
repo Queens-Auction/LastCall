@@ -14,4 +14,7 @@ public interface BidServiceApi {
 
 	// 이전 최고 입찰자, 최고 입찰가를 찾는 로직
 	Optional<Bid> findPreviousHighestBidByAuction(Auction auction);
+
+	// 최고 입찰자, 최고가 입찰가를 찾는 로직
+	Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction);
 }

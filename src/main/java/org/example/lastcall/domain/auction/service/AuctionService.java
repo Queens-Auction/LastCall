@@ -37,6 +37,8 @@ public class AuctionService implements AuctionServiceApi {
     private final ProductViewServiceApi productService;
     // product 엔티티를 DB 조회 없이 식별자 기반 참조하기 위해 사용 (경매 등록시)
     private final EntityManager em;
+    private final ProductImageServiceApi productImageService;
+    //private final BidServiceApi bidService;
     private final ProductImageViewServiceApi productImageService;
 
     // 경매 상태 분리

@@ -35,22 +35,32 @@ public class EmailVerification extends BaseEntity {
     @Column(nullable = false)
     private String email;
 
-    private EmailVerification(UUID publicId, String verificationCode, String email) {
+    private EmailVerification(
+            UUID publicId,
+            String verificationCode,
+            String email)
+    {
         this.publicId = publicId;
         this.verificationCode = verificationCode;
         this.status = EmailVerificationStatus.SENT;
         this.email = email;
     }
 
-    public static EmailVerification create(UUID publicId, String verificationCode, String email) {
+    public static EmailVerification create(
+            UUID publicId,
+            String verificationCode,
+            String email)
+    {
         return new EmailVerification(publicId, verificationCode, email);
     }
 
-    public void updateStatus(EmailVerificationStatus status) {
+    public void updateStatus(EmailVerificationStatus status)
+    {
         this.status = status;
     }
 
-    public void validateVerificationCode(final String requestedVerificationCode) {
+    public void validateVerificationCode(final String requestedVerificationCode)
+    {
         if (!Objects.equals(requestedVerificationCode, verificationCode)) {
             throw new BusinessException(EmailErrorCode.CODE_MISMATCH);
         }

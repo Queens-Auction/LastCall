@@ -8,12 +8,14 @@ import org.example.lastcall.common.util.DateTimeUtil;
 import org.example.lastcall.common.util.GeneratorUtil;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
+import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.email.entity.EmailVerification;
 import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;
 import org.example.lastcall.domain.auth.email.repository.EmailVerificationRepository;
 import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
 import org.example.lastcall.domain.auth.entity.RefreshToken;
+import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.example.lastcall.domain.auth.jwt.JwtUtil;
 import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
@@ -28,6 +30,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_NOT_FOUND;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,6 +42,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+
 
     private void validateEmailVerifiedStatus(final EmailVerificationStatus status) {
         if (!Objects.equals(status, EmailVerificationStatus.VERIFIED)) {
@@ -54,7 +60,7 @@ public class AuthService {
         // 검증 상태 확인
         validateEmailVerifiedStatus(emailVerification.getStatus()); // VERIFIED 아니면 예외
 
-        // 4) 인증 기록 소비 처리
+        // 인증 기록 소비 처리
         emailVerification.updateStatus(EmailVerificationStatus.CONSUMED);
 
         User user = User.createForSignUp(
@@ -74,10 +80,21 @@ public class AuthService {
 
     @Transactional
     public LoginResponse userLogin(final LoginRequest request) {
-        User user = userRepository.findByEmailAndDeletedFalse(request.email().trim())
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 유저입니다."));
+        String email = request.email().trim();
 
-        user.validatePassword(passwordEncoder, request.password());
+        // 1) 이메일 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_CREDENTIALS));
+
+        // 2) 탈퇴 계정 차단
+        if (user.isDeleted()) {
+            throw new BusinessException(AuthErrorCode.ACCOUNT_DELETED);
+        }
+
+        // 3) 비밀번호 검증
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
+        }
 
         String accessToken = jwtUtil.createAccessToken(user);
         String refreshToken = jwtUtil.createRefreshToken(user);
@@ -102,13 +119,17 @@ public class AuthService {
     }
 
     private RefreshToken validateRefreshToken(String requestedRefreshToken) {
-        RefreshToken refreshToken =
-                refreshTokenRepository.findByTokenAndStatus(requestedRefreshToken, RefreshTokenStatus.ACTIVE)
-                        .orElseThrow(() -> new RuntimeException("유효하지 않은 토큰입니다."));
+        RefreshToken refreshToken = refreshTokenRepository
+                .findByTokenAndStatus(requestedRefreshToken, RefreshTokenStatus.ACTIVE)
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
 
         final LocalDateTime now = LocalDateTime.now();
         if (refreshToken.getExpiredAt().isBefore(now)) {
-            throw new RuntimeException("만료된 토큰입니다.");
+            throw new BusinessException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
+        }
+
+        if (refreshToken.isRevoked()) {
+            throw new BusinessException(AuthErrorCode.REVOKED_REFRESH_TOKEN);
         }
 
         return refreshToken;
@@ -125,5 +146,20 @@ public class AuthService {
                 RefreshTokenStatus.ACTIVE
         );
         activeTokens.forEach(RefreshToken::revoke);
+    }
+
+    @Transactional
+    public void withdraw(Long userId, WithdrawRequest request) {
+        // 1) 사용자 조회(삭제 안 된 사용자만) + 비밀번호 검증
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
+        if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
+        user.validatePassword(passwordEncoder, request.password());
+
+        // 2) soft delete
+        user.softDelete();
+
+        // 3) 해당 사용자의 모든 활성 RT 무효화
+        refreshTokenRepository.revokeAllActiveByUserId(user.getId(), RefreshTokenStatus.ACTIVE, RefreshTokenStatus.REVOKED);
     }
 }

@@ -5,4 +5,6 @@ public interface PointServiceApi {
     void validateSufficientPoints(Long userId, Long requiredAmount);
 
     void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId);
+
+    void DepositToSettlement(Long userId, Long auctionId, Long amount);
 }

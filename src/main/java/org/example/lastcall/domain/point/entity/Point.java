@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
+import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.user.entity.User;
 
 @Entity
@@ -54,7 +56,28 @@ public class Point extends BaseEntity {
 
     public void updateDepositPoint(Long amount) {
         this.availablePoint -= amount;
-        this.depositPoint = +amount;
+        this.depositPoint += amount;
+    }
+
+    public void DepositToSettlement(Long amount) {
+
+        if (this.depositPoint < amount) {
+            throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);
+        }
+
+        this.depositPoint -= amount;
+        this.settlementPoint += amount;
+    }
+
+    public void decreaseAvailablePoint(Long amount) {
+        if (this.availablePoint < amount) {
+            throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
+        }
+        this.availablePoint -= amount;
+    }
+
+    public void increaseDepositPoint(Long amount) {
+        this.depositPoint += amount;
     }
 }
 

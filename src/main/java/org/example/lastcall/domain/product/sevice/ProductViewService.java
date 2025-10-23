@@ -7,6 +7,7 @@ import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
 import org.example.lastcall.domain.product.entity.Product;
+import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +27,19 @@ public class ProductViewService implements ProductViewServiceApi {
     private final ProductImageViewServiceApi productImageViewServiceApi;
 
     //상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)
-    public PageResponse<ProductReadAllResponse> readAllProduct(int page, int size) {
+    public PageResponse<ProductReadAllResponse> readAllProduct(Long userId, int page, int size) {
         Page<Product> products = productRepository.findAll(PageRequest.of(page, size));
-        return ProductReadAllResponse.from(products);
+        List<Long> productIds = products.stream()
+                .map(Product::getId)
+                .toList();
+
+        //대표 이미지들 한 번에 조회
+        List<ProductImage> thumbnails = productImageViewServiceApi.findAllThumbnailsByProductIds(productIds);
+
+        //productId -> imageUrl 매핑
+        Map<Long, String> thumbnailUrlMap = thumbnails.stream()
+                .collect(Collectors.toMap(pi -> pi.getProduct().getId(), ProductImage::getImageUrl));
+        return ProductReadAllResponse.from(products, thumbnailUrlMap);
     }
 
     //상품 단건 조회

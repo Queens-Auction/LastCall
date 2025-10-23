@@ -59,7 +59,7 @@ public class Point extends BaseEntity {
         this.depositPoint += amount;
     }
 
-    public void DepositToSettlement(Long amount) {
+    public void depositToSettlement(Long amount) {
 
         if (this.depositPoint < amount) {
             throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);

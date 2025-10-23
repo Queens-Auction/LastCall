@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     // 재등록이 안되는 경매 조건
@@ -36,4 +38,21 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     // 상품에 진행 중인 경매 존재 여부 검증
     boolean existsByProductIdAndStatus(Long productId, AuctionStatus status);
+
+    // 특정 이메일을 가진 판매자가 등록한 경매 목록 조회 (우선 이메일로)
+    // -> 테스트 코드 수정하면서 삭제 예정
+    Page<Auction> findByUserEmail(String email, Pageable pageable);
+
+    // 판매자가 등록한 모든 경매 목록 조회 (페이징)
+    @Query("SELECT a " +
+            "FROM Auction a " +
+            "WHERE a.user.id = :userId")
+    Page<Auction> findBySellerId(Long userId, Pageable pageable);
+
+    // 판매자가 등록한 특정 경매 단건 조회
+    @Query("SELECT a " +
+            "FROM Auction a " +
+            "WHERE a.user.id = :userId " +
+            "AND a.id = :auctionId")
+    Optional<Auction> findBySellerIdAndAuctionId(Long userId, Long auctionId);
 }

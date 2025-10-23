@@ -98,4 +98,11 @@ public class BidService implements BidServiceApi {
 	public Optional<Bid> findExistingBid(Long auctionId, Long userId) {
 		return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId);
 	}
+
+	@Override
+	public Bid getBid(Long bidId) {
+		return bidRepository.findById(bidId).orElseThrow(
+			() -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
+		);
+	}
 }

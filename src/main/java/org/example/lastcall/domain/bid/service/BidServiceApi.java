@@ -20,4 +20,7 @@ public interface BidServiceApi {
 
 	// 특정 경매에서 특정 유저의 마지막 입찰 기록 조회 로직
 	Optional<Bid> findExistingBid(Long auctionId, Long userId);
+
+	// ID로 입찰을 가져오는 로직
+	Bid getBid(Long bidId);
 }

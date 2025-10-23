@@ -17,4 +17,7 @@ public interface BidServiceApi {
 
 	// 최고 입찰자, 최고가 입찰가를 찾는 로직
 	Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction);
+
+	// 특정 경매에서 특정 유저의 마지막 입찰 기록 조회 로직
+	Optional<Bid> findExistingBid(Long auctionId, Long userId);
 }

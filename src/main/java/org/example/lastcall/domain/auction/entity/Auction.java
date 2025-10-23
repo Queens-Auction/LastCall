@@ -110,7 +110,8 @@ public class Auction extends BaseEntity {
     // -> 조회 시점 상태 계산 메서드
     @Transient
     public AuctionStatus getDynamicStatus() {
-        return determineStatus();
+        this.status = determineStatus();
+        return this.status;
     }
 
     // 내 경매 수정

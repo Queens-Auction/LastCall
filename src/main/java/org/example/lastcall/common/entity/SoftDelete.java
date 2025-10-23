@@ -19,7 +19,8 @@ public class SoftDelete {
     }
 
     // 복구 메서드
-    public void restore() {
+    public void restore()
+    {
         this.deleted = false;
     }
 }

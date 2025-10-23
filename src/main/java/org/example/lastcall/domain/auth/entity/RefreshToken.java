@@ -28,21 +28,34 @@ public class RefreshToken extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private RefreshTokenStatus status;
 
+    public boolean isRevoked() {
+        return this.status == RefreshTokenStatus.REVOKED;
+    }
+
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt;
 
-    private RefreshToken(Long userId, String token, RefreshTokenStatus status, LocalDateTime expiredAt) {
+    private RefreshToken(Long userId,
+                         String token,
+                         RefreshTokenStatus status,
+                         LocalDateTime expiredAt)
+    {
         this.userId = userId;
         this.token = token;
         this.status = status;
         this.expiredAt = expiredAt;
     }
 
-    public static RefreshToken create(Long userId, String token, RefreshTokenStatus status, LocalDateTime expiredAt) {
+    public static RefreshToken create(Long userId,
+                                      String token,
+                                      RefreshTokenStatus status,
+                                      LocalDateTime expiredAt)
+    {
         return new RefreshToken(userId, token, status, expiredAt);
     }
 
-    public void revoke() {
+    public void revoke()
+    {
         this.status = RefreshTokenStatus.REVOKED;
     }
 }

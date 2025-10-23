@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Builder
-public class AuctionCreateResponse {
+public class AuctionResponse {
     private Long auctionId;
     private Long productId;
     private Long userId;
@@ -21,8 +21,8 @@ public class AuctionCreateResponse {
     private LocalDateTime createdAt;
 
     // 정적 팩토리 메서드 (from)
-    public static AuctionCreateResponse from(Auction auction) {
-        return AuctionCreateResponse.builder()
+    public static AuctionResponse from(Auction auction) {
+        return AuctionResponse.builder()
                 .auctionId(auction.getId())
                 .productId(auction.getProduct().getId())
                 .userId(auction.getUser().getId())

@@ -29,6 +29,16 @@ public class ProductImageController {
         );
     }
 
+    //상품 수정 시 이미지 추가 기능
+    @PostMapping("/{productId}/images/append")
+    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> appendProductImages(@PathVariable Long productId,
+                                                                                       @RequestBody List<ProductImageCreateRequest> requests) {
+        List<ProductImageResponse> response = productCommandServiceApi.appendImagesToProduct(productId, requests);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("상품 이미지를 추가등록했습니다.", response));
+    }
+
     //상품 대표 이미지 변경 업데이트
     @PatchMapping("/{productId}/image/{imageId}")
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> updateThumbnailImage(@PathVariable Long productId,

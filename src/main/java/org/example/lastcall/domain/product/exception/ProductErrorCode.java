@@ -15,7 +15,8 @@ public enum ProductErrorCode implements ErrorCode {
     DUPLICATE_IMAGE_URL_IN_REQUEST(HttpStatus.BAD_REQUEST, "중복 이미지입니다."),
     DUPLICATE_IMAGE_URL_IN_PRODUCT(HttpStatus.BAD_REQUEST, "한 상품 안에 중복 이미지는 들어갈 수 없습니다."),
     THUMBNAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "대표 이미지가 존재하지 않습니다."),
-    IMAGE_NOT_BELONGS_TO_PRODUCT(HttpStatus.BAD_REQUEST, "해당 상품에 속한 이미지가 아닙니다.");
+    IMAGE_NOT_BELONGS_TO_PRODUCT(HttpStatus.BAD_REQUEST, "해당 상품에 속한 이미지가 아닙니다."),
+    MAX_IMAGE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지는 최대 10장입니다.");
 
     private final HttpStatus status;
     private final String message;

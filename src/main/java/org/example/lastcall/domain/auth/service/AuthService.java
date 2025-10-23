@@ -157,6 +157,10 @@ public class AuthService {
         user.validatePassword(passwordEncoder, request.password());
 
         // 2) soft delete
+        int updated = userRepository.softDeleteById(userId);
+        if (updated == 0) {
+            throw new BusinessException(USER_ALREADY_DELETED);
+        }
         user.softDelete();
 
         // 3) 해당 사용자의 모든 활성 RT 무효화

@@ -1,6 +1,5 @@
 package org.example.lastcall.domain.auction.service;
 
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
@@ -13,7 +12,6 @@ import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
-import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
@@ -34,21 +32,14 @@ public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
     private final ProductViewServiceApi productService;
-    // product 엔티티를 DB 조회 없이 식별자 기반 참조하기 위해 사용 (경매 등록시)
-    private final EntityManager em;
-    private final ProductImageServiceApi productImageService;
-    //private final BidServiceApi bidService;
     private final ProductImageViewServiceApi productImageService;
 
     // 경매 등록 //
     public AuctionResponse createAuction(Long userId, AuctionCreateRequest request) {
         // 1. 상품 존재 여부 확인
-        ProductResponse productResponse = productService.readProduct(request.getProductId());
-        if (productResponse == null) {
-            throw new BusinessException(AuctionErrorCode.PRODUCT_NOT_FOUND);
-        }
+        Product product = productService.findById(request.getProductId());
         // 2. 상품 소유자 검증
-        if (!productResponse.getUserId().equals(userId)) {
+        if (!product.getUser().getId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
         // 3. 중복 경매 등록 방지
@@ -59,10 +50,7 @@ public class AuctionService implements AuctionServiceApi {
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER)
         );
-        // 5. Product 엔티티 조회 없이 참조만 (SELECT X)
-        // -> Product 엔티티 내 빌더가 id 제외 되어있어서 (클래스 단위 아닌 메서드 단위)
-        Product product = em.getReference(Product.class, productResponse.getId());
-        // 6. 경매 등록
+        // 5. 경매 등록
         Auction auction = Auction.of(
                 user,
                 product,
@@ -86,6 +74,7 @@ public class AuctionService implements AuctionServiceApi {
                     return AuctionReadAllResponse.from(auction, image.getImageUrl());
                 })
                 .toList();
+
         // 3. PageResponse로 변환하여 페이징 응답 반환
         return PageResponse.of(auctions, responses);
     }

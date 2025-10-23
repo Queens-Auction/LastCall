@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.bid.service;
+package org.example.lastcall.domain.bid.service.query;
 
 import java.util.List;
 import java.util.Optional;
@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.bid.entity.Bid;
 
-public interface BidServiceApi {
+public interface BidQueryServiceApi {
 	// 특정 경매에 해당 사용자의 입찰 존재 여부 확인
 	boolean existsByAuctionIdAndUserId(Long auctionId, Long userId);
 

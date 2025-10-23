@@ -164,7 +164,7 @@ public class PointService implements PointServiceApi {
 
     // 경매 종료 후 입찰 확정시 예치 포인트를 정산포인트로 이동
     @Override
-    public void DepositToSettlement(Long userId, Long auctionId, Long amount) {
+    public void depositToSettlement(Long userId, Long auctionId, Long amount) {
 
         // 낙찰자의 포인트 계좌 조회
         Point point = pointRepository.findByUserId(userId).orElseThrow(
@@ -172,7 +172,7 @@ public class PointService implements PointServiceApi {
         );
 
         // 예치 포인트 -> 정산 포인트로 이동
-        point.DepositToSettlement(amount);
+        point.depositToSettlement(amount);
 
         // 변경사항 저장
         pointRepository.save(point);

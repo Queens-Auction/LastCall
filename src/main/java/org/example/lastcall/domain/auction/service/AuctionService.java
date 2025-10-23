@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
-import org.example.lastcall.domain.auction.dto.response.AuctionCreateResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionReadResponse;
+import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.entity.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
@@ -41,7 +41,7 @@ public class AuctionService implements AuctionServiceApi {
     private final ProductImageViewServiceApi productImageService;
 
     // 경매 등록 //
-    public AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request) {
+    public AuctionResponse createAuction(Long userId, AuctionCreateRequest request) {
         // 1. 상품 존재 여부 확인
         ProductResponse productResponse = productService.readProduct(request.getProductId());
         if (productResponse == null) {
@@ -70,7 +70,7 @@ public class AuctionService implements AuctionServiceApi {
         );
         auctionRepository.save(auction);
 
-        return AuctionCreateResponse.from(auction);
+        return AuctionResponse.from(auction);
     }
 
     // 경매 전체 조회 //

@@ -3,8 +3,11 @@ package org.example.lastcall.domain.auction.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.domain.auction.dto.response.MySellingAuctionResponse;
+import org.example.lastcall.common.security.Auth;
+import org.example.lastcall.domain.auction.dto.response.MyParticipatedResponse;
+import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.service.MyAuctionService;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +25,10 @@ public class MyAuctionController {
 
     // 내가 판매한 경매 목록 조회 //
     @GetMapping("/selling")
-    public ResponseEntity<ApiResponse<PageResponse<MySellingAuctionResponse>>> getMySellingAuctions(
-            //@AuthenticationPrincipal AuthUser authUser,
-            // AuthUser 적용되면 email -> user.getId()
-            Pageable pageable) {
-        Long testUserId = 5L; // DB에 실제 존재하는 user_id (임시) -> authUser 적용 후 삭제하기
-        PageResponse<MySellingAuctionResponse> pageResponse = myAuctionService.getMySellingAuctions(testUserId, pageable);
-        // AuthUser 적용되면 email -> user.getId()로 수정 예정
+    public ResponseEntity<ApiResponse<PageResponse<MySellingResponse>>> getMySellingAuctions(@Auth AuthUser authUser,
+                                                                                             Pageable pageable) {
+        PageResponse<MySellingResponse> pageResponse = myAuctionService.getMySellingAuctions(authUser.userId(), pageable);
+
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("내가 판매한 경매 목록이 조회되었습니다.", pageResponse)
         );
@@ -36,15 +36,34 @@ public class MyAuctionController {
 
     // 내가 판매한 경매 상세 조회 //
     @GetMapping("/selling/{auctionId}")
-    public ResponseEntity<ApiResponse<MySellingAuctionResponse>> getMySellingDetailAuctions(
-            @PathVariable Long auctionId
-            // @Auth AuthUser authUser -> 도입되면 주석풀기
-    ) {
-        Long testUserId = 5L; // DB에 실제 존재하는 user_id (임시) -> authUser 적용 후 삭제하기
-        MySellingAuctionResponse response = myAuctionService.getMySellingDetailAuction(testUserId, auctionId);
+    public ResponseEntity<ApiResponse<MySellingResponse>> getMySellingDetailAuctions(@Auth AuthUser authUser,
+                                                                                     @PathVariable Long auctionId) {
+        MySellingResponse response = myAuctionService.getMySellingDetailAuction(authUser.userId(), auctionId);
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("내가 판매한 경매 중 해당 경매가 조회되었습니다.", response)
+        );
+    }
+
+    // 내가 참여한 경매 전체 조회 //
+    @GetMapping("/participated")
+    public ResponseEntity<ApiResponse<PageResponse<MyParticipatedResponse>>> getMyParticipatedAuctions(@Auth AuthUser authUser,
+                                                                                                       Pageable pageable) {
+        PageResponse<MyParticipatedResponse> pageResponse = myAuctionService.getMyParticipatedAuctions(authUser.userId(), pageable);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 참여한 경매 목록이 조회되었습니다.", pageResponse)
+        );
+    }
+
+    // 내가 참여한 경매 단건 조회 //
+    @GetMapping("/participated/{auctionId}")
+    public ResponseEntity<ApiResponse<MyParticipatedResponse>> getMyParticipatedDetailAuction(@Auth AuthUser authUser,
+                                                                                              @PathVariable Long auctionId) {
+        MyParticipatedResponse response = myAuctionService.getMyParticipatedDetailAuction(authUser.userId(), auctionId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 참여한 경매 중 해당 경매가 조회되었습니다.", response)
         );
     }
 }

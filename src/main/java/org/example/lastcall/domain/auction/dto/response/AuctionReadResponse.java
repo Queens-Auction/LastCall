@@ -39,7 +39,7 @@ public class AuctionReadResponse {
                 .startingBid(auction.getStartingBid())
                 .bidStep(auction.getBidStep())
                 .myParticipated(myParticipated)
-                .status(auction.getStatus())
+                .status(auction.getDynamicStatus()) // 조회 시점 상태 계산
                 .build();
     }
 }

@@ -25,7 +25,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -41,57 +40,34 @@ public class AuctionService implements AuctionServiceApi {
     //private final BidServiceApi bidService;
     private final ProductImageViewServiceApi productImageService;
 
-    // 경매 상태 분리
-    private AuctionStatus determineStatus(AuctionCreateRequest request) {
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(request.getStartTime())) {
-            return AuctionStatus.SCHEDULED;
-        } else if (now.isAfter(request.getEndTime())) {
-            return AuctionStatus.CLOSED;
-        } else {
-            return AuctionStatus.ONGOING;
-        }
-    }
-
     // 경매 등록 //
     public AuctionCreateResponse createAuction(Long userId, AuctionCreateRequest request) {
-
         // 1. 상품 존재 여부 확인
         ProductResponse productResponse = productService.readProduct(request.getProductId());
         if (productResponse == null) {
             throw new BusinessException(AuctionErrorCode.PRODUCT_NOT_FOUND);
         }
-
         // 2. 상품 소유자 검증
         if (!productResponse.getUserId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
-
         // 3. 중복 경매 등록 방지
         if (auctionRepository.existsActiveAuction(request.getProductId())) {
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
-
-        // 4. 경매 상태 결정
-        AuctionStatus status = determineStatus(request);
-
-        // 5. User 엔티티 조회
+        // 4. User 엔티티 조회
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER)
         );
-
-        // 6. Product 엔티티 조회 없이 참조만 (SELECT X)
+        // 5. Product 엔티티 조회 없이 참조만 (SELECT X)
         // -> Product 엔티티 내 빌더가 id 제외 되어있어서 (클래스 단위 아닌 메서드 단위)
         Product product = em.getReference(Product.class, productResponse.getId());
-
-        // 7. 경매 등록
+        // 6. 경매 등록
         Auction auction = Auction.of(
                 user,
                 product,
-                request,
-                status
+                request
         );
-
         auctionRepository.save(auction);
 
         return AuctionCreateResponse.from(auction);
@@ -100,20 +76,16 @@ public class AuctionService implements AuctionServiceApi {
     // 경매 전체 조회 //
     @Transactional(readOnly = true)
     public PageResponse<AuctionReadAllResponse> readAllAuctions(Category category, Pageable pageable) {
-
         // 1. 경매 목록 조회 (최신순)
         Page<Auction> auctions = auctionRepository.findAllActiveAuctionsByCategory(category, pageable);
-
         // 2. 엔티티 -> DTO 변환
         List<AuctionReadAllResponse> responses = auctions.stream()
                 .map(auction -> {
                     // 현재 경매에 연결된 상품의 이미지 조회
                     ProductImageResponse image = productImageService.readThumbnailImage(auction.getProduct().getId());
-
                     return AuctionReadAllResponse.from(auction, image.getImageUrl());
                 })
                 .toList();
-
         // 3. PageResponse로 변환하여 페이징 응답 반환
         return PageResponse.of(auctions, responses);
     }
@@ -124,11 +96,9 @@ public class AuctionService implements AuctionServiceApi {
     // 여기서 bidService 호출 시 순환참조 발생
     @Transactional(readOnly = true)
     public AuctionReadResponse readAuction(Long auctionId, Long userId) {
-
         // 1. 경매 조회
         Auction auction = auctionRepository.findById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-
         // 2. 상품 이미지 조회
         List<ProductImageResponse> images = productImageService.readAllProductImage(auction.getProduct().getId());
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();

@@ -8,6 +8,7 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.example.lastcall.domain.user.enums.Role;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -49,8 +50,20 @@ public class User extends BaseEntity {
     @Column(name = "user_role", nullable = false, length = 5)
     private Role userRole; // ENUM(ADMIN, USER)
 
-    private User(UUID publicId, String username, String nickname, String email, String password,
-                 String address, String postcode, String detailAddress, String phoneNumber, Role userRole) {
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
+    private User(UUID publicId,
+                 String username,
+                 String nickname,
+                 String email,
+                 String password,
+                 String address,
+                 String postcode,
+                 String detailAddress,
+                 String phoneNumber,
+                 Role userRole)
+    {
         this.publicId = publicId;
         this.username = username;
         this.nickname = nickname;
@@ -63,11 +76,53 @@ public class User extends BaseEntity {
         this.userRole = userRole;
     }
 
-    public static User createForSignUp(UUID publicId, String username, String nickname, String email,
-                                       String encodedPassword, String address, String postcode,
-                                       String detailAddress, String phoneNumber, Role userRole) {
-        return new User(publicId, username, nickname, email, encodedPassword,
-                address, postcode, detailAddress, phoneNumber, userRole);
+    public static User createForSignUp(UUID publicId,
+                                       String username,
+                                       String nickname,
+                                       String email,
+                                       String encodedPassword,
+                                       String address,
+                                       String postcode,
+                                       String detailAddress,
+                                       String phoneNumber,
+                                       Role userRole)
+    {
+        return new User(publicId,
+                username,
+                nickname,
+                email,
+                encodedPassword,
+                address,
+                postcode,
+                detailAddress,
+                phoneNumber,
+                userRole);
+    }
+
+    public void changeNickname(String nickname)
+    {
+        this.nickname = nickname;
+    }
+
+    public void changePhoneNumber(String phoneNumber)
+    {
+        this.phoneNumber = phoneNumber;
+
+    }
+    public void changeAddress(String address,
+                              String postcode,
+                              String detailAddress)
+    {
+        if (address != null)
+        {
+            this.address = address;
+        }
+        if (postcode != null) {
+            this.postcode = postcode;
+        }
+        if (detailAddress != null) {
+            this.detailAddress = detailAddress;
+        }
     }
 
     public void validatePassword(PasswordEncoder passwordEncoder, String requestedPassword) {
@@ -75,4 +130,14 @@ public class User extends BaseEntity {
             throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
         }
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    public void markPasswordChangedNow()
+    {
+        this.passwordChangedAt = LocalDateTime.now();
+    }
+
 }

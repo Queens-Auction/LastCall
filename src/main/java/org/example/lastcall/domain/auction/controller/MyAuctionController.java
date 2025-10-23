@@ -1,9 +1,12 @@
 package org.example.lastcall.domain.auction.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.common.security.Auth;
+import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
+import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
 import org.example.lastcall.domain.auction.dto.response.MyParticipatedResponse;
 import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.service.MyAuctionService;
@@ -11,10 +14,7 @@ import org.example.lastcall.domain.auth.model.AuthUser;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -64,6 +64,18 @@ public class MyAuctionController {
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("내가 참여한 경매 중 해당 경매가 조회되었습니다.", response)
+        );
+    }
+
+    // 내 경매 수정 //
+    @PatchMapping("{auctionId}")
+    public ResponseEntity<ApiResponse<AuctionResponse>> updateAuction(@Auth AuthUser authUser,
+                                                                      @PathVariable Long auctionId,
+                                                                      @Valid @RequestBody AuctionUpdateRequest request) {
+        AuctionResponse response = myAuctionService.updateAuction(authUser.userId(), auctionId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내 경매가 수정 되었습니다.", response)
         );
     }
 }

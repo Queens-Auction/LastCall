@@ -2,6 +2,8 @@ package org.example.lastcall.domain.point.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.lastcall.common.security.Auth;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.example.lastcall.domain.point.dto.CreatePointRequest;
 import org.example.lastcall.domain.point.dto.PointResponse;
 import org.example.lastcall.domain.point.service.PointService;
@@ -19,19 +21,19 @@ public class PointController {
     // 포인트 충전
     @PostMapping("/users/{userId}/points/earn")
     public ResponseEntity<PointResponse> createPoint(
-            @PathVariable Long userId,
+            @Auth AuthUser authUser,
             @RequestBody @Valid CreatePointRequest request) {
 
-        PointResponse pointResponse = pointService.createPoint(userId, request);
+        PointResponse pointResponse = pointService.createPoint(authUser, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(pointResponse);
     }
 
     // 유저 포인트 조회
     @GetMapping("/users/{userId}/points")
-    public ResponseEntity<PointResponse> getUserPoint(@PathVariable Long userId) {
+    public ResponseEntity<PointResponse> getUserPoint(@Auth AuthUser authUser) {
 
-        PointResponse pointResponse = pointService.getUserPoint(userId);
+        PointResponse pointResponse = pointService.getUserPoint(authUser);
 
         return ResponseEntity.status(HttpStatus.OK).body(pointResponse);
     }

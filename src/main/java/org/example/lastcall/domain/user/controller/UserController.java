@@ -12,6 +12,9 @@ import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
 import org.example.lastcall.domain.user.service.UserService;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
+import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
+import org.example.lastcall.domain.user.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

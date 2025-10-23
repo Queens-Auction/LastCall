@@ -39,6 +39,7 @@ public class UserService implements UserServiceApi {
 
         if (user.isDeleted()) {
             throw new BusinessException(USER_ALREADY_DELETED);
+            throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
         }
         return UserProfileResponse.from(user);
     }
@@ -52,6 +53,7 @@ public class UserService implements UserServiceApi {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
+        if (user.isDeleted()) throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
 
         // nickname 변경 시 중복 방지
         if (req.nickname() != null && !req.nickname().equals(user.getNickname())) {

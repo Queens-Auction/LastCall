@@ -16,20 +16,21 @@ jobs:
       mysql:
         image: mysql:8
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: root1123
           MYSQL_DATABASE: auction
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -p ${{ secrets.DB_PASSWORD }}"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -p root1123"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
       mailhog:
         image: mailhog/mailhog:latest
         ports:
-          - 1025:1025  
-          - 8025:8025  
+          - 1025:1025   # SMTP
+          - 8025:8025   # Web UI (디버깅용, 테스트에는 불필요)
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,13 +50,13 @@ jobs:
           # DB
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/auction?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
           SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SPRING_DATASOURCE_PASSWORD: root1123
           # MAIL (MailHog)
           SPRING_MAIL_HOST: 127.0.0.1
           SPRING_MAIL_PORT: 1025
           SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
           SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
           # JWT
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_SECRET: ijdD7QDEK0qa1UXs5uMgcGNmmYNObF+6DkMSVWV/d6edXjnDDILwAY1ZZcrwpQcszNMMiF6ZG6rszF2UwIyMNg==
           JWT_EXPIRATION: 86400000
         run: ./gradlew clean build --no-daemon

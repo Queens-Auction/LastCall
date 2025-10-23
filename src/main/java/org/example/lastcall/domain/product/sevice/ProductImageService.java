@@ -13,10 +13,7 @@ import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +26,6 @@ public class ProductImageService implements ProductImageServiceApi {
     //이미지 등록 (여러 장 등록)
     @Override
     public List<ProductImageResponse> createProductImages(Product product, List<ProductImageCreateRequest> requests) {
-
         validateImageCount(requests);
         validateDuplicateUrls(requests, product.getId());
 
@@ -52,6 +48,56 @@ public class ProductImageService implements ProductImageServiceApi {
                 .toList();
     }
 
+    //상품 수정 시 이미지 추가
+    @Override
+    public List<ProductImageResponse> appendProductImages(Product product, List<ProductImageCreateRequest> requests) {
+        auctionServiceApi.validateAuctionScheduled(product.getId());
+
+        //기존 이미지 불러오기
+        List<ProductImage> existingImages = productImageRepository.findAllByProductId(product.getId());
+
+        //새 이미지 객체생성
+        List<ProductImage> newImages = requests.stream()
+                .map(req -> {
+                    ImageType type = (req.getIsThumbnail() != null && req.getIsThumbnail())
+                            ? ImageType.THUMBNAIL
+                            : ImageType.DETAIL;
+                    return ProductImage.of(product, type, req.getImageUrl());
+                })
+                .toList();
+
+        //전체 이미지 합치기
+        List<ProductImage> allImages = new ArrayList<>();
+        allImages.addAll(existingImages);
+        allImages.addAll(newImages);
+
+        //총 이미지 갯수 검증
+        if (allImages.size() > 10) {
+            throw new BusinessException(ProductErrorCode.MAX_IMAGE_COUNT_EXCEEDED);
+        }
+
+        //썸네일 한 개만 유지
+        ensureSingleThumbnail(allImages);
+
+        //중복 URL 체크
+        validateDuplicateUrlsForAll(allImages);
+
+        //새 이미지들만 저장
+        List<ProductImage> savedImages = productImageRepository.saveAll(newImages);
+
+        return savedImages.stream()
+                .map(ProductImageResponse::from)
+                .toList();
+    }
+
+    private void validateDuplicateUrlsForAll(List<ProductImage> allImages) {
+        Set<String> urls = new HashSet<>();
+        for (ProductImage image : allImages) {
+            if (!urls.add(image.getImageUrl())) {
+                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
+            }
+        }
+    }
 
     //썸네일 이미지 변경
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {

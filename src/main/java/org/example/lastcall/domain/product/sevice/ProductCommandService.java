@@ -64,4 +64,11 @@ public class ProductCommandService implements ProductCommandServiceApi {
         //ProductImageService에 Product 엔티티를 인자로 전달하여 호출 (단방향)
         return productImageCommandServiceApi.createProductImages(product, requests);
     }
+
+    @Override
+    public List<ProductImageResponse> appendImagesToProduct(Long productId, List<ProductImageCreateRequest> requests) {
+        Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        return productImageCommandServiceApi.appendProductImages(product, requests);
+    }
 }

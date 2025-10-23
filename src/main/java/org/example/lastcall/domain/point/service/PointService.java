@@ -132,7 +132,8 @@ public class PointService implements PointServiceApi {
                         point.getUser(),
                         PointLogType.ADDITIONAL_DEPOSIT,
                         "입찰 금액 증가로 인한 추가 예치 처리",
-                        difference
+                        difference,
+                        auctionRepository.getReferenceById(auctionId)
                 );
 
                 // 포인트 로그에 저장
@@ -153,7 +154,8 @@ public class PointService implements PointServiceApi {
                     point.getUser(),
                     PointLogType.DEPOSIT,
                     "입찰금 예치 처리",
-                    bidAmount
+                    bidAmount,
+                    auctionRepository.getReferenceById(auctionId)
             );
 
             pointLogRepository.save(log);

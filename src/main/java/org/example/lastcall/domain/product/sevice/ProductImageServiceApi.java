@@ -10,4 +10,6 @@ public interface ProductImageServiceApi {
     void softDeleteByProductId(Long productId);
 
     List<ProductImageResponse> createProductImages(Product product, List<ProductImageCreateRequest> requests);
+
+    List<ProductImageResponse> appendProductImages(Product product, List<ProductImageCreateRequest> requests);
 }

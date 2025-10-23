@@ -10,12 +10,7 @@ import org.example.lastcall.common.entity.BaseEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(
-        name = "product_image",
-        //한 상품 당 하나의 이미지만 THUMBNAIL이 될 수 있도록 제약
-        uniqueConstraints = @UniqueConstraint(
-                columnNames = {"product_id", "image_type"}
-        ))
+@Table(name = "product_image")
 public class ProductImage extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

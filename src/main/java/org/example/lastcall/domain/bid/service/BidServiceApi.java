@@ -1,5 +1,6 @@
 package org.example.lastcall.domain.bid.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.example.lastcall.domain.auction.entity.Auction;
@@ -23,4 +24,13 @@ public interface BidServiceApi {
 
 	// ID로 입찰을 가져오는 로직
 	Bid getBid(Long bidId);
+
+	// 특정 유저가 입찰한 경매 목록 조회
+	List<Long> getParticipatedAuctionIds(Long userId);
+
+	// 특정 유저가 특정 경매에서 입찰한 최고 금액 조회
+	Long getMyBidAmount(Long auctionId, Long userId);
+
+	// 특정 유저가 특정 경매에서 최고 입찰자인지 여부 조회
+	boolean isUserLeading(Long auctionId, Long userId);
 }

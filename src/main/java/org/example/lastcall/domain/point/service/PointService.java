@@ -3,9 +3,13 @@ package org.example.lastcall.domain.point.service;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
+import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 import org.example.lastcall.domain.bid.entity.Bid;
+import org.example.lastcall.domain.bid.exception.BidErrorCode;
 import org.example.lastcall.domain.bid.repository.BidRepository;
+import org.example.lastcall.domain.bid.service.BidServiceApi;
 import org.example.lastcall.domain.point.dto.CreatePointRequest;
 import org.example.lastcall.domain.point.dto.PointResponse;
 import org.example.lastcall.domain.point.entity.Point;
@@ -32,6 +36,8 @@ public class PointService implements PointServiceApi {
     private final UserRepository userRepository;
     private final AuctionRepository auctionRepository;
     private final BidRepository bidRepository;
+    private final BidServiceApi bidServiceApi;
+    private final AuctionServiceApi auctionServiceApi;
 
     public PointResponse createPoint(Long userId, @Valid CreatePointRequest request) {
 
@@ -105,7 +111,7 @@ public class PointService implements PointServiceApi {
         );
 
         // 이전 입찰 조회 (해당 유저가 이미 입찰했는지)
-        Optional<Bid> existingBid = bidRepository.findByAuctionIdAndUserId(auctionId, userId);
+        Optional<Bid> existingBid = bidServiceApi.findExistingBid(auctionId, userId);
 
         if (existingBid.isPresent()) {
             Bid previousBid = existingBid.get();
@@ -164,15 +170,24 @@ public class PointService implements PointServiceApi {
 
     // 경매 종료 후 입찰 확정시 예치 포인트를 정산포인트로 이동
     @Override
-    public void DepositToSettlement(Long userId, Long auctionId, Long amount) {
+    public void depositToSettlement(Long userId, Long auctionId, Long amount) {
+
+        // 경매 및 최고 입찰 조회
+        Auction auction = auctionServiceApi.findById(auctionId);
+        Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
+                () -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
+        );
+
+        Long winnerUserId = highestBid.getUser().getId();
+        Long winnerBidAmount = highestBid.getBidAmount();
 
         // 낙찰자의 포인트 계좌 조회
-        Point point = pointRepository.findByUserId(userId).orElseThrow(
+        Point point = pointRepository.findByUserId(winnerUserId).orElseThrow(
                 () -> new BusinessException(PointErrorCode.POINT_ACCOUNT_NOT_FOUND)
         );
 
         // 예치 포인트 -> 정산 포인트로 이동
-        point.DepositToSettlement(amount);
+        point.depositToSettlement(winnerBidAmount);
 
         // 변경사항 저장
         pointRepository.save(point);
@@ -183,12 +198,11 @@ public class PointService implements PointServiceApi {
                 point.getUser(),
                 PointLogType.SETTLEMENT,
                 "입찰 확정으로 인한 정산 포인트 이동",
-                amount,
-                auctionRepository.getReferenceById(auctionId)
+                winnerBidAmount,
+                auction
         );
 
         // 포인트 로그에 저장
         pointLogRepository.save(log);
     }
-
 }

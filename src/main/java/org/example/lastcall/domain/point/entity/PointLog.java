@@ -55,6 +55,16 @@ public class PointLog extends BaseEntity {
     private Long settlementPointAfter = 0L;
 
 
+    public static PointLog create(Point point, User user, PointLogType type, String description, Long change) {
+        PointLog log = new PointLog();
+        log.point = point;
+        log.user = user;
+        log.type = type;
+        log.description = description;
+        log.pointChange = change;
+        return log;
+    }
+
     public static PointLog create(Point point, User user, PointLogType type, String description, Long change, Auction auction) {
         PointLog log = new PointLog();
         log.point = point;

@@ -93,4 +93,9 @@ public class BidService implements BidServiceApi {
 	public Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction) {
 		return bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
 	}
+
+	@Override
+	public Optional<Bid> findExistingBid(Long auctionId, Long userId) {
+		return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId);
+	}
 }

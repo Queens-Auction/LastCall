@@ -1,8 +1,10 @@
-### 환경 변수 설정
+### 환경 변수 설정 (IntelliJ HTTP Client 전용)
 @host = localhost:8080
 @baseUrl = http://{{host}}/api/v1
 
+#######################################
 ### ===== 회원가입 플로우 =====
+#######################################
 
 ### 1. 이메일 인증번호 발송
 POST {{baseUrl}}/email-verifications
@@ -13,7 +15,7 @@ Content-Type: application/json
 }
 
 ### 2. 이메일 인증번호 검증
-# 위 요청으로 받은 인증번호를 입력하세요
+# 위 요청에서 받은 인증번호를 아래에 입력
 PUT {{baseUrl}}/email-verifications/status
 Content-Type: application/json
 
@@ -23,7 +25,7 @@ Content-Type: application/json
 }
 
 ### 3. 회원가입
-# 이메일 인증 완료 후 회원가입
+# 이메일 인증 완료 후, verificationPublicId 값을 실제 응답값으로 교체해야 함
 POST {{baseUrl}}/auth
 Content-Type: application/json
 
@@ -38,7 +40,9 @@ Content-Type: application/json
   "phoneNumber": "01012345678"
 }
 
-### ===== 로그인 플로우 =====
+#######################################
+### ===== 로그인 & 인증 플로우 =====
+#######################################
 
 ### 4. 로그인
 POST {{baseUrl}}/auth/login
@@ -46,11 +50,51 @@ Content-Type: application/json
 
 {
   "email": "eunjin0468@naver.com",
-  "password": "Password123!@#"
+  "password": "Password!1234#"
 }
 
-### 5. 로그아웃
+
+### 5. 로그아웃 (Access Token이 필요할 수도 있음)
 POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{accessToken}}
+
+### 6. 회원 탈퇴
+DELETE {{baseUrl}}/users/me
+Authorization: Bearer {{accessToken}}
+
+#######################################
+### ===== 내 정보 =====
+#######################################
+
+### 7. 내 정보 조회
+GET {{baseUrl}}/users/me
+
+### 8. 내 정보 수정
+PATCH {{baseUrl}}/users/me
+Content-Type: application/json
+
+{
+  "nickname": "nickname",
+  "addressInfo": {
+    "postcode": "06236",
+    "address": "서울특별시 강남구 테헤란로 123",
+    "detailAddress": "5층 501호"
+  },
+  "phoneNumber": "010-1234-5678"
+}
+
+### 9. 비밀번호 수정
+PATCH {{baseUrl}}/users/me/password
+Content-Type: application/json
+
+{
+  "oldPassword": "Password!1234#",
+  "newPassword": "Password!123#"
+}
+
+
+
+
 
 ### ===== 토큰 재발급 =====
 

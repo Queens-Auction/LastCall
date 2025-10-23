@@ -157,11 +157,24 @@ public class MyAuctionService {
         if (!auction.getUser().getId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
-
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
         auction.update(request);
         return AuctionResponse.from(auction);
+    }
+
+    // 내 경매 삭제 //
+    public void deleteAuction(Long userId, Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        if (!auction.getUser().getId().equals(userId)) {
+            throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
+        }
+        if (auction.getStatus() != AuctionStatus.SCHEDULED) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
+        }
+        auction.softDelete();
     }
 }

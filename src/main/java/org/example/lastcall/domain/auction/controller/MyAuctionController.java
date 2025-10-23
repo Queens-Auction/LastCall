@@ -75,7 +75,18 @@ public class MyAuctionController {
         AuctionResponse response = myAuctionService.updateAuction(authUser.userId(), auctionId, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(
-                ApiResponse.success("내 경매가 수정 되었습니다.", response)
+                ApiResponse.success("내 경매가 수정되었습니다.", response)
+        );
+    }
+
+    // 내 경매 삭제 //
+    @DeleteMapping("{auctionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAuction(@Auth AuthUser authUser,
+                                                           @PathVariable Long auctionId) {
+        myAuctionService.deleteAuction(authUser.userId(), auctionId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내 경매가 삭제되었습니다.")
         );
     }
 }

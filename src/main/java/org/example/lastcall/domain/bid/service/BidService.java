@@ -1,5 +1,6 @@
 package org.example.lastcall.domain.bid.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.example.lastcall.common.exception.BusinessException;
@@ -97,5 +98,34 @@ public class BidService implements BidServiceApi {
 	@Override
 	public Optional<Bid> findExistingBid(Long auctionId, Long userId) {
 		return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId);
+	}
+
+	@Override
+	public Bid getBid(Long bidId) {
+		return bidRepository.findById(bidId).orElseThrow(
+			() -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
+		);
+	}
+
+	// 내가 참여한 경매 목록 조회
+	@Override
+	public List<Long> getParticipatedAuctionIds(Long userId) {
+		return bidRepository.findDistinctAuctionsByUserId(userId);
+	}
+
+	// 특정 유저가 특정 경매에서 최고 입찰자인지 여부 조회
+	@Override
+	public boolean isUserLeading(Long auctionId, Long userId) {
+		Long currentBid = getCurrentBidAmount(auctionId);
+		Long myBidAmount = getMyBidAmount(auctionId, userId);
+		return myBidAmount != null && myBidAmount.equals(currentBid);
+	}
+
+	// 특정 유저가 해당 경매에서 입찰한 금액 중 가장 높은 금액 조회
+	@Override
+	public Long getMyBidAmount(Long auctionId, Long userId) {
+		return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId)
+			.map(Bid::getBidAmount)
+			.orElse(null);
 	}
 }

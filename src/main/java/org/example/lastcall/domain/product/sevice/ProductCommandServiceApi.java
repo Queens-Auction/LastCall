@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ProductCommandServiceApi {
     List<ProductImageResponse> addImagesToProduct(Long productId, List<ProductImageCreateRequest> requests);
+
+    List<ProductImageResponse> appendImagesToProduct(Long productId, List<ProductImageCreateRequest> requests);
 }

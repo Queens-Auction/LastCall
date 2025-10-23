@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
+import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.user.entity.User;
 
@@ -110,5 +111,14 @@ public class Auction extends BaseEntity {
     @Transient
     public AuctionStatus getDynamicStatus() {
         return determineStatus();
+    }
+
+    // 내 경매 수정
+    public void update(AuctionUpdateRequest request) {
+        this.startingBid = request.getStartingBid();
+        this.bidStep = request.getBidStep();
+        this.startTime = request.getStartTime();
+        this.endTime = request.getEndTime();
+        this.status = determineStatus();
     }
 }

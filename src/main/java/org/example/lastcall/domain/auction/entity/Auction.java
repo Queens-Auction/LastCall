@@ -63,25 +63,26 @@ public class Auction extends BaseEntity {
          - @GeneratedValue : JPA 가 id를 자동 생성 (개발자 수동 세팅 금지)
          - 개발자가 JPA 관리 영역 침범하므로 정책 위반이 됨
     */
+    // 현재 of 메서드에서 간접적으로 사용중
     @Builder
     private Auction(User user,
                     Product product,
                     Long startingBid,
                     Long bidStep,
                     LocalDateTime startTime,
-                    LocalDateTime endTime,
-                    AuctionStatus status) {
+                    LocalDateTime endTime) {
         this.user = user;
         this.product = product;
         this.startingBid = startingBid;
         this.bidStep = bidStep;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.status = status;
+        // null 이면 determineStatus 로 자동 계산, status 명시되면 그대로 사용(테스트, 스케줄러용 예외 케이스)
+        this.status = (status != null) ? status : determineStatus();
     }
 
     // 정적 팩토리 메서드 (of)
-    public static Auction of(User user, Product product, AuctionCreateRequest request, AuctionStatus status) {
+    public static Auction of(User user, Product product, AuctionCreateRequest request) {
         return Auction.builder()
                 .user(user)
                 .product(product)
@@ -89,7 +90,25 @@ public class Auction extends BaseEntity {
                 .bidStep(request.getBidStep())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
-                .status(status)
                 .build();
+    }
+
+    // 경매 상태 계산 (엔티티 내부에서 처리)
+    private AuctionStatus determineStatus() {
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(this.getStartTime())) {
+            return AuctionStatus.SCHEDULED;
+        } else if (now.isAfter(this.getEndTime())) {
+            return AuctionStatus.CLOSED;
+        } else {
+            return AuctionStatus.ONGOING;
+        }
+    }
+
+    // 동적 상태 조회용(표시용)
+    // -> 조회 시점 상태 계산 메서드
+    @Transient
+    public AuctionStatus getDynamicStatus() {
+        return determineStatus();
     }
 }

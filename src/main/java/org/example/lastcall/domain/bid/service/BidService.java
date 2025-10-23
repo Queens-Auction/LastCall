@@ -1,9 +1,12 @@
 package org.example.lastcall.domain.bid.service;
 
+import java.util.Optional;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
@@ -11,7 +14,7 @@ import org.example.lastcall.domain.bid.exception.BidErrorCode;
 import org.example.lastcall.domain.bid.repository.BidRepository;
 import org.example.lastcall.domain.point.service.PointServiceApi;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.repository.UserRepository;
+import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,21 +28,19 @@ import lombok.RequiredArgsConstructor;
 public class BidService implements BidServiceApi {
 	private final BidRepository bidRepository;
 	private final AuctionServiceApi auctionServiceApi;
-	private final UserRepository userRepository;
+	private final UserServiceApi userServiceApi;
 	private final PointServiceApi pointServiceApi;
 
 	// 입찰 등록
-	// userId는 인증/인가 구현 완료되면 이후 수정하기 (@Auth AuthUser authUser)
-	public BidResponse createBid(Long auctionId, Long userId) {
+	public BidResponse createBid(Long auctionId, AuthUser authUser) {
 		// 입찰이 가능한 경매인지 확인하고, 경매를 받아옴
 		Auction auction = auctionServiceApi.getBiddableAuction(auctionId);
 
-		if (auction.getUser().getId().equals(userId)) {
+		if (auction.getUser().getId().equals(authUser.userId())) {
 			throw new BusinessException(BidErrorCode.SELLER_CANNOT_BID);
 		}
 
-		User user = userRepository.findById(userId)    // 구현 완료해주셔서 이번 PR 이후 수정 예정입니다!
-			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
+		User user = userServiceApi.findById(authUser.userId());
 
 		// orElse: Optional 객체가 비어있을 경우, 해당 값(시작 값)을 반환함
 		Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
@@ -47,13 +48,13 @@ public class BidService implements BidServiceApi {
 		Long bidAmount = currentMaxBid + auction.getBidStep();
 
 		// 경매에 참여할만큼 포인트가 충분한 지 검증함
-		pointServiceApi.validateSufficientPoints(userId, bidAmount);
+		pointServiceApi.validateSufficientPoints(user.getId(), bidAmount);
 
 		Bid bid = new Bid(bidAmount, auction, user);
 
 		Bid savedBid = bidRepository.save(bid);
 
-		pointServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), bidAmount, userId);
+		pointServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), bidAmount, user.getId());
 
 		return BidResponse.from(savedBid);
 	}
@@ -81,5 +82,15 @@ public class BidService implements BidServiceApi {
 		Auction auction = auctionServiceApi.findById(auctionId);
 
 		return bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
+	}
+
+	@Override
+	public Optional<Bid> findPreviousHighestBidByAuction(Auction auction) {
+		return bidRepository.findPreviousHighestBidByAuction(auction);
+	}
+
+	@Override
+	public Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction) {
+		return bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
 	}
 }

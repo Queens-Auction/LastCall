@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
+import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.user.entity.User;
 
@@ -23,12 +24,16 @@ public class PointLog extends BaseEntity {
     private Point point;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bid_id", nullable = false)
+    @JoinColumn(name = "bid_id", nullable = true)   // Bid가 항상 존재하지 않는 로그도 있을 수 있기 때문에 nullable 허용
     private Bid bid;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "auction_id")
+    private Auction auction;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
@@ -49,17 +54,15 @@ public class PointLog extends BaseEntity {
     @Column(name = "settlement_point_after", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private Long settlementPointAfter = 0L;
 
-    @Column(name = "related_auction_id")
-    private Long relatedAuctionId;
 
-
-    public static PointLog create(Point point, User user, PointLogType type, String description, Long change) {
+    public static PointLog create(Point point, User user, PointLogType type, String description, Long change, Auction auction) {
         PointLog log = new PointLog();
         log.point = point;
         log.user = user;
         log.type = type;
         log.description = description;
         log.pointChange = change;
+        log.auction = auction;
         return log;
     }
 

@@ -174,7 +174,7 @@ public class PointService implements PointServiceApi {
 
         // 경매 및 최고 입찰 조회
         Auction auction = auctionServiceApi.findById(auctionId);
-        Bid highestBid = bidRepository.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
+        Bid highestBid = bidServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
                 () -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
         );
 

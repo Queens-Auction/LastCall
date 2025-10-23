@@ -38,7 +38,6 @@ public class UserService implements UserServiceApi {
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         if (user.isDeleted()) {
-            throw new BusinessException(USER_ALREADY_DELETED);
             throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
         }
         return UserProfileResponse.from(user);

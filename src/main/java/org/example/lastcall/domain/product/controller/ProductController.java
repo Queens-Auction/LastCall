@@ -26,11 +26,10 @@ public class ProductController {
     private final ProductViewService productViewService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(Long userId,  // 임시 유저 아이디
-                                                                      //@AuthenticationPrincipal AuthUser authUser, 유저 인증인가 후 주석 해제
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Auth AuthUser authUser,
                                                                       @Valid @RequestBody ProductCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                ApiResponse.success("상품을 등록했습니다.", productService.createProduct(userId, request))
+                ApiResponse.success("상품을 등록했습니다.", productService.createProduct(authUser.userId(), request))
         );
     }
 

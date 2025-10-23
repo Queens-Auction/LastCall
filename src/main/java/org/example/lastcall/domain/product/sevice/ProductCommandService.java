@@ -12,7 +12,7 @@ import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.repository.UserRepository;
+import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,11 +25,10 @@ public class ProductCommandService implements ProductCommandServiceApi {
     private final ProductRepository productRepository;
     private final ProductImageServiceApi productImageCommandServiceApi;
     private final AuctionServiceApi auctionServiceApi;
-    private final UserRepository userRepository;
+    private final UserServiceApi userServiceApi;
 
     public ProductResponse createProduct(Long userId, ProductCreateRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ProductErrorCode.USER_NOT_FOUND));
+        User user = userServiceApi.findById(userId);
         Product product = Product.of(user, request.getName(), request.getCategory(), request.getDescription());
         Product savedProduct = productRepository.save(product);
 
@@ -57,12 +56,6 @@ public class ProductCommandService implements ProductCommandServiceApi {
         //상품에 연결된 이미지까지 soft delete
         productImageCommandServiceApi.softDeleteByProductId(productId);
     }
-
-//    @Override
-//    public Product findById(Long productId) {
-//        return productRepository.findById(productId)
-//                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-//    }
 
     @Override
     public List<ProductImageResponse> addImagesToProduct(Long productId, List<ProductImageCreateRequest> requests) {

@@ -8,6 +8,7 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.example.lastcall.domain.user.enums.Role;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -48,6 +49,9 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role", nullable = false, length = 5)
     private Role userRole; // ENUM(ADMIN, USER)
+
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
 
     private User(UUID publicId,
                  String username,
@@ -126,4 +130,14 @@ public class User extends BaseEntity {
             throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
         }
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    public void markPasswordChangedNow()
+    {
+        this.passwordChangedAt = LocalDateTime.now();
+    }
+
 }

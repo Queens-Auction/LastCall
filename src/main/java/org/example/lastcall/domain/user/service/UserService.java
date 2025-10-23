@@ -1,7 +1,11 @@
 package org.example.lastcall.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
+import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
+import org.example.lastcall.domain.user.dto.request.PasswordChangeRequest;
 import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
 import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
 import org.example.lastcall.domain.user.entity.User;
@@ -10,10 +14,16 @@ import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.example.lastcall.domain.auth.model.RefreshTokenStatus.ACTIVE;
+import static org.example.lastcall.domain.auth.model.RefreshTokenStatus.REVOKED;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
+
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserServiceApi {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -28,6 +38,7 @@ public class UserService implements UserServiceApi {
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         if (user.isDeleted()) {
+            throw new BusinessException(USER_ALREADY_DELETED);
             throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
         }
         return UserProfileResponse.from(user);
@@ -41,6 +52,7 @@ public class UserService implements UserServiceApi {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+        if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
         if (user.isDeleted()) throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
 
         // nickname 변경 시 중복 방지
@@ -62,4 +74,24 @@ public class UserService implements UserServiceApi {
 
         return UserProfileResponse.from(user);
     }
+
+    @Transactional
+    public void changeMyPassword(Long userId, PasswordChangeRequest req) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+        if (user.isDeleted()) throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
+
+        // 기존 비밀번호 검증
+        user.validatePassword(passwordEncoder, req.oldPassword());
+        if (passwordEncoder.matches(req.newPassword(), user.getPassword())) {
+            throw new BusinessException(UserErrorCode.SAME_AS_OLD_PASSWORD);
+        }
+
+        // 새 비밀번호 인코딩/저장
+        user.changePassword(passwordEncoder.encode(req.newPassword()));
+        user.markPasswordChangedNow();
+
+        refreshTokenRepository.revokeAllActiveByUserId(user.getId(), ACTIVE, REVOKED);
+    }
+
 }

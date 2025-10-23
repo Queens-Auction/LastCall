@@ -14,8 +14,7 @@ import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
-import org.example.lastcall.domain.product.sevice.ProductViewServiceApi;
+import org.example.lastcall.domain.product.sevice.query.ProductQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -31,8 +30,7 @@ import java.util.List;
 public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
-    private final ProductViewServiceApi productService;
-    private final ProductImageViewServiceApi productImageService;
+    private final ProductQueryServiceApi productService;
 
     // 경매 등록 //
     public AuctionResponse createAuction(Long userId, AuctionCreateRequest request) {
@@ -70,7 +68,7 @@ public class AuctionService implements AuctionServiceApi {
         List<AuctionReadAllResponse> responses = auctions.stream()
                 .map(auction -> {
                     // 현재 경매에 연결된 상품의 이미지 조회
-                    ProductImageResponse image = productImageService.readThumbnailImage(auction.getProduct().getId());
+                    ProductImageResponse image = productService.readThumbnailImage(auction.getProduct().getId());
                     return AuctionReadAllResponse.from(auction, image.getImageUrl());
                 })
                 .toList();
@@ -89,7 +87,7 @@ public class AuctionService implements AuctionServiceApi {
         Auction auction = auctionRepository.findById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
         // 2. 상품 이미지 조회
-        List<ProductImageResponse> images = productImageService.readAllProductImage(auction.getProduct().getId());
+        List<ProductImageResponse> images = productService.readAllProductImage(auction.getProduct().getId());
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 
         return AuctionReadResponse.from(

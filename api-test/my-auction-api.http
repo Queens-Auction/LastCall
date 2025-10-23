@@ -1,0 +1,25 @@
+### 내 경매 조회 (판매)
+GET http://localhost:8080/api/v1/my/auctions/selling
+
+### 내 경매 단건 조회 (판매)
+GET http://localhost:8080/api/v1/my/auctions/selling/23
+
+### 내 경매 조회 (참여)
+GET http://localhost:8080/api/v1/my/auctions/participated
+
+### 내 경매 단건 조회 (참여)
+GET http://localhost:8080/api/v1/my/auctions/participated/21
+
+### 내 경매 수정
+PATCH http://localhost:8080/api/v1/my/auctions/24
+Content-Type: application/json
+
+{
+  "startingBid": 20000,
+  "bidStep": 1000,
+  "startTime": "2025-10-24T15:00:00",
+  "endTime": "2025-10-27T22:00:00"
+}
+
+### 내 경매 삭제
+DELETE http://localhost:8080/api/v1/my/auctions/20

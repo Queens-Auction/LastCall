@@ -10,7 +10,9 @@ import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
-import org.example.lastcall.domain.product.sevice.ProductImageService;
+import org.example.lastcall.domain.product.repository.ProductRepository;
+import org.example.lastcall.domain.product.sevice.ProductValidator;
+import org.example.lastcall.domain.product.sevice.command.ProductCommandService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,15 +38,16 @@ import static org.mockito.Mockito.*;
 public class ProductImageServiceTest {
     @Mock
     ProductImageRepository productImageRepository;
+
+    @Mock
+    ProductRepository productRepository;
+
     @Mock
     AuctionServiceApi auctionServiceApi;
-
-    //    @Mock
-//    ProductCommandServiceApi productServiceApi;
-//
     @InjectMocks
-    ProductImageService productImageService;
-
+    ProductCommandService productCommandService;
+    @Mock
+    private ProductValidator productValidator;
     private Product product;
     private Long productId;
 
@@ -106,13 +109,16 @@ public class ProductImageServiceTest {
         setId(savedImages.get(0), 1L);
         setId(savedImages.get(1), 2L);
         setId(savedImages.get(2), 3L);
-        /* 불필요한 Mocking 제거!
-            ProductServiceApi를 호출하는 로직이 이 서비스에서 제거되었으므로, 이 Mocking은 필요 없음.*/
-//        given(productServiceApi.findById(productId)).willReturn(product);
+
+        doNothing().when(productValidator).validateImageCount(anyList());
+        doNothing().when(productValidator).validateDuplicateUrls(anyList(), anyLong());
+        doNothing().when(productValidator).ensureSingleThumbnail(anyList());
+
+        given(productRepository.findById(productId)).willReturn(Optional.of(product));
         given(productImageRepository.saveAll(anyList())).willReturn(savedImages);
 
         //when
-        List<ProductImageResponse> responses = productImageService.createProductImages(product, requests);
+        List<ProductImageResponse> responses = productCommandService.createProductImages(productId, requests);
 
         //then
         assertThat(responses).hasSize(3);
@@ -121,6 +127,7 @@ public class ProductImageServiceTest {
         assertThat(responses.get(2).getImageType()).isEqualTo(ImageType.DETAIL);
         //추가 검증: saveAll이 Product 엔티티를 포함하는 ProductImage 객체 리스트로 호출되었는지 확인
         verify(productImageRepository, times(1)).saveAll(anyList());
+        verify(productRepository, times(1)).findById(productId);
     }
 
     @Test
@@ -144,7 +151,7 @@ public class ProductImageServiceTest {
                 .willReturn(List.of(oldThumbnail, newThumbnail));
 
         //when
-        List<ProductImageResponse> responses = productImageService.updateThumbnailImage(productId, newThumbnailId);
+        List<ProductImageResponse> responses = productCommandService.updateThumbnailImage(productId, newThumbnailId);
 
         //then
         assertThat(oldThumbnail.getImageType()).isEqualTo(ImageType.DETAIL);
@@ -164,7 +171,7 @@ public class ProductImageServiceTest {
         doNothing().when(auctionServiceApi).validateAuctionScheduled(productId);
 
         //when
-        productImageService.deleteProductImage(productId, imageId);
+        productCommandService.deleteProductImage(productId, imageId);
 
         //then
         assertTrue(productImage.isDeleted());
@@ -188,7 +195,7 @@ public class ProductImageServiceTest {
 
         //when&then
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productImageService.deleteProductImage(productId, imageId));
+                () -> productCommandService.deleteProductImage(productId, imageId));
 
         assertEquals(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT, exception.getErrorCode());
         verify(auctionServiceApi, times(1)).validateAuctionScheduled(productId);

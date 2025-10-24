@@ -1,14 +1,17 @@
-package org.example.lastcall.domain.product.sevice;
+package org.example.lastcall.domain.product.sevice.query;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
+import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
+import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,19 +25,19 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ProductViewService implements ProductViewServiceApi {
+public class ProductQueryService implements ProductQueryServiceApi {
     private final ProductRepository productRepository;
-    private final ProductImageViewServiceApi productImageViewServiceApi;
+    private final ProductImageRepository productImageRepository;
 
-    //상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)
-    public PageResponse<ProductReadAllResponse> readAllProduct(Long userId, int page, int size) {
-        Page<Product> products = productRepository.findAll(PageRequest.of(page, size));
+    //내 상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)
+    public PageResponse<ProductReadAllResponse> readAllProduct(AuthUser authuser, int page, int size) {
+        Page<Product> products = productRepository.findAllByUserId(authuser.userId(), PageRequest.of(page, size));
         List<Long> productIds = products.stream()
                 .map(Product::getId)
                 .toList();
 
         //대표 이미지들 한 번에 조회
-        List<ProductImage> thumbnails = productImageViewServiceApi.findAllThumbnailsByProductIds(productIds);
+        List<ProductImage> thumbnails = productImageRepository.findAllThumbnailsByProductIds(productIds);
 
         //productId -> imageUrl 매핑
         Map<Long, String> thumbnailUrlMap = thumbnails.stream()
@@ -45,12 +48,32 @@ public class ProductViewService implements ProductViewServiceApi {
     //상품 단건 조회
     public ProductReadOneResponse readProduct(Long productId) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        List<ProductImageResponse> images = productImageViewServiceApi.readAllProductImage(productId);
+
+        List<ProductImageResponse> images = productImageRepository.findAllByProductId(productId).stream()
+                .map(ProductImageResponse::from)
+                .toList();
 
         return ProductReadOneResponse.from(product, images);
     }
 
-    //상품 찾기
+    //대표이미지 조회
+    @Override
+    @Transactional(readOnly = true)
+    public ProductImageResponse readThumbnailImage(Long productId) {
+        ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
+        return ProductImageResponse.from(thumbnailImage);
+    }
+
+    //상품별 이미지 전체 조회
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductImageResponse> readAllProductImage(Long productId) {
+        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
+        return ProductImageResponse.from(productImages);
+    }
+
+    //상품 조회
     @Override
     public Product findById(Long productId) {
         return productRepository.findById(productId)

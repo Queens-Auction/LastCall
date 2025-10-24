@@ -14,12 +14,12 @@ jobs:
       mysql:
         image: mysql:8
         env:
-          MYSQL_ROOT_PASSWORD: ${{ DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD }}
           MYSQL_DATABASE: auction
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p${{ DB_PASSWORD }}"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -p${{ secrets.DB_PASSWORD }}"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -55,17 +55,17 @@ jobs:
       # 테스트 프로필로 실행. application-test.yml을 로드하게 함.
       - name: Build (tests included)
         env:
-          SPRING_PROFILES_ACTIVE: local
+          SPRING_PROFILES_ACTIVE: test
           # DB
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/auction?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
           SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: ${{ DB_PASSWORD }}
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
           # MAIL (MailHog)
           SPRING_MAIL_HOST: 127.0.0.1
           SPRING_MAIL_PORT: 1025
           SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
           SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
           # JWT
-          JWT_SECRET: ${{  JWT_SECRET }}
+          JWT_SECRET: ${{  secrets.JWT_SECRET }}
           JWT_EXPIRATION: 86400000
         run: ./gradlew clean build --no-daemon

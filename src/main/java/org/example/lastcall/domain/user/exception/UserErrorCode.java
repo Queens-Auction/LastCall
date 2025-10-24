@@ -13,6 +13,8 @@ public enum UserErrorCode implements ErrorCode {
 
     // 회원가입 / 중복 관련
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
+    DELETED_ACCOUNT(HttpStatus.FORBIDDEN, "탈퇴한 계정입니다. 다른 이메일로 재가입해주세요."),
 
     // 비밀번호 관련
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "이전 비밀번호와 동일합니다."),

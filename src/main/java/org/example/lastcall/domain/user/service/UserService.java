@@ -92,5 +92,4 @@ public class UserService implements UserServiceApi {
 
         refreshTokenRepository.revokeAllActiveByUserId(user.getId(), ACTIVE, REVOKED);
     }
-
 }

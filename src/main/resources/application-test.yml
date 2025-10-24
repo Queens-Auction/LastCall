@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/${DB_NAME}. auction
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  mail:
+    username: queensauction.noreply@gmail.com
+    password: jfqojferptxyizod
+    host: smtp.gmail.com
+    port: 587
+    transport:
+      protocol: smtp
+    smtp:
+      auth: true
+      starttls:
+        enable: true
+      connectiontimeout: 5s  # 연결 타임아웃 (5초)햣
+      timeout: 5s           # 읽기 타임아웃 (5초)
+      writetimeout: 5s      # 쓰기 타임아웃 (5초)
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  expiration: 86400000
+
+auth:
+  base-url: "http://localhost:8080"
+  server:
+    ssl:
+      enabled: false  # 로컬 개발환경은 HTTP 사용
+  security:
+    cookie:
+      secure: false  # HTTP 환경에서는 Secure 속성 불필요
+
+logging:
+  level:
+    org.hibernate.SQL: debug

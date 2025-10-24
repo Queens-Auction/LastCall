@@ -6,7 +6,7 @@ import org.example.lastcall.domain.auction.entity.Auction;
 
 public interface AuctionServiceApi {
 
-    AuctionResponse createAuction(Long userId, AuctionCreateRequest request);
+    AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request);
 
     // 상품에 진행 중인 경매 여부 검증
     void validateAuctionScheduled(Long productId);

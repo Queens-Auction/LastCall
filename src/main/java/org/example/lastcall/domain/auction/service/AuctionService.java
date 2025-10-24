@@ -33,15 +33,15 @@ public class AuctionService implements AuctionServiceApi {
     private final ProductQueryServiceApi productService;
 
     // 경매 등록 //
-    public AuctionResponse createAuction(Long userId, AuctionCreateRequest request) {
+    public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
         // 1. 상품 존재 여부 확인
-        Product product = productService.findById(request.getProductId());
+        Product product = productService.findById(productId);
         // 2. 상품 소유자 검증
         if (!product.getUser().getId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
         // 3. 중복 경매 등록 방지
-        if (auctionRepository.existsActiveAuction(request.getProductId())) {
+        if (auctionRepository.existsActiveAuction(productId)) {
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
         // 4. User 엔티티 조회

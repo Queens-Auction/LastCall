@@ -31,6 +31,8 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 	// 특정 유저의 특정 경매 내 최고 입찰 1건 조회
 	Optional<Bid> findTopByAuctionIdAndUserIdOrderByBidAmountDesc(Long auctionId, Long userId);
 
+    Optional<Bid> findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(Long auctionId, Long userId, Long bidId);
+
 	// 특정 유저가 입찰한 모든 경매의 ID 목록 조회 (중복 제거)
 	@Query("SELECT DISTINCT b.auction.id FROM Bid b WHERE b.user.id = :userId")
 	List<Long> findDistinctAuctionsByUserId(@Param("userId") Long userId);

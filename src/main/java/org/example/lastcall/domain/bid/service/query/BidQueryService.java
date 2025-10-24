@@ -61,8 +61,8 @@ public class BidQueryService implements BidQueryServiceApi {
 	}
 
 	@Override
-	public Optional<Bid> findExistingBid(Long auctionId, Long userId) {
-		return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId);
+	public Optional<Bid> findExistingBid(Long auctionId, Long userId, Long bidId) {
+		return bidRepository.findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(auctionId, userId, bidId);
 	}
 
 	@Override

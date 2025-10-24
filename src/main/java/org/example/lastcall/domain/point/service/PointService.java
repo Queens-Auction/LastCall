@@ -104,7 +104,7 @@ public class PointService implements PointServiceApi {
         );
 
         // 이전 입찰 조회 (해당 유저가 이미 입찰했는지)
-        Optional<Bid> existingBid = bidQueryServiceApi.findExistingBid(auctionId, userId);
+        Optional<Bid> existingBid = bidQueryServiceApi.findExistingBid(auctionId, userId, bidId);
 
         if (existingBid.isPresent()) {
             Bid previousBid = existingBid.get();

@@ -21,6 +21,7 @@ import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
+import org.example.lastcall.domain.user.exception.UserErrorCode;
 import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +63,15 @@ public class AuthService {
 
         // 인증 기록 소비 처리
         emailVerification.updateStatus(EmailVerificationStatus.CONSUMED);
+
+        // 기존 사용자 여부 확인
+        userRepository.findByEmail(emailVerification.getEmail())
+                .ifPresent(existingUser -> {
+                    if (existingUser.isDeleted()) {
+                        throw new BusinessException(UserErrorCode.DELETED_ACCOUNT);
+                    }
+                    throw new BusinessException(UserErrorCode.DUPLICATE_EMAIL);
+                });
 
         User user = User.createForSignUp(
                 GeneratorUtil.generatePublicId(),

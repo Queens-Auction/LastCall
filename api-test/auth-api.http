@@ -1,0 +1,128 @@
+### 환경 변수 설정 (IntelliJ HTTP Client 전용)
+@host = localhost:8080
+@baseUrl = http://{{host}}/api/v1
+
+#######################################
+### ===== 회원가입 플로우 =====
+#######################################
+
+### 1. 이메일 인증번호 발송
+POST {{baseUrl}}/email-verifications
+Content-Type: application/json
+
+{
+  "email": "slowslow9150@gmail.com"
+}
+
+### 2. 이메일 인증번호 검증
+# 위 요청으로 받은 인증번호를 입력하세요
+PUT {{baseUrl}}/email-verifications/status
+Content-Type: application/json
+
+{
+  "email": "slowslow9150@gmail.com",
+  "verificationCode": "925478"
+}
+
+### 3. 회원가입
+# 이메일 인증 완료 후, verificationPublicId 값을 실제 응답값으로 교체해야 함
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+  "verificationPublicId": "a6c3d5ee-449f-49c0-a04f-5fad348de9de",
+  "username": "사용자ㅇ11",
+  "nickname": "사용자11ㅇ1",
+  "password": "Password123!@#",
+  "address": "서울특별시 강남구 테헤란로 123",
+  "postcode": "06234",
+  "detailAddress": "456호",
+  "phoneNumber": "01012345678"
+}
+
+### ===== 로그인 플로우 =====
+
+### 4. 로그인
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "lsa68803@naver.com",
+  "password": "Password123!@#"
+}
+
+### 5. 로그아웃 (Access Token이 필요할 수도 있음)
+POST {{baseUrl}}/auth/logout
+
+
+### 6. 회원 탈퇴
+DELETE {{baseUrl}}/users/me
+Authorization: Bearer {{accessToken}}
+
+#######################################
+### ===== 내 정보 =====
+#######################################
+
+### 7. 내 정보 조회
+GET {{baseUrl}}/users/me
+
+### 8. 내 정보 수정
+PATCH {{baseUrl}}/users/me
+Content-Type: application/json
+
+{
+  "nickname": "nickname",
+  "addressInfo": {
+    "postcode": "06236",
+    "address": "서울특별시 ",
+    "detailAddress": "5층 501호"
+  },
+  "phoneNumber": "010-1234-5678"
+}
+
+### 9. 비밀번호 수정
+PATCH {{baseUrl}}/users/me/password
+Content-Type: application/json
+
+{
+  "oldPassword": "Password!123#",
+  "newPassword": "Password123!@#"
+}
+
+### ===== 다른 사용자 테스트 =====
+
+### 이메일 인증번호 발송 (사용자 2)
+POST {{baseUrl}}/email-verifications
+Content-Type: application/json
+
+{
+  "email": "user2@example.com"
+}
+
+### 이메일 인증번호 검증 (사용자 2)
+PUT {{baseUrl}}/email-verifications/status
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "code": "123456"
+}
+
+### 회원가입 (사용자 2)
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "password": "password456!",
+  "nickname": "테스트유저2"
+}
+
+### 로그인 (사용자 2)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "password": "password456!"
+}

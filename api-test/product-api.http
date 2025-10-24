@@ -1,0 +1,62 @@
+### 상품 등록
+POST http://localhost:8080/api/v1/products
+Content-Type: application/json
+
+{
+  "name": "흰둥이",
+  "category": "KITCHEN",
+  "description": "방바닥에 놓고 먹으면 짱맛있습니다. 거래 가격은 삼만원부터 시작합니다. 다들 즐건 경매하시길 후후훗"
+}
+
+### 이미지 등록
+POST http://localhost:8080/api/v1/products/14/images
+Content-Type: application/json
+
+[
+  {
+    "isThumbnail": false,
+    "imageUrl": "image6.jpg"
+  },
+  {
+    "isThumbnail": false,
+    "imageUrl": "image7.jpg"
+  }
+]
+
+###나의 상품 전체 조회
+GET http://localhost:8080/api/v1/products/me
+
+###상품 단건 조회
+GET http://localhost:8080/api/v1/products/1
+
+###상품 업데이트
+PUT http://localhost:8080/api/v1/products/14
+Content-Type: application/json
+
+{
+  "name": "2흰둥이의 밥그릇"
+}
+
+###상품 삭제
+DELETE http://localhost:8080/api/v1/products/14
+
+###이미지 변경 업데이트
+PATCH http://localhost:8080/api/v1/products/1/image/1
+
+###이미지 삭제
+DELETE http://localhost:8080/api/v1/products/14/image/19
+
+### 기존 이미지에 추가 이미지 등록
+POST http://localhost:8080/api/v1/products/14/images/append
+Content-Type: application/json
+
+[
+  {
+    "isThumbnail": false,
+    "imageUrl": "image1.jpg"
+  },
+  {
+    "isThumbnail": false,
+    "imageUrl": "image2.jpg"
+  }
+]

@@ -4,8 +4,8 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.auth.model.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
-import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
@@ -14,11 +14,10 @@ import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
+import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
-import org.example.lastcall.domain.product.sevice.ProductCommandService;
-import org.example.lastcall.domain.product.sevice.ProductImageServiceApi;
-import org.example.lastcall.domain.product.sevice.ProductImageViewServiceApi;
-import org.example.lastcall.domain.product.sevice.ProductViewService;
+import org.example.lastcall.domain.product.sevice.command.ProductCommandService;
+import org.example.lastcall.domain.product.sevice.query.ProductQueryService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +32,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,14 +45,16 @@ import static org.mockito.Mockito.*;
 public class ProductServiceTest {
     @Mock
     ProductRepository productRepository;
+
+    @Mock
+    ProductImageRepository productImageRepository;
+
     @InjectMocks
     ProductCommandService productService;
+
     @InjectMocks
-    ProductViewService productViewService;
-    @Mock
-    private ProductImageServiceApi productImageServiceApi;
-    @Mock
-    private ProductImageViewServiceApi productImageViewServiceApi;
+    ProductQueryService productQueryService;
+
     @Mock
     private AuctionServiceApi auctionServiceApi;
 
@@ -103,19 +103,20 @@ public class ProductServiceTest {
         int size = 10;
         Long userId = 1L;
 
+        AuthUser authUser = new AuthUser(userId, "test@example.com", "ROLE_USER");
         Page<Product> productPage = new PageImpl<>(List.of(product, product2));
 
-        given(productRepository.findAll(PageRequest.of(page, size)))
+        given(productRepository.findAllByUserId(userId, PageRequest.of(page, size)))
                 .willReturn(productPage);
 
         ProductImage thumbnail1 = ProductImage.of(product, ImageType.THUMBNAIL, "thumb1.jpg");
         ProductImage thumbnail2 = ProductImage.of(product2, ImageType.THUMBNAIL, "thumb2.jpg");
 
-        given(productImageViewServiceApi.findAllThumbnailsByProductIds(List.of(1L, 2L)))
+        given(productImageRepository.findAllThumbnailsByProductIds(List.of(1L, 2L)))
                 .willReturn(List.of(thumbnail1, thumbnail2));
 
         //when
-        PageResponse<ProductReadAllResponse> response = productViewService.readAllProduct(userId, page, size);
+        PageResponse<ProductReadAllResponse> response = productQueryService.readAllProduct(authUser, page, size);
 
         //then
         assertThat(response.getContent()).hasSize(2);
@@ -127,24 +128,24 @@ public class ProductServiceTest {
         assertThat(response1.getThumbnailUrl()).isEqualTo("thumb1.jpg");
         assertThat(response2.getThumbnailUrl()).isEqualTo("thumb2.jpg");
 
-        verify(productRepository, times(1)).findAll(PageRequest.of(page, size));
-        verify(productImageViewServiceApi, times(1)).findAllThumbnailsByProductIds(List.of(1L, 2L));
+        verify(productRepository, times(1)).findAllByUserId(userId, PageRequest.of(page, size));
+        verify(productImageRepository, times(1)).findAllThumbnailsByProductIds(List.of(1L, 2L));
     }
 
     @Test
     @DisplayName("상품 단건 조회 성공")
     void readProduct_success() {
         //given
-        List<ProductImageResponse> images = List.of(
-                new ProductImageResponse(1L, productId, ImageType.THUMBNAIL, "imageUrl1.jpg", LocalDateTime.now(), LocalDateTime.now()),
-                new ProductImageResponse(2L, productId, ImageType.DETAIL, "imageUrl2.jpg", LocalDateTime.now(), LocalDateTime.now())
+        List<ProductImage> images = List.of(
+                ProductImage.of(product, ImageType.THUMBNAIL, "imageUrl1.jpg"),
+                ProductImage.of(product, ImageType.DETAIL, "imageUrl2.jpg")
         );
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(productImageViewServiceApi.readAllProductImage(productId)).thenReturn(images);
+        when(productImageRepository.findAllByProductId(productId)).thenReturn(images);
 
         //when
-        ProductReadOneResponse response = productViewService.readProduct(productId);
+        ProductReadOneResponse response = productQueryService.readProduct(productId);
 
         //then
         assertNotNull(response);
@@ -155,7 +156,7 @@ public class ProductServiceTest {
         assertEquals("imageUrl1.jpg", response.getImages().get(0).getImageUrl());
 
         verify(productRepository, times(1)).findById(productId);
-        verify(productImageViewServiceApi, times(1)).readAllProductImage(productId);
+        verify(productImageRepository, times(1)).findAllByProductId(productId);
     }
 
     @Test
@@ -166,12 +167,12 @@ public class ProductServiceTest {
 
         //when&then
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productViewService.readProduct(productId));
+                () -> productQueryService.readProduct(productId));
 
         assertEquals(ProductErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
 
         verify(productRepository, times(1)).findById(productId);
-        verifyNoInteractions(productImageServiceApi);
+        verifyNoInteractions(productImageRepository);
     }
 
     @Test
@@ -225,7 +226,7 @@ public class ProductServiceTest {
 
         //then
         assertTrue(product.isDeleted(), "상품이 soft deleted 되어야 함");
-        verify(productImageServiceApi, times(1)).softDeleteByProductId(productId);
+        verify(productImageRepository, times(1)).softDeleteByProductId(productId);
     }
 
     @Test
@@ -236,7 +237,7 @@ public class ProductServiceTest {
 
         //when&then
         assertThrows(BusinessException.class, () -> productService.deleteProduct(productId));
-        verify(productImageServiceApi, never()).softDeleteByProductId(any());
+        verify(productImageRepository, never()).softDeleteByProductId(any());
     }
 
     @Test
@@ -253,7 +254,7 @@ public class ProductServiceTest {
 
         assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
         verify(productRepository, never()).findById(any());
-        verify(productImageServiceApi, never()).softDeleteByProductId(any());
+        verify(productImageRepository, never()).softDeleteByProductId(any());
         verify(auctionServiceApi, times(1)).validateAuctionScheduled(productId);
     }
 }

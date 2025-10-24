@@ -7,10 +7,10 @@ spring:
   mail:
     username: queensauction.noreply@gmail.com
     password: jfqojferptxyizod
-    host: smtp.gmail.com.
+    host: smtp.gmail.com
     port: 587
     transport:
-      protocol: smtp
+      protocol: smt
     smtp:
       auth: true
       starttls:

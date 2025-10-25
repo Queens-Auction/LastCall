@@ -20,3 +20,12 @@ springdoc:
     enabled: true
     display-request-duration: true
     tryItOutEnabled: true
+
+auth:
+  base-url: "http://localhost:8080"
+  server:
+    ssl:
+      enabled: false  # 로컬 개발환경은 HTTP 사용
+  security:
+    cookie:
+      secure: false  # HTTP 환경에서는 Secure 속성 불필요

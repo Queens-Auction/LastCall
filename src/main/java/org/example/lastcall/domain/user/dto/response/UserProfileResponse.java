@@ -56,5 +56,3 @@ public record UserProfileResponse(
     ) {
     }
 }
-
-

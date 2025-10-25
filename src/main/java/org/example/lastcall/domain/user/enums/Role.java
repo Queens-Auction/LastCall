@@ -16,4 +16,3 @@ public enum Role {
 
     private final String key;
 }
-

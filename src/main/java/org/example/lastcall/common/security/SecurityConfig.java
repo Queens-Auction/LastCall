@@ -1,7 +1,7 @@
-package org.example.lastcall.common.config;
+package org.example.lastcall.common.security;
 
 import lombok.RequiredArgsConstructor;
-import org.example.lastcall.domain.auth.jwt.JwtAuthenticationFilter;
+import org.example.lastcall.common.security.jwt.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

@@ -1,4 +1,4 @@
-package org.example.lastcall.common.config;
+package org.example.lastcall.domain.auth.email.config;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -18,8 +18,7 @@ public record MailProperties(
         @NotBlank String host,
         @Min(587) @Max(587) int port,
         @Valid Transport transport,
-        @Valid Smtp smtp
-) {
+        @Valid Smtp smtp) {
     public record Transport(@NotBlank String protocol) {}
     public record Smtp(
             boolean auth,

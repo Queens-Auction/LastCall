@@ -6,12 +6,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.security.Auth;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.example.lastcall.domain.user.dto.request.PasswordChangeRequest;
 import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
 import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
-import org.example.lastcall.domain.user.service.UserService;
+import org.example.lastcall.domain.user.service.command.UserCommandService;
+import org.example.lastcall.domain.user.service.query.UserQueryService;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
 public class UserController {
-    private final UserService userService;
+    private final UserCommandService userCommandService;
+    private final UserQueryService userQueryService;
     private final CookieUtil cookieUtil;
 
     @Operation(
@@ -29,8 +31,8 @@ public class UserController {
             description = "로그인한 사용자의 프로필 정보를 조회합니다."
     )
     @GetMapping("/me")
-    public ApiResponse<UserProfileResponse> getProfile(@Auth AuthUser authUser) {
-        UserProfileResponse dto = userService.getUserById(authUser.userId());
+    public ApiResponse<UserProfileResponse> getMyProfile(@Auth AuthUser authUser) {
+        UserProfileResponse dto = userCommandService.getUserById(authUser.userId());
         return ApiResponse.success("내 정보 조회 성공", dto);
     }
 
@@ -41,7 +43,7 @@ public class UserController {
     @PatchMapping("/me")
     public ApiResponse<UserProfileResponse> updateMe(@Auth AuthUser authUser,
                                                      @RequestBody UserUpdateRequest request) {
-        UserProfileResponse response = userService.updateMyProfile(authUser.userId(), request);
+        UserProfileResponse response = userQueryService.updateMyProfile(authUser.userId(), request);
         return ApiResponse.success("내 정보 수정 성공", response);
     }
 
@@ -52,9 +54,8 @@ public class UserController {
     @PatchMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @Auth AuthUser authUser,
-            @Valid @RequestBody PasswordChangeRequest request
-    ) {
-        userService.changeMyPassword(authUser.userId(), request);
+            @Valid @RequestBody PasswordChangeRequest request) {
+        userQueryService.changeMyPassword(authUser.userId(), request);
 
         // 쿠키 삭제 (비밀번호 변경 후 모든 세션 무효화)
         ResponseCookie delAT = cookieUtil.deleteCookieOfAccessToken();
@@ -65,5 +66,4 @@ public class UserController {
                 .header("Set-Cookie", delRT.toString())
                 .body(ApiResponse.success("비밀번호가 변경되었습니다."));
     }
-
 }

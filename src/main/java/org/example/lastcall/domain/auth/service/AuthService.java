@@ -128,6 +128,55 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
+    /**
+     * 리프레시 토큰 재발급
+     * - 전달된 RT가 ACTIVE이고 만료/철회되지 않았는지 검사
+     * - 소유자(User) 조회
+     * - 새 AT/RT 생성
+     * - 기존 ACTIVE RT 전부 REVOKE
+     * - 새 RT 저장 후 (AT, RT) 반환
+     */
+    @Transactional
+    public LoginResponse reissueAccessToken(final String requestedRefreshToken) {
+        // 1) 전달받은 RT 유효성 검증 및 엔티티 조회
+        RefreshToken validRefreshToken = validateRefreshToken(requestedRefreshToken);
+
+        // 2) 소유자 조회 (탈퇴 계정 차단 포함)
+        User user = userRepository.findById(validRefreshToken.getUserId())
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
+        if (user.isDeleted()) {
+            throw new BusinessException(AuthErrorCode.ACCOUNT_DELETED);
+        }
+
+        // 3) 새 토큰 생성
+        String newAccessToken = jwtUtil.createAccessToken(user);
+        String newRefreshToken = jwtUtil.createRefreshToken(user);
+
+        Date refreshTokenExpiredDate = jwtUtil.getExpiration(newRefreshToken);
+        LocalDateTime refreshTokenExpiredAt = DateTimeUtil.convertToLocalDateTime(refreshTokenExpiredDate);
+
+        RefreshToken newRtEntity = RefreshToken.create(
+                user.getId(),
+                newRefreshToken,
+                RefreshTokenStatus.ACTIVE,
+                refreshTokenExpiredAt
+        );
+
+        // 4) 기존 ACTIVE RT 전부 REVOKE → 최신 RT만 유효하게 유지
+        refreshTokenRepository.revokeAllActiveByUserId(
+                user.getId(),
+                RefreshTokenStatus.ACTIVE,
+                RefreshTokenStatus.REVOKED
+        );
+
+        // 5) 새 RT 저장
+        refreshTokenRepository.save(newRtEntity);
+
+        // 6) (AT, RT) 반환
+        return new LoginResponse(newAccessToken, newRefreshToken);
+    }
+
+    // DB에 저장된 Refresh Token을 조회하고, 유효성 검증
     private RefreshToken validateRefreshToken(String requestedRefreshToken) {
         RefreshToken refreshToken = refreshTokenRepository
                 .findByTokenAndStatus(requestedRefreshToken, RefreshTokenStatus.ACTIVE)

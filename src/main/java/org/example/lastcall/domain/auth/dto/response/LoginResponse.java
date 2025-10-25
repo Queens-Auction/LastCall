@@ -1,5 +1,9 @@
 package org.example.lastcall.domain.auth.dto.response;
 
+public record LoginResponse(
+        String accessToken,
+        String refreshToken
+) {}
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

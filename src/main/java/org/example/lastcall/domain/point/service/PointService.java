@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.point.service;
 
-import java.util.Optional;
-
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
@@ -22,87 +22,86 @@ import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class PointService implements PointServiceApi {
 
-	private final PointRepository pointRepository;
-	private final PointLogRepository pointLogRepository;
-	private final UserServiceApi userServiceApi;
-	private final BidQueryServiceApi bidQueryServiceApi;
-	private final AuctionServiceApi auctionServiceApi;
+    private final PointRepository pointRepository;
+    private final PointLogRepository pointLogRepository;
+    private final UserServiceApi userServiceApi;
+    private final BidQueryServiceApi bidQueryServiceApi;
+    private final AuctionServiceApi auctionServiceApi;
 
-	public PointResponse createPoint(AuthUser authUser, @Valid CreatePointRequest request) {
+    public PointResponse createPoint(AuthUser authUser, @Valid CreatePointRequest request) {
 
-		User user = userServiceApi.findById(authUser.userId());
+        User user = userServiceApi.findById(authUser.userId());
 
-		Point currentPoint = pointRepository.findByUser(user).orElse(null);
+        Point currentPoint = pointRepository.findByUser(user).orElse(null);
 
-		Long incomePoint = request.getIncomePoint();
+        Long incomePoint = request.getIncomePoint();
 
-		if (currentPoint == null) {
-			currentPoint = Point.create(user, incomePoint);
-			currentPoint = pointRepository.save(currentPoint);
-		} else {
-			currentPoint.updateAvailablePoint(incomePoint);
-		}
+        if (currentPoint == null) {
+            currentPoint = Point.create(user, incomePoint);
+            currentPoint = pointRepository.save(currentPoint);
+        } else {
+            currentPoint.updateAvailablePoint(incomePoint);
+        }
 
-		PointLog log = pointLogRepository.save(
-			PointLog.create(currentPoint, user, PointLogType.EARN, PointLogType.EARN.getDescription(), incomePoint));
+        PointLog log = pointLogRepository.save(
+                PointLog.create(currentPoint, user, PointLogType.EARN, PointLogType.EARN.getDescription(), incomePoint));
 
-		return new PointResponse(
-			user.getId(),
-			currentPoint.getId(),
-			currentPoint.getAvailablePoint(),
-			currentPoint.getDepositPoint(),
-			currentPoint.getSettlementPoint()
-		);
-	}
+        return new PointResponse(
+                user.getId(),
+                currentPoint.getId(),
+                currentPoint.getAvailablePoint(),
+                currentPoint.getDepositPoint(),
+                currentPoint.getSettlementPoint()
+        );
+    }
 
-	// 유저 포인트 조회
-	public PointResponse getUserPoint(AuthUser authUser) {
+    // 유저 포인트 조회
+    public PointResponse getUserPoint(AuthUser authUser) {
 
-		User user = userServiceApi.findById(authUser.userId());
+        User user = userServiceApi.findById(authUser.userId());
 
-		Point point = pointRepository.findByUserId(authUser.userId()).orElseThrow(
-			() -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
-		);
+        Point point = pointRepository.findByUserId(authUser.userId()).orElseThrow(
+                () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
+        );
 
-		return new PointResponse(
-			user.getId(),
-			point.getId(),
-			point.getAvailablePoint(),
-			point.getDepositPoint(),
-			point.getSettlementPoint()
-		);
-	}
+        return new PointResponse(
+                user.getId(),
+                point.getId(),
+                point.getAvailablePoint(),
+                point.getDepositPoint(),
+                point.getSettlementPoint()
+        );
+    }
 
-	@Override
+    @Override
 
-	// 현재 보유 포인트로 입찰이 가능한지 확인하는 메서드
-	public void validateSufficientPoints(Long userId, Long requiredAmount) {
+    // 현재 보유 포인트로 입찰이 가능한지 확인하는 메서드
+    public void validateSufficientPoints(Long userId, Long requiredAmount) {
 
-		Point point = pointRepository.findByUserId(userId).orElseThrow(
-			() -> new BusinessException(PointErrorCode.POINT_ACCOUNT_NOT_FOUND)
-		);
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new BusinessException(PointErrorCode.POINT_ACCOUNT_NOT_FOUND)
+        );
 
-		if (point.getAvailablePoint() < requiredAmount) {
-			throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
-		}
-	}
+        if (point.getAvailablePoint() < requiredAmount) {
+            throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
+        }
+    }
 
-	// 입찰 발생 시 포인트 예치 관련 변경 메서드
-	@Override
-	public void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId) {
+    // 입찰 발생 시 포인트 예치 관련 변경 메서드
+    @Override
+    public void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId) {
 
-		// 포인트 조회
-		Point point = pointRepository.findByUserId(userId).orElseThrow(
-			() -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
-		);
+        // 포인트 조회
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
+        );
 
 		// 이전 입찰 조회 (해당 유저가 이미 입찰했는지)
 		Optional<Bid> existingBid = bidQueryServiceApi.findLastBidExceptBidId(auctionId, userId, bidId);

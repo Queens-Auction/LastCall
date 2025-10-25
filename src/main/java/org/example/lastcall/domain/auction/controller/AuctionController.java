@@ -1,5 +1,7 @@
 package org.example.lastcall.domain.auction.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
@@ -19,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "경매 API", description = "경매 등록, 전체 조회, 상세 조회 기능 제공")
+// -> Swagger 그룹 이름 및 설명
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auctions") // 오타 수정
@@ -26,6 +30,11 @@ public class AuctionController {
     private final AuctionService auctionService;
 
     // 경매 등록 //
+    @Operation(
+            summary = "경매 등록",
+            description = "로그인한 사용자가 새로운 경매를 등록합니다. " +
+                    "요청 본문에는 상품 정보, 시작가, 마감 시간 등이 포함됩니다."
+    )
     @PostMapping
     public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@Auth AuthUser authUser,
                                                                       @Valid @RequestBody AuctionCreateRequest request) {
@@ -36,6 +45,11 @@ public class AuctionController {
     }
 
     // 경매 전체 조회 //
+    @Operation(
+            summary = "경매 전체 조회",
+            description = "모든 경매 목록을 최신순으로 조회합니다. " +
+                    "카테고리별 필터링도 가능합니다."
+    )
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> readAllAuctions(
             @RequestParam(required = false) Category category,
@@ -52,6 +66,11 @@ public class AuctionController {
 
     // 경매 단건 상세 조회 //
     // required = false : 로그인 안 한 사용자도 접근 가능 (null 가능)
+    @Operation(
+            summary = "경매 상세 조회",
+            description = "경매 ID를 이용해 단일 경매의 상세 정보를 조회합니다. " +
+                    "비로그인 사용자도 접근 가능합니다."
+    )
     @GetMapping("/{auctionId}")
     public ResponseEntity<ApiResponse<AuctionReadResponse>> readAuction(
             @PathVariable("auctionId") Long auctionId,

@@ -7,6 +7,7 @@ import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
+import org.example.lastcall.domain.auth.dto.request.TokenReissueRequest;
 import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.model.AuthUser;
@@ -77,5 +78,14 @@ public class AuthController {
                 .header("Set-Cookie", deleteAccess.toString())
                 .header("Set-Cookie", deleteRefresh.toString())
                 .build();
+    }
+
+    /**
+     * 리프레시 토큰을 이용해 AccessToken/RefreshToken 재발급
+     */
+    @PostMapping("/tokens")
+    public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
+        LoginResponse response = authService.reissueAccessToken(request.refreshToken());
+        return ResponseEntity.ok(response);
     }
 }

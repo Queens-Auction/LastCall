@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.auth.service;
+package org.example.lastcall.domain.auth.service.command;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +16,10 @@ import org.example.lastcall.domain.auth.email.repository.EmailVerificationReposi
 import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
 import org.example.lastcall.domain.auth.entity.RefreshToken;
 import org.example.lastcall.domain.auth.exception.AuthErrorCode;
-import org.example.lastcall.domain.auth.jwt.JwtUtil;
-import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
+import org.example.lastcall.common.security.jwt.JwtUtil;
+import org.example.lastcall.domain.auth.enums.RefreshTokenStatus;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
+import org.example.lastcall.domain.auth.service.validator.AuthValidatorService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.example.lastcall.domain.user.exception.UserErrorCode;
@@ -29,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 
 import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
 import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_NOT_FOUND;
@@ -37,19 +37,13 @@ import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_NOT_
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthCommandService {
     private final UserRepository userRepository;
     private final EmailVerificationRepository emailVerificationRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-
-
-    private void validateEmailVerifiedStatus(final EmailVerificationStatus status) {
-        if (!Objects.equals(status, EmailVerificationStatus.VERIFIED)) {
-            throw new BusinessException(EmailErrorCode.NOT_VERIFIED);
-        }
-    }
+    private final AuthValidatorService authValidatorService;
 
     @Transactional
     public void signup(final SignupRequest request) {
@@ -59,7 +53,7 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(EmailErrorCode.NOT_REQUESTED));
 
         // 검증 상태 확인
-        validateEmailVerifiedStatus(emailVerification.getStatus()); // VERIFIED 아니면 예외
+        authValidatorService.validateEmailVerifiedStatus(emailVerification.getStatus()); // VERIFIED 아니면 예외
 
         // 인증 기록 소비 처리
         emailVerification.updateStatus(EmailVerificationStatus.CONSUMED);
@@ -89,7 +83,7 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse userLogin(final LoginRequest request) {
+    public LoginResponse login(final LoginRequest request) {
         String email = request.email().trim();
 
         // 1) 이메일 조회
@@ -128,27 +122,10 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
-    private RefreshToken validateRefreshToken(String requestedRefreshToken) {
-        RefreshToken refreshToken = refreshTokenRepository
-                .findByTokenAndStatus(requestedRefreshToken, RefreshTokenStatus.ACTIVE)
-                .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
-
-        final LocalDateTime now = LocalDateTime.now();
-        if (refreshToken.getExpiredAt().isBefore(now)) {
-            throw new BusinessException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
-        }
-
-        if (refreshToken.isRevoked()) {
-            throw new BusinessException(AuthErrorCode.REVOKED_REFRESH_TOKEN);
-        }
-
-        return refreshToken;
-    }
-
     @Transactional
-    public void userLogout(final String requestedRefreshToken) {
+    public void logout(final String requestedRefreshToken) {
         // refresh token 유효성 검증 및 조회
-        RefreshToken refreshToken = validateRefreshToken(requestedRefreshToken);
+        RefreshToken refreshToken = authValidatorService.validateRefreshToken(requestedRefreshToken);
 
         // 해당 사용자의 모든 활성 refresh token 무효화 (REVOKED)
         List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndStatus(

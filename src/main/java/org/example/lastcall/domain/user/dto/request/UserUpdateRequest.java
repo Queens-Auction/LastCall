@@ -13,8 +13,7 @@ public record UserUpdateRequest(
         String phoneNumber,
 
         @Schema(description = "주소 정보")
-        AddressRequest addressInfo
-) {
+        AddressRequest addressInfo) {
     public boolean isEmpty() {
         boolean addressEmpty = (addressInfo == null) ||
                 (addressInfo.address() == null &&

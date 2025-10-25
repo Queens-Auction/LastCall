@@ -1,4 +1,4 @@
-package org.example.lastcall.common.config;
+package org.example.lastcall.common.security;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

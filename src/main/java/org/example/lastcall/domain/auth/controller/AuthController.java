@@ -11,8 +11,9 @@ import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
 import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
-import org.example.lastcall.domain.auth.model.AuthUser;
-import org.example.lastcall.domain.auth.service.AuthService;
+import org.example.lastcall.domain.auth.enums.AuthUser;
+import org.example.lastcall.domain.auth.service.command.AuthCommandService;
+import org.example.lastcall.domain.auth.service.validator.AuthValidatorService;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -25,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-    private final AuthService authService;
+    private final AuthCommandService authCommandService;
     private final CookieUtil cookieUtil;
 
     @Operation(
@@ -34,7 +35,7 @@ public class AuthController {
     )
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> signup(@Valid @RequestBody SignupRequest request) {
-        authService.signup(request);
+        authCommandService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("회원가입이 완료되었습니다."));
     }
@@ -44,8 +45,8 @@ public class AuthController {
             description = "이메일과 비밀번호로 로그인하며, Access/Refresh Token을 쿠키로 발급받습니다."
     )
     @PostMapping("/login")
-    public ResponseEntity<Void> LoginRequest(@Valid @RequestBody LoginRequest request) {
-        LoginResponse loginResponse = authService.userLogin(request);
+    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse loginResponse = authCommandService.login(request);
 
         ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(loginResponse.accessToken());
         ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(loginResponse.refreshToken());
@@ -63,8 +64,8 @@ public class AuthController {
             description = "사용자의 Refresh Token을 무효화하고, 인증 관련 쿠키를 삭제합니다."
     )
     @PostMapping("/logout")
-    public ResponseEntity<Void> userLogout(@CookieValue(name = CookieUtil.REFRESH_COOKIE) String refreshToken) {
-        authService.userLogout(refreshToken);
+    public ResponseEntity<Void> logout(@CookieValue(name = CookieUtil.REFRESH_COOKIE) String refreshToken) {
+        authCommandService.logout(refreshToken);
         ResponseCookie deleteAccessCookie = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefreshCookie = cookieUtil.deleteCookieOfRefreshToken();
 
@@ -84,7 +85,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> withdraw(@Auth AuthUser authUser,
                                                       @Valid @RequestBody WithdrawRequest withdrawRequest) {
         log.info("withdraw endpoint called, authUser={}", authUser);
-        authService.withdraw(authUser.userId(), withdrawRequest);
+        authCommandService.withdraw(authUser.userId(), withdrawRequest);
 
         // 쿠키 삭제
         ResponseCookie deleteAccess = cookieUtil.deleteCookieOfAccessToken();

@@ -38,8 +38,7 @@ public class EmailVerification extends BaseEntity {
     private EmailVerification(
             UUID publicId,
             String verificationCode,
-            String email)
-    {
+            String email) {
         this.publicId = publicId;
         this.verificationCode = verificationCode;
         this.status = EmailVerificationStatus.SENT;
@@ -49,18 +48,15 @@ public class EmailVerification extends BaseEntity {
     public static EmailVerification create(
             UUID publicId,
             String verificationCode,
-            String email)
-    {
+            String email) {
         return new EmailVerification(publicId, verificationCode, email);
     }
 
-    public void updateStatus(EmailVerificationStatus status)
-    {
+    public void updateStatus(EmailVerificationStatus status) {
         this.status = status;
     }
 
-    public void validateVerificationCode(final String requestedVerificationCode)
-    {
+    public void validateVerificationCode(final String requestedVerificationCode) {
         if (!Objects.equals(requestedVerificationCode, verificationCode)) {
             throw new BusinessException(EmailErrorCode.CODE_MISMATCH);
         }

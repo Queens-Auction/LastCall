@@ -2,7 +2,6 @@ package org.example.lastcall.domain.auth.email.config;
 
 
 import lombok.RequiredArgsConstructor;
-import org.example.lastcall.common.config.MailProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,7 +11,7 @@ import java.util.Properties;
 
 @Configuration
 @RequiredArgsConstructor
-public class EmailConfiguration {
+public class EmailConfig {
     public static final int POSSIBLE_REQUEST_TIME = 180;
 
     private final MailProperties mailProperties;

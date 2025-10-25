@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.auth.repository;
 
 import org.example.lastcall.domain.auth.entity.RefreshToken;
-import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
+import org.example.lastcall.domain.auth.enums.RefreshTokenStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

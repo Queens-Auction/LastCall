@@ -1,16 +1,14 @@
-package org.example.lastcall.domain.auth.jwt;
+package org.example.lastcall.common.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.example.lastcall.common.config.JwtProperties;
 import org.example.lastcall.domain.user.entity.User;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;

@@ -3,7 +3,6 @@ package org.example.lastcall.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
-import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
 import org.example.lastcall.domain.user.dto.request.PasswordChangeRequest;
 import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
@@ -14,8 +13,8 @@ import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.example.lastcall.domain.auth.model.RefreshTokenStatus.ACTIVE;
-import static org.example.lastcall.domain.auth.model.RefreshTokenStatus.REVOKED;
+import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.ACTIVE;
+import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.REVOKED;
 import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
 
 @Service

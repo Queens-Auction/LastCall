@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.user.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.entity.BaseEntity;

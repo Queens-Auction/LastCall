@@ -18,10 +18,9 @@ public enum UserErrorCode implements ErrorCode {
 
     // 비밀번호 관련
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "이전 비밀번호와 동일합니다."),
-    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "새 비밀번호와 확인 비밀번호가 일치하지 않습니다."),
-    PASSWORD_SAME_AS_OLD(HttpStatus.BAD_REQUEST, "이전 비밀번호와 동일합니다."),
 
-    // 프로필 수정 관련
+    // 내 정보 수정 관련
+    INVALID_PHONE_FORMAT(HttpStatus.BAD_REQUEST, "전화번호 형식이 올바르지 않습니다."),
     NO_FIELDS_TO_UPDATE(HttpStatus.BAD_REQUEST, "수정할 항목이 존재하지 않습니다.");
 
     private final HttpStatus status;

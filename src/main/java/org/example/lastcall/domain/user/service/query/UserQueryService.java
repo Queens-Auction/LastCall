@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.user.service;
+package org.example.lastcall.domain.user.service.query;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.config.PasswordEncoder;
@@ -15,32 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.ACTIVE;
 import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.REVOKED;
-import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
 
 @Service
 @RequiredArgsConstructor
-public class UserService implements UserServiceApi {
+public class UserQueryService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
-
-    @Override
-    @Transactional(readOnly = true)
-    public User findById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-    }
-
-    @Transactional(readOnly = true)
-    public UserProfileResponse getUserById(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-
-        if (user.isDeleted()) {
-            throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
-        }
-        return UserProfileResponse.from(user);
-    }
 
     @Transactional
     public UserProfileResponse updateMyProfile(Long userId, UserUpdateRequest req) {
@@ -51,7 +33,6 @@ public class UserService implements UserServiceApi {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
-        if (user.isDeleted()) throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
 
         // nickname 변경 시 중복 방지
         if (req.nickname() != null && !req.nickname().equals(user.getNickname())) {

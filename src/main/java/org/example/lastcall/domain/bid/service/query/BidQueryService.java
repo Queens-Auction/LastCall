@@ -60,13 +60,13 @@ public class BidQueryService implements BidQueryServiceApi {
 		return bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
 	}
 
-    @Override
-    public Optional<Bid> findLastBidExceptBidId(Long auctionId, Long userId, Long currentBidId) {
-        return bidRepository.findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(auctionId, userId, currentBidId);
-    }
+	@Override
+	public Optional<Bid> findLastBidExceptBidId(Long auctionId, Long userId, Long currentBidId) {
+		return bidRepository.findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(auctionId, userId, currentBidId);
+	}
 
 	@Override
-	public Bid getBid(Long bidId) {
+	public Bid findById(Long bidId) {
 		return bidRepository.findById(bidId).orElseThrow(
 			() -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
 		);

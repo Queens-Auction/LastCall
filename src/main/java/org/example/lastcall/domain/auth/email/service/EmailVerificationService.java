@@ -3,6 +3,7 @@ package org.example.lastcall.domain.auth.email.service;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.email.dto.request.EmailVerificationSendRequest;
 import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
+import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,9 @@ public class EmailVerificationService {
     public void sendEmailVerificationCode(final EmailVerificationSendRequest.Request request) {
         final String verificationCode = VerificationCodeGenerator.generateVerificationCode();
 
+        if(userRepository.existsByEmail(request.email())){
+            throw new BusinessException(EmailErrorCode.DUPLICATE_EMAIL);
+        }
         EmailVerification emailVerification = EmailVerification.create(
                 GeneratorUtil.generatePublicId(),
                 verificationCode,

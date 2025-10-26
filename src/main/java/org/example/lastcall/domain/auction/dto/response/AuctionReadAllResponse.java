@@ -20,15 +20,15 @@ public class AuctionReadAllResponse {
     private String productName;
 
     @Schema(description = "현재 참여자 수", example = "8")
-    private Integer participantCount;
+    private int participantCount;
 
     // 정적 팩토리 메서드 (from)
-    public static AuctionReadAllResponse from(Auction auction, String imageUrl) {
+    public static AuctionReadAllResponse from(Auction auction, String imageUrl, int participantCount) {
         return AuctionReadAllResponse.builder()
                 .id(auction.getId())
                 .imageUrl(imageUrl)
                 .productName(auction.getProduct().getName())
-                .participantCount(auction.getParticipantCount())
+                .participantCount(participantCount)
                 .build();
     }
 }

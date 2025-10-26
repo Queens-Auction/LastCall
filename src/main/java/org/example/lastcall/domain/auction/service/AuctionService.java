@@ -63,7 +63,11 @@ public class AuctionService implements AuctionServiceApi {
                 .map(auction -> {
                     // 현재 경매에 연결된 상품의 이미지 조회
                     ProductImageResponse image = productService.readThumbnailImage(auction.getProduct().getId());
-                    return AuctionReadAllResponse.from(auction, image.getImageUrl());
+                    // 참여자(입찰자) 수 계산
+                    //int participantCount = bidService.getParticipantCount(auction.getId()); 연결되면 주석풀기 (cqrs 구조 변경 후 진행해야함)
+                    int participantCount = 0;
+
+                    return AuctionReadAllResponse.from(auction, image.getImageUrl(), participantCount);
                 })
                 .toList();
 

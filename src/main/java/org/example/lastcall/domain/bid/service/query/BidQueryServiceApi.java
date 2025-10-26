@@ -20,7 +20,10 @@ public interface BidQueryServiceApi {
 	Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction);
 
 	// 특정 경매에서 특정 유저의 마지막 입찰 기록 조회
-	Optional<Bid> findLastBidExceptBidId(Long auctionId, Long userId, Long currentBidId);
+	Optional<Bid> findLastBidExceptBidId(
+		Long auctionId,
+		Long userId,
+		Long currentBidId);
 
 	// ID로 입찰 단건 조회
 	Bid findById(Long bidId);

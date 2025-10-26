@@ -63,8 +63,7 @@ public class User extends BaseEntity {
                  String postcode,
                  String detailAddress,
                  String phoneNumber,
-                 Role userRole)
-    {
+                 Role userRole) {
         this.publicId = publicId;
         this.username = username;
         this.nickname = nickname;
@@ -100,20 +99,17 @@ public class User extends BaseEntity {
                 userRole);
     }
 
-    public void changeNickname(String nickname)
-    {
+    public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
 
-    public void changePhoneNumber(String phoneNumber)
-    {
+    public void changePhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
 
     }
     public void changeAddress(String address,
                               String postcode,
-                              String detailAddress)
-    {
+                              String detailAddress) {
         if (address != null)
         {
             this.address = address;
@@ -136,8 +132,7 @@ public class User extends BaseEntity {
         this.password = encodedPassword;
     }
 
-    public void markPasswordChangedNow()
-    {
+    public void markPasswordChangedNow() {
         this.passwordChangedAt = LocalDateTime.now();
     }
 

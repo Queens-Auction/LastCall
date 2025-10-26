@@ -21,6 +21,7 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, columnDefinition = "BINARY(16)")
     private UUID publicId;
 
     @Column(name = "username", nullable = false, length = 10)

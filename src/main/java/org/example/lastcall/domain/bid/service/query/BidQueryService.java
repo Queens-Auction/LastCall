@@ -63,7 +63,10 @@ public class BidQueryService implements BidQueryServiceApi {
 
 	// 특정 경매에서 특정 유저의 마지막 입찰 기록 조회
 	@Override
-	public Optional<Bid> findLastBidExceptBidId(Long auctionId, Long userId, Long currentBidId) {
+	public Optional<Bid> findLastBidExceptBidId(
+		Long auctionId,
+		Long userId,
+		Long currentBidId) {
 		return bidRepository.findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(auctionId, userId, currentBidId);
 	}
 

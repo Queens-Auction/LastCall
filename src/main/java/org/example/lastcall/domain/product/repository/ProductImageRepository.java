@@ -26,4 +26,6 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
     //대표 이미지 조회
     @Query("SELECT pi FROM ProductImage pi WHERE pi.product.id IN :productIds AND pi.imageType = 'THUMBNAIL' AND pi.deleted = false")
     List<ProductImage> findAllThumbnailsByProductIds(@Param("productIds") List<Long> productIds);
+
+    List<ProductImage> findByProductIdAndDeletedFalseOrderByIdAsc(Long productId);
 }

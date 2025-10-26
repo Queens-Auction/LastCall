@@ -168,6 +168,17 @@ public class ProductCommandService implements ProductCommandServiceApi {
         if (!productImage.getProduct().getId().equals(productId)) {
             throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);
         }
+        boolean isThumbnail = productImage.getImageType() == ImageType.THUMBNAIL;
+
         productImage.softDelete();
+
+        if (isThumbnail) {
+            List<ProductImage> remainingImages = productImageRepository.findByProductIdAndDeletedFalseOrderByIdAsc(productId);
+            if (!remainingImages.isEmpty()) {
+                ProductImage newThumbnail = remainingImages.get(0);
+                newThumbnail.updateImageType(ImageType.THUMBNAIL);
+            }
+        }
+
     }
 }

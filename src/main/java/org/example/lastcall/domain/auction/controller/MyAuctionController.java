@@ -14,6 +14,8 @@ import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.service.MyAuctionService;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +35,9 @@ public class MyAuctionController {
                     "페이징 처리가 적용되어 있으며, 최신순으로 정렬됩니다."
     )
     @GetMapping("/selling")
-    public ResponseEntity<ApiResponse<PageResponse<MySellingResponse>>> getMySellingAuctions(@Auth AuthUser authUser,
-                                                                                             Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<MySellingResponse>>> getMySellingAuctions(
+            @Auth AuthUser authUser,
+            @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<MySellingResponse> pageResponse = myAuctionService.getMySellingAuctions(authUser.userId(), pageable);
 
         return ResponseEntity.status(HttpStatus.OK).body(
@@ -64,8 +67,9 @@ public class MyAuctionController {
                     "페이징 처리가 적용되어 있으며, 최신순으로 정렬됩니다."
     )
     @GetMapping("/participated")
-    public ResponseEntity<ApiResponse<PageResponse<MyParticipatedResponse>>> getMyParticipatedAuctions(@Auth AuthUser authUser,
-                                                                                                       Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<MyParticipatedResponse>>> getMyParticipatedAuctions(
+            @Auth AuthUser authUser,
+            @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<MyParticipatedResponse> pageResponse = myAuctionService.getMyParticipatedAuctions(authUser.userId(), pageable);
 
         return ResponseEntity.status(HttpStatus.OK).body(
@@ -94,7 +98,7 @@ public class MyAuctionController {
             description = "로그인한 사용자가 자신이 등록한 경매의 정보를 수정합니다. " +
                     "시작가, 입찰 단위, 시작/종료 시간을 변경할 수 있습니다."
     )
-    @PatchMapping("{auctionId}")
+    @PatchMapping("/{auctionId}")
     public ResponseEntity<ApiResponse<AuctionResponse>> updateAuction(@Auth AuthUser authUser,
                                                                       @PathVariable Long auctionId,
                                                                       @Valid @RequestBody AuctionUpdateRequest request) {
@@ -111,7 +115,7 @@ public class MyAuctionController {
             description = "로그인한 사용자가 자신이 등록한 경매를 삭제합니다. " +
                     "해당 경매가 이미 시작되었거나 종료된 경우 삭제가 제한될 수 있습니다."
     )
-    @DeleteMapping("{auctionId}")
+    @DeleteMapping("/{auctionId}")
     public ResponseEntity<ApiResponse<Void>> deleteAuction(@Auth AuthUser authUser,
                                                            @PathVariable Long auctionId) {
         myAuctionService.deleteAuction(authUser.userId(), auctionId);

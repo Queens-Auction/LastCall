@@ -85,7 +85,7 @@ public class AuctionService implements AuctionServiceApi {
     @Transactional(readOnly = true)
     public AuctionReadResponse readAuction(Long auctionId, Long userId) {
         // 1. 경매 조회
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
         // 2. 상품 이미지 조회
         List<ProductImageResponse> images = productService.readAllProductImage(auction.getProduct().getId());
@@ -119,7 +119,7 @@ public class AuctionService implements AuctionServiceApi {
     // 입찰 가능한 경매 여부 검증
     @Override
     public Auction getBiddableAuction(Long auctionId) {
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         if (auction.getStatus() == AuctionStatus.SCHEDULED
@@ -132,7 +132,7 @@ public class AuctionService implements AuctionServiceApi {
     // 경매 ID로 경매 조회
     @Override
     public Auction findById(Long auctionId) {
-        return auctionRepository.findById(auctionId).orElseThrow(
+        return auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND)
         );
     }

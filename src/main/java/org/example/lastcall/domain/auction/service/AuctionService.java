@@ -32,6 +32,7 @@ public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
     private final UserServiceApi userService;
     private final ProductQueryServiceApi productService;
+    //private final BidQueryService bidService;
 
     // 경매 등록 //
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
@@ -83,11 +84,17 @@ public class AuctionService implements AuctionServiceApi {
         List<ProductImageResponse> images = productService.readAllProductImage(auction.getProduct().getId());
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 
+        boolean participated = false;
+        // 공개용/로그인용 같이 쓰기 -> cqrs 분리 후 주석풀기
+        //if (userId != null) {
+        //    participated = bidService.existsByAuctionIdAndUserId(auctionId, userId);
+        //}
+
         return AuctionReadResponse.from(
                 auction,
                 auction.getProduct(),
                 imageUrl,
-                false // 항상 false 로 전달 -> 공개용 임을 명시
+                participated
         );
     }
 

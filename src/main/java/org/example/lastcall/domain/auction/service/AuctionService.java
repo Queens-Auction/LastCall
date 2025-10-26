@@ -16,7 +16,7 @@ import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.sevice.query.ProductQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.repository.UserRepository;
+import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,31 +30,23 @@ import java.util.Optional;
 @Transactional
 public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
-    private final UserRepository userRepository;
+    private final UserServiceApi userService;
     private final ProductQueryServiceApi productService;
 
     // 경매 등록 //
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
         // 1. 상품 존재 여부 확인
-        Product product = productService.findById(productId);
-        // 2. 상품 소유자 검증
-        if (!product.getUser().getId().equals(userId)) {
-            throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
-        }
-        // 3. 중복 경매 등록 방지
+        // productService.validateProductOwner(productId, userId); 연결되면 주석 풀기
+        // 2. 중복 경매 등록 방지
         if (auctionRepository.existsActiveAuction(productId)) {
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
-        // 4. User 엔티티 조회
-        User user = userRepository.findById(userId).orElseThrow(
-                () -> new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER)
-        );
+        // 3. User 조회
+        User user = userService.findById(userId);
+        // 4. 상품 조회
+        Product product = productService.findById(productId);
         // 5. 경매 등록
-        Auction auction = Auction.of(
-                user,
-                product,
-                request
-        );
+        Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);
 
         return AuctionResponse.from(auction);

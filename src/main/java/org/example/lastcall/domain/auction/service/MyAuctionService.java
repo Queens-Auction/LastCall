@@ -156,7 +156,7 @@ public class MyAuctionService {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
         auction.update(request);
-        return AuctionResponse.from(auction);
+        return AuctionResponse.fromUpdate(auction);
     }
 
     // 내 경매 삭제 //

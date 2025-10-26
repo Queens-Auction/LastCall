@@ -50,7 +50,7 @@ public class AuctionService implements AuctionServiceApi {
         Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);
 
-        return AuctionResponse.from(auction);
+        return AuctionResponse.fromCreate(auction);
     }
 
     // 경매 전체 조회 //

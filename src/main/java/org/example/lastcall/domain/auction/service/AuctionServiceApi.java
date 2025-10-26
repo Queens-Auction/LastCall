@@ -8,12 +8,12 @@ public interface AuctionServiceApi {
 
     AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request);
 
-    // 상품에 진행 중인 경매 여부 검증
-    void validateAuctionScheduled(Long productId);
+    // 상품 수정시, 연결 경매 상태 확인 후 수정 가능 여부 검증
+    void validateAuctionStatusForModification(Long productId);
 
     // 입찰 가능한 경매 여부 검증
     Auction getBiddableAuction(Long auctionId);
 
-    // 경매 ID로 경매 조회
+    // 경매 ID 기준으로 특정 경매 엔티티 조회
     Auction findById(Long auctionId);
 }

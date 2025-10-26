@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.security.Auth;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.point.dto.CreatePointRequest;
 import org.example.lastcall.domain.point.dto.PointResponse;
 import org.example.lastcall.domain.point.service.PointService;

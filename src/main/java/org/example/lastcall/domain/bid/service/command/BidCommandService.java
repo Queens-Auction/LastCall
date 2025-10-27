@@ -3,7 +3,7 @@ package org.example.lastcall.domain.bid.service.command;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;

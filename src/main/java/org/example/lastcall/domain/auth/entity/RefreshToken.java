@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
-import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
+import org.example.lastcall.domain.auth.enums.RefreshTokenStatus;
 
 import java.time.LocalDateTime;
 
@@ -38,8 +38,7 @@ public class RefreshToken extends BaseEntity {
     private RefreshToken(Long userId,
                          String token,
                          RefreshTokenStatus status,
-                         LocalDateTime expiredAt)
-    {
+                         LocalDateTime expiredAt) {
         this.userId = userId;
         this.token = token;
         this.status = status;
@@ -49,13 +48,11 @@ public class RefreshToken extends BaseEntity {
     public static RefreshToken create(Long userId,
                                       String token,
                                       RefreshTokenStatus status,
-                                      LocalDateTime expiredAt)
-    {
+                                      LocalDateTime expiredAt){
         return new RefreshToken(userId, token, status, expiredAt);
     }
 
-    public void revoke()
-    {
+    public void revoke() {
         this.status = RefreshTokenStatus.REVOKED;
     }
 }

@@ -20,13 +20,12 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class BidQueryService implements BidQueryServiceApi {
 	private final BidRepository bidRepository;
 	private final AuctionServiceApi auctionServiceApi;
 
 	// 경매별 전체 입찰 내역 조회
-	@Transactional(readOnly = true)
 	public PageResponse<BidGetAllResponse> getAllBids(Long auctionId, Pageable pageable) {
 		Auction auction = auctionServiceApi.findById(auctionId);
 

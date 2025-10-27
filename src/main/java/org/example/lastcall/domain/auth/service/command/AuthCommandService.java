@@ -57,7 +57,7 @@ public class AuthCommandService {
 
         // 인증 기록 소비 처리
         emailVerification.updateStatus(EmailVerificationStatus.CONSUMED);
-
+      
         if (userRepository.existsByNickname(request.getNickname())) {
             throw new BusinessException(UserErrorCode.DUPLICATE_NICKNAME); // 409
         }
@@ -200,6 +200,7 @@ public class AuthCommandService {
 
     @Transactional
     public void logout(final String requestedRefreshToken) {
+        // 해당 사용자의 모든 활성 refresh token 무효화 (REVOKED)
         if (requestedRefreshToken == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }

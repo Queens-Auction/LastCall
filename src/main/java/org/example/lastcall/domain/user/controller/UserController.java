@@ -13,6 +13,8 @@ import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.example.lastcall.domain.user.dto.request.PasswordChangeRequest;
 import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
 import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
+import org.example.lastcall.domain.user.service.command.UserCommandService;
+import org.example.lastcall.domain.user.service.query.UserQueryService;
 import org.example.lastcall.domain.user.exception.UserErrorCode;
 import org.example.lastcall.domain.user.service.command.UserCommandService;
 import org.example.lastcall.domain.user.service.query.UserQueryService;

@@ -21,7 +21,7 @@ public record UserProfileResponse(
         String email,
 
         @Schema(description = "주소 상세 정보")
-        AddressResponse detailAddress,
+        AddressResponse addressInfo,
 
         @Schema(description = "전화번호", example = "01012345678")
         String phoneNumber,
@@ -66,5 +66,3 @@ public record UserProfileResponse(
     ) {
     }
 }
-
-

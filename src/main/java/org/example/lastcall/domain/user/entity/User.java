@@ -108,6 +108,7 @@ public class User extends BaseEntity {
         this.phoneNumber = phoneNumber;
 
     }
+
     public void changeAddress(String address,
                               String postcode,
                               String detailAddress) {
@@ -136,5 +137,4 @@ public class User extends BaseEntity {
     public void markPasswordChangedNow() {
         this.passwordChangedAt = LocalDateTime.now();
     }
-
 }

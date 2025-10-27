@@ -41,7 +41,7 @@ public class UserController {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
-        UserProfileResponse dto = userCommandService.getUserById(authUser.userId());
+        UserProfileResponse dto = userCommandService.getMyProfile(authUser.userId());
         return ApiResponse.success("내 정보 조회 성공", dto);
     }
 

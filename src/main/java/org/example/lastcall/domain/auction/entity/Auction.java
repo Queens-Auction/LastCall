@@ -48,7 +48,7 @@ public class Auction extends BaseEntity {
     private Long winnerId;
 
     @Column(name = "participant_count", nullable = false)
-    private Integer participantCount = 0;
+    private int participantCount = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)

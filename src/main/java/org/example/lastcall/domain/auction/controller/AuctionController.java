@@ -12,7 +12,7 @@ import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionReadResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
 import org.example.lastcall.domain.auction.service.AuctionService;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -35,10 +35,11 @@ public class AuctionController {
             description = "로그인한 사용자가 새로운 경매를 등록합니다. " +
                     "요청 본문에는 상품 정보, 시작가, 마감 시간 등이 포함됩니다."
     )
-    @PostMapping
-    public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@Auth AuthUser authUser,
+    @PostMapping("/{productId}")
+    public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@PathVariable("productId") Long productId,
+                                                                      @Auth AuthUser authUser,
                                                                       @Valid @RequestBody AuctionCreateRequest request) {
-        AuctionResponse response = auctionService.createAuction(authUser.userId(), request);
+        AuctionResponse response = auctionService.createAuction(productId, authUser.userId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.success("경매가 등록되었습니다.", response)
         );
@@ -51,14 +52,14 @@ public class AuctionController {
                     "카테고리별 필터링도 가능합니다."
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> readAllAuctions(
+    public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> getAllAuctions(
             @RequestParam(required = false) Category category,
             // 기본 정렬값 createdAt, 보조 정렬값 id
             // - 보조가 없으면 MySQL 이 비슷하거나 동시간대 정렬 구분 못함
             @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(category, pageable);
+        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.getAllAuctions(category, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("경매가 전체 조회되었습니다.", pageResponse)
         );
@@ -72,11 +73,11 @@ public class AuctionController {
                     "비로그인 사용자도 접근 가능합니다."
     )
     @GetMapping("/{auctionId}")
-    public ResponseEntity<ApiResponse<AuctionReadResponse>> readAuction(
+    public ResponseEntity<ApiResponse<AuctionReadResponse>> getAuction(
             @PathVariable("auctionId") Long auctionId,
             @RequestHeader(value = "userId", required = false) Long userId   // 시큐리티 적용 후, @AuthenticationPrincipal AuthUser authUser 로 변경 예정
     ) {
-        AuctionReadResponse response = auctionService.readAuction(auctionId, userId);
+        AuctionReadResponse response = auctionService.getAuction(auctionId, userId);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("해당 경매가 조회되었습니다.", response)
         );

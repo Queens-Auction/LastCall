@@ -12,4 +12,7 @@ public interface ProductQueryServiceApi {
     ProductImageResponse readThumbnailImage(Long productId);
 
     List<ProductImageResponse> readAllProductImage(Long productId);
+
+    //상품 소유자 검증
+    void validateProductOwner(Long productId, Long userId);
 }

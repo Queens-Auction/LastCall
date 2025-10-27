@@ -39,8 +39,11 @@ public class AuctionResponse {
     @Schema(description = "경매 등록 시각", example = "2025-10-24T21:10:00")
     private LocalDateTime createdAt;
 
-    // 정적 팩토리 메서드 (from)
-    public static AuctionResponse from(Auction auction) {
+    @Schema(description = "경매 수정 시각", example = "2025-10-27T21:10:00")
+    private LocalDateTime modifiedAt;
+
+    // 정적 팩토리 메서드 (from) - 경매 등록 응답용
+    public static AuctionResponse fromCreate(Auction auction) {
         return AuctionResponse.builder()
                 .auctionId(auction.getId())
                 .productId(auction.getProduct().getId())
@@ -51,6 +54,22 @@ public class AuctionResponse {
                 .endTime(auction.getEndTime())
                 .status(auction.getStatus())
                 .createdAt(auction.getCreatedAt())
+                .build();
+    }
+
+    // 정적 팩토리 메서드 (from) - 경매 수정 응답용
+    public static AuctionResponse fromUpdate(Auction auction) {
+        return AuctionResponse.builder()
+                .auctionId(auction.getId())
+                .productId(auction.getProduct().getId())
+                .userId(auction.getUser().getId())
+                .startingBid(auction.getStartingBid())
+                .bidStep(auction.getBidStep())
+                .startTime(auction.getStartTime())
+                .endTime(auction.getEndTime())
+                .status(auction.getStatus())
+                .createdAt(auction.getCreatedAt())
+                .modifiedAt(auction.getModifiedAt())
                 .build();
     }
 }

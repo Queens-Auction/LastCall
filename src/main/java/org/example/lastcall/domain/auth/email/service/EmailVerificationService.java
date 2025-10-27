@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.util.GeneratorUtil;
-import org.example.lastcall.domain.auth.email.config.EmailConfiguration;
+import org.example.lastcall.domain.auth.email.config.EmailConfig;
 import org.example.lastcall.domain.auth.email.dto.request.VerifyEmailVerificationCodeDto;
 import org.example.lastcall.domain.auth.email.entity.EmailVerification;
 import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;
@@ -27,13 +27,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
-
     private final UserRepository userRepository;
     private final JavaMailSender javaMailSender;
     private final EmailVerificationRepository emailVerificationRepository;
 
     @Transactional
     public void sendEmailVerificationCode(final EmailVerificationSendRequest.Request request) {
+        validateDuplicateEmail(request.email());
+
         final String verificationCode = VerificationCodeGenerator.generateVerificationCode();
 
         EmailVerification emailVerification = EmailVerification.create(
@@ -62,10 +63,10 @@ public class EmailVerificationService {
 
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public void validateDuplicateEmail(final String email) {
-        boolean existsAlreadyEmail = userRepository.existsByEmail(email);
-        if (existsAlreadyEmail) {
+        boolean existsInUser = userRepository.existsByEmail(email);
+        if (existsInUser) {
             throw new BusinessException(EmailErrorCode.DUPLICATE_EMAIL);
         }
     }
@@ -88,7 +89,7 @@ public class EmailVerificationService {
 
     private void validateExpiredVerificationCode(final LocalDateTime createdAt) {
         long compareRequestTime = Duration.between(createdAt, LocalDateTime.now()).getSeconds();
-        if (compareRequestTime > EmailConfiguration.POSSIBLE_REQUEST_TIME) {
+        if (compareRequestTime > EmailConfig.POSSIBLE_REQUEST_TIME) {
             throw new BusinessException(EmailErrorCode.EXPIRED);
         }
     }

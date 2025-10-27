@@ -3,7 +3,7 @@ package org.example.lastcall.domain.product.sevice.query;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;

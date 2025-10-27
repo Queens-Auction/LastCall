@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
@@ -12,9 +13,13 @@ import org.example.lastcall.domain.auth.dto.request.SignupRequest;
 import org.example.lastcall.domain.auth.dto.request.TokenReissueRequest;
 import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
-import org.example.lastcall.domain.auth.model.AuthUser;
-import org.example.lastcall.domain.auth.service.AuthService;
+import org.example.lastcall.domain.auth.enums.AuthUser;
+import org.example.lastcall.domain.auth.service.command.AuthCommandService;
+import org.example.lastcall.domain.auth.service.validator.AuthValidatorService;
+import org.example.lastcall.domain.auth.exception.AuthErrorCode;
+import org.example.lastcall.domain.auth.service.command.AuthCommandService;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +31,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-    private final AuthService authService;
+    private final AuthCommandService authCommandService;
     private final CookieUtil cookieUtil;
 
     @Operation(
@@ -35,7 +40,7 @@ public class AuthController {
     )
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> signup(@Valid @RequestBody SignupRequest request) {
-        authService.signup(request);
+        authCommandService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("회원가입이 완료되었습니다."));
     }
@@ -45,18 +50,18 @@ public class AuthController {
             description = "이메일과 비밀번호로 로그인하며, Access/Refresh Token을 쿠키로 발급받습니다."
     )
     @PostMapping("/login")
-    public ResponseEntity<Void> LoginRequest(@Valid @RequestBody LoginRequest request) {
-        LoginResponse loginResponse = authService.userLogin(request);
+    public ResponseEntity<ApiResponse<Object>> login(@Valid @RequestBody LoginRequest request) {
+        if (request == null){
+            throw new BusinessException(AuthErrorCode.INVALID_EMPTY_EMAIL_OR_PASSWORD);
+        }
+        LoginResponse loginResponse = authCommandService.login(request);
 
         ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(loginResponse.accessToken());
         ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(loginResponse.refreshToken());
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .headers(httpHeaders -> {
-                    httpHeaders.add("Set-Cookie", accessCookie.toString());
-                    httpHeaders.add("Set-Cookie", refreshCookie.toString());
-                })
-                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString(), refreshCookie.toString())
+                .body(ApiResponse.success("로그인에 성공했습니다."));
     }
 
     @Operation(
@@ -64,17 +69,19 @@ public class AuthController {
             description = "사용자의 Refresh Token을 무효화하고, 인증 관련 쿠키를 삭제합니다."
     )
     @PostMapping("/logout")
-    public ResponseEntity<Void> userLogout(@CookieValue(name = CookieUtil.REFRESH_COOKIE) String refreshToken) {
-        authService.userLogout(refreshToken);
+    public ResponseEntity<ApiResponse<Void>> logout(@CookieValue(name = CookieUtil.REFRESH_COOKIE,
+                                                    required = false) String refreshToken) {
+        authCommandService.logout(refreshToken);
         ResponseCookie deleteAccessCookie = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefreshCookie = cookieUtil.deleteCookieOfRefreshToken();
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .headers(httpHeaders -> {
-                    httpHeaders.add("Set-Cookie", deleteAccessCookie.toString());
-                    httpHeaders.add("Set-Cookie", deleteRefreshCookie.toString());
-                })
-                .build();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, deleteAccessCookie.toString());
+        headers.add(HttpHeaders.SET_COOKIE, deleteRefreshCookie.toString());
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(ApiResponse.success("정상적으로 로그아웃되었습니다."));
     }
 
     @Operation(
@@ -84,17 +91,19 @@ public class AuthController {
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<Void>> withdraw(@Auth AuthUser authUser,
                                                       @Valid @RequestBody WithdrawRequest withdrawRequest) {
-        log.info("withdraw endpoint called, authUser={}", authUser);
-        authService.withdraw(authUser.userId(), withdrawRequest);
+        if(authUser == null){
+            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
+        }
+        authCommandService.withdraw(authUser.userId(), withdrawRequest);
 
         // 쿠키 삭제
         ResponseCookie deleteAccess = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefresh = cookieUtil.deleteCookieOfRefreshToken();
 
-        return ResponseEntity.noContent()
+        return ResponseEntity.ok()
                 .header("Set-Cookie", deleteAccess.toString())
                 .header("Set-Cookie", deleteRefresh.toString())
-                .build();
+                .body(ApiResponse.success("정상적으로 회원 탈퇴 요청이 완료되었습니다."));
     }
 
     /**
@@ -102,7 +111,7 @@ public class AuthController {
      */
     @PostMapping("/tokens")
     public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
-        LoginResponse response = authService.reissueAccessToken(request.refreshToken());
+        LoginResponse response = authCommandService.reissueAccessToken(request.refreshToken());
         return ResponseEntity.ok(response);
     }
 }

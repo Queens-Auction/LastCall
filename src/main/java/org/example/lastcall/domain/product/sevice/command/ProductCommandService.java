@@ -45,8 +45,17 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     //이미지 등록 (여러 장 등록)
-    public List<ProductImageResponse> createProductImages(Long productId, List<ProductImageCreateRequest> requests) {
-        Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+    public List<ProductImageResponse> createProductImages(
+            Long productId,
+            List<ProductImageCreateRequest> requests,
+            AuthUser authUser) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        // 소유자 확인
+        if (!product.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
+        }
 
         productValidator.validateImageCount(requests);
         productValidator.validateDuplicateUrls(requests, product.getId());
@@ -71,18 +80,34 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     //상품 정보 수정
-    public ProductResponse updateProduct(Long productId, ProductUpdateRequest request) {
-        auctionServiceApi.validateAuctionStatusForModification(productId);
+    public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        auctionServiceApi.validateAuctionStatusForModification(productId);
+
+        // 소유자 확인
+        if (!product.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
+        }
+
         product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
+
         return ProductResponse.from(product);
     }
 
     //상품 수정 시 이미지 추가
-    public List<ProductImageResponse> appendProductImages(Long productId, List<ProductImageCreateRequest> requests) {
-        Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+    public List<ProductImageResponse> appendProductImages(
+            Long productId,
+            List<ProductImageCreateRequest> requests,
+            AuthUser authUser) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         auctionServiceApi.validateAuctionStatusForModification(product.getId());
+
+        // 소유자 확인
+        if (!product.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
+        }
 
         //기존 이미지 불러오기
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
@@ -122,8 +147,15 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     //썸네일 이미지 변경
-    public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {
+    public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         auctionServiceApi.validateAuctionStatusForModification(productId);
+
+        // 소유자 확인
+        if (!product.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
+        }
 
         //기존 썸네일 찾기
         Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
@@ -149,12 +181,17 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     //상품 삭제
-    public void deleteProduct(Long productId) {
-        //경매 중, 경매 완료인 상품은 삭제 불가능
-        auctionServiceApi.validateAuctionStatusForModification(productId);
-
+    public void deleteProduct(Long productId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        auctionServiceApi.validateAuctionStatusForModification(productId);
+
+        // 소유자 확인
+        if (!product.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
+        }
+
+
         product.softDelete();
 
         //상품에 연결된 이미지까지 soft delete
@@ -162,8 +199,16 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     //이미지 단건 삭제
-    public void deleteProductImage(Long productId, Long imageId) {
+    public void deleteProductImage(Long productId, Long imageId, AuthUser authUser) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         auctionServiceApi.validateAuctionStatusForModification(productId);
+
+        // 소유자 확인
+        if (!product.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
+        }
+
         ProductImage productImage = productImageRepository.findById(imageId).orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
         if (!productImage.getProduct().getId().equals(productId)) {
             throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);

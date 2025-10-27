@@ -42,9 +42,10 @@ public class Point extends BaseEntity {
         this.settlementPoint = settlementPoint;
     }
 
-    public static Point create(User user, Long incomePoint) {
+    public static Point create(User user, PointLogType type, Long incomePoint) {
         Point point = new Point();
         point.user = user;
+        point.type = type;
         point.availablePoint = incomePoint;
         return point;
     }

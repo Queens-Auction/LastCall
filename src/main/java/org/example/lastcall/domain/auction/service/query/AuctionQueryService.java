@@ -162,6 +162,12 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
+        // 사용자 참여 여부 검증
+        boolean participated = bidQueryServiceApi.existsByAuctionIdAndUserId(auctionId, userId);
+        if (!participated) {
+            throw new BusinessException(AuctionErrorCode.USER_NOT_PARTICIPATED_IN_AUCTION);
+        }
+
         Product product = auction.getProduct();
 
         String imageUrl = productQueryServiceApi

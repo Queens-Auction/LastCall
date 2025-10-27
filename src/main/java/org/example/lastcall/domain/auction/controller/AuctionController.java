@@ -52,14 +52,14 @@ public class AuctionController {
                     "카테고리별 필터링도 가능합니다."
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> readAllAuctions(
+    public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> getAllAuctions(
             @RequestParam(required = false) Category category,
             // 기본 정렬값 createdAt, 보조 정렬값 id
             // - 보조가 없으면 MySQL 이 비슷하거나 동시간대 정렬 구분 못함
             @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.readAllAuctions(category, pageable);
+        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.getAllAuctions(category, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("경매가 전체 조회되었습니다.", pageResponse)
         );
@@ -73,11 +73,11 @@ public class AuctionController {
                     "비로그인 사용자도 접근 가능합니다."
     )
     @GetMapping("/{auctionId}")
-    public ResponseEntity<ApiResponse<AuctionReadResponse>> readAuction(
+    public ResponseEntity<ApiResponse<AuctionReadResponse>> getAuction(
             @PathVariable("auctionId") Long auctionId,
             @RequestHeader(value = "userId", required = false) Long userId   // 시큐리티 적용 후, @AuthenticationPrincipal AuthUser authUser 로 변경 예정
     ) {
-        AuctionReadResponse response = auctionService.readAuction(auctionId, userId);
+        AuctionReadResponse response = auctionService.getAuction(auctionId, userId);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("해당 경매가 조회되었습니다.", response)
         );

@@ -6,8 +6,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.enums.AuthUser;
-import org.example.lastcall.domain.point.dto.CreatePointRequest;
-import org.example.lastcall.domain.point.dto.PointResponse;
+import org.example.lastcall.domain.point.dto.request.PointCreateRequest;
+import org.example.lastcall.domain.point.dto.response.PointResponse;
 import org.example.lastcall.domain.point.service.PointService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +30,7 @@ public class PointController {
     @PostMapping("/earn")
     public ResponseEntity<PointResponse> createPoint(
             @Auth AuthUser authUser,
-            @RequestBody @Valid CreatePointRequest request) {
+            @RequestBody @Valid PointCreateRequest request) {
 
         PointResponse pointResponse = pointService.createPoint(authUser, request);
 

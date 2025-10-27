@@ -100,7 +100,7 @@ public class BidQueryService implements BidQueryServiceApi {
 			.orElse(null);
 	}
 
-	// 특정 경매의 참여자(입찰자) 수 조회
+	// 특정 경매의 참여자 수 (입찰자 수) 조회
 	@Override
 	public int countDistinctParticipants(Long auctionId) {
 		return bidRepository.countDistinctByAuctionId(auctionId);

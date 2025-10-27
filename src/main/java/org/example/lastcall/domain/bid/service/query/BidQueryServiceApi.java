@@ -37,6 +37,6 @@ public interface BidQueryServiceApi {
 	// 특정 유저가 특정 경매에서 최고 입찰자인지 여부 조회
 	boolean isUserLeading(Long auctionId, Long userId);
 
-	// 특정 경매 참여자(입찰자) 수 조회
+	// 특정 경매의 참여자 수 (입찰자 수) 조회
 	int countDistinctParticipants(Long auctionId);
 }

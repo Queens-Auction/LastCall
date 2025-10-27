@@ -12,7 +12,7 @@ import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionReadResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
 import org.example.lastcall.domain.auction.service.AuctionService;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -35,10 +35,11 @@ public class AuctionController {
             description = "로그인한 사용자가 새로운 경매를 등록합니다. " +
                     "요청 본문에는 상품 정보, 시작가, 마감 시간 등이 포함됩니다."
     )
-    @PostMapping
-    public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@Auth AuthUser authUser,
+    @PostMapping("/{productId}")
+    public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@PathVariable("productId") Long productId,
+                                                                      @Auth AuthUser authUser,
                                                                       @Valid @RequestBody AuctionCreateRequest request) {
-        AuctionResponse response = auctionService.createAuction(authUser.userId(), request);
+        AuctionResponse response = auctionService.createAuction(productId, authUser.userId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.success("경매가 등록되었습니다.", response)
         );

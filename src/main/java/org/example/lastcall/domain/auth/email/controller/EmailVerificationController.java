@@ -49,5 +49,4 @@ public class EmailVerificationController {
         var result = emailVerificationService.verifyEmailVerificationCode(request);
         return ResponseEntity.ok(ApiResponse.success("이메일 인증이 완료되었습니다.", result));
     }
-
 }

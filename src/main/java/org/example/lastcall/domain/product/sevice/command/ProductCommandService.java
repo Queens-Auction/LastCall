@@ -3,7 +3,7 @@ package org.example.lastcall.domain.product.sevice.command;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
@@ -72,7 +72,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //상품 정보 수정
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request) {
-        auctionServiceApi.validateAuctionScheduled(productId);
+        auctionServiceApi.validateAuctionStatusForModification(productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
@@ -82,7 +82,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //상품 수정 시 이미지 추가
     public List<ProductImageResponse> appendProductImages(Long productId, List<ProductImageCreateRequest> requests) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionServiceApi.validateAuctionScheduled(product.getId());
+        auctionServiceApi.validateAuctionStatusForModification(product.getId());
 
         //기존 이미지 불러오기
         List<ProductImage> existingImages = productImageRepository.findAllByProductId(product.getId());
@@ -149,7 +149,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //상품 삭제
     public void deleteProduct(Long productId) {
         //경매 중, 경매 완료인 상품은 삭제 불가능
-        auctionServiceApi.validateAuctionScheduled(productId);
+        auctionServiceApi.validateAuctionStatusForModification(productId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
@@ -161,7 +161,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //이미지 단건 삭제
     public void deleteProductImage(Long productId, Long imageId) {
-        auctionServiceApi.validateAuctionScheduled(productId);
+        auctionServiceApi.validateAuctionStatusForModification(productId);
         ProductImage productImage = productImageRepository.findById(imageId).orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
         if (!productImage.getProduct().getId().equals(productId)) {
             throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);

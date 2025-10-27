@@ -15,5 +15,5 @@ public interface AuctionServiceApi {
     Auction getBiddableAuction(Long auctionId);
 
     // 경매 ID로 경매 조회
-    Auction findById(Long auctionId);
+    Auction getUserId(Long auctionId);
 }

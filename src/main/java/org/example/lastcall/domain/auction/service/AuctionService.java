@@ -125,7 +125,7 @@ public class AuctionService implements AuctionServiceApi {
 
     // 경매 ID로 경매 조회
     @Override
-    public Auction findById(Long auctionId) {
+    public Auction getUserId(Long auctionId) {
         return auctionRepository.findById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND)
         );

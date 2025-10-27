@@ -37,7 +37,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //상품 등록
     public ProductResponse createProduct(AuthUser authuser, ProductCreateRequest request) {
-        User user = userServiceApi.findById(authuser.userId());
+        User user = userServiceApi.getUserId(authuser.userId());
         Product product = Product.of(user, request.getName(), request.getCategory(), request.getDescription());
         Product savedProduct = productRepository.save(product);
 

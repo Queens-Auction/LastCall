@@ -3,7 +3,6 @@ package org.example.lastcall.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
-import org.example.lastcall.domain.auth.model.RefreshTokenStatus;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
 import org.example.lastcall.domain.user.dto.request.PasswordChangeRequest;
 import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
@@ -16,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.example.lastcall.domain.auth.model.RefreshTokenStatus.ACTIVE;
 import static org.example.lastcall.domain.auth.model.RefreshTokenStatus.REVOKED;
-import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class UserService implements UserServiceApi {
 
     @Override
     @Transactional(readOnly = true)
-    public User findById(Long id) {
+    public User getUserId(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
     }

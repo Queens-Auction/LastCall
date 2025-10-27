@@ -48,7 +48,11 @@ public class BidCommandService {
 
 		Bid savedBid = bidRepository.save(bid);
 
-		pointServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), bidAmount, user.getId());
+		pointServiceApi.updateDepositPoint(
+			auction.getId(),
+			savedBid.getId(),
+			bidAmount,
+			user.getId());
 
 		return BidResponse.from(savedBid);
 	}

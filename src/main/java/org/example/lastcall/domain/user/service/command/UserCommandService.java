@@ -24,7 +24,7 @@ public class UserCommandService implements UserServiceApi {
     }
 
     @Transactional(readOnly = true)
-    public UserProfileResponse getUserById(Long userId) {
+    public UserProfileResponse getMyProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,15 +34,15 @@ public class AuctionService implements AuctionServiceApi {
     private final ProductQueryServiceApi productService;
 
     // 경매 등록 //
-    public AuctionResponse createAuction(Long userId, AuctionCreateRequest request) {
+    public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
         // 1. 상품 존재 여부 확인
-        Product product = productService.findById(request.getProductId());
+        Product product = productService.findById(productId);
         // 2. 상품 소유자 검증
         if (!product.getUser().getId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
         // 3. 중복 경매 등록 방지
-        if (auctionRepository.existsActiveAuction(request.getProductId())) {
+        if (auctionRepository.existsActiveAuction(productId)) {
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
         // 4. User 엔티티 조회
@@ -98,16 +99,21 @@ public class AuctionService implements AuctionServiceApi {
         );
     }
 
-    // Override //
-
-    // 특정 상품에 진행 중인 경매 여부 검증
+    // 상품 수정 시, 해당 상품이 연결된 경매 확인 후 수정 가능 여부 검증
     @Override
-    public void validateAuctionScheduled(Long productId) {
-        boolean isScheduledAuction = auctionRepository.existsByProductIdAndStatus(productId, AuctionStatus.SCHEDULED);
-
-        if (!isScheduledAuction) {
+    public void validateAuctionStatusForModification(Long productId) {
+        // 해당 상품과 연결된 경매가 있는지 조회
+        Optional<Auction> auctionOpt = auctionRepository.findByProductId(productId);
+        // 경매가 없으면 통과
+        if (auctionOpt.isEmpty()) {
+            return;
+        }
+        AuctionStatus status = auctionOpt.get().getStatus();
+        // 경매가 진행중(ONGOING) 또는 종료(CLOSED)면 수정 불가
+        if (status == AuctionStatus.ONGOING || status == AuctionStatus.CLOSED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
         }
+        // SCHEDULED면 통과
     }
 
     // 입찰 가능한 경매 여부 검증

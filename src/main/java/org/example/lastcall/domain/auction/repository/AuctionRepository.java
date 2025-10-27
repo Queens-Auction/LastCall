@@ -54,4 +54,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     Optional<Auction> findBySellerIdAndAuctionId(Long userId, Long auctionId);
 
     Page<Auction> findByIdIn(List<Long> auctionIds, Pageable pageable);
+
+    // 상품 ID로 연결된 경매 조회
+    Optional<Auction> findByProductId(Long productId);
 }

@@ -51,7 +51,6 @@ public class UserController {
     )
     @PatchMapping("/me")
     public ApiResponse<UserProfileResponse> updateMe(@Auth AuthUser authUser,
-                                                     @RequestBody UserUpdateRequest request) {
                                                      @RequestBody(required = false) UserUpdateRequest request) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);

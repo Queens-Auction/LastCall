@@ -1,8 +1,8 @@
-package org.example.lastcall.domain.point.dto;
+package org.example.lastcall.domain.point.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import org.example.lastcall.domain.point.entity.PointLogType;
+import org.example.lastcall.domain.point.enums.PointLogType;
 
 @Schema(description = "포인트 충전 요청 DTO")
 @Getter

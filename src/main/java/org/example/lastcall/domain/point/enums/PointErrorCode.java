@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.point.exception;
+package org.example.lastcall.domain.point.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

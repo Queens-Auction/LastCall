@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.bid.entity.Bid;
+import org.example.lastcall.domain.point.enums.PointLogType;
 import org.example.lastcall.domain.user.entity.User;
 
 @Entity

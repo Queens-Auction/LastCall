@@ -64,8 +64,9 @@ public class BidQueryService implements BidQueryServiceApi {
         return bidRepository.findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(auctionId, userId, currentBidId);
     }
 
+    // ID로 입찰 단건 조회
     @Override
-    public Bid getBid(Long bidId) {
+    public Bid findById(Long bidId) {
         return bidRepository.findById(bidId).orElseThrow(
                 () -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
         );
@@ -91,5 +92,11 @@ public class BidQueryService implements BidQueryServiceApi {
         return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId)
                 .map(Bid::getBidAmount)
                 .orElse(null);
+    }
+
+    // 특정 경매의 참여자 수 (입찰자 수) 조회
+    @Override
+    public int countDistinctParticipants(Long auctionId) {
+        return bidRepository.countDistinctByAuctionId(auctionId);
     }
 }

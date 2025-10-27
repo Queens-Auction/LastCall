@@ -23,14 +23,17 @@ public interface BidQueryServiceApi {
     Optional<Bid> getLastBidExceptBidId(Long auctionId, Long userId, Long currentBidId);
 
     // ID로 입찰을 가져오는 로직
-    Bid getBid(Long bidId);
+    Bid findById(Long bidId);
 
     // 특정 유저가 입찰한 경매 목록 조회
     List<Long> getParticipatedAuctionIds(Long userId);
 
-    // 특정 유저가 특정 경매에서 입찰한 최고 금액 조회
+    // 특정 경매에서 특정 유저의 입찰 최고가 조회
     Long getMyBidAmount(Long auctionId, Long userId);
 
     // 특정 유저가 특정 경매에서 최고 입찰자인지 여부 조회
     boolean isUserLeading(Long auctionId, Long userId);
+
+    // 특정 경매의 참여자 수 (입찰자 수) 조회
+    int countDistinctParticipants(Long auctionId);
 }

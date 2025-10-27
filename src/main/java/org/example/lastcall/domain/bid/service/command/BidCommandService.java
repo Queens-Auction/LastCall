@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;
@@ -33,7 +33,7 @@ public class BidCommandService {
             throw new BusinessException(BidErrorCode.SELLER_CANNOT_BID);
         }
 
-        User user = userServiceApi.getUserId(authUser.userId());
+        User user = userServiceApi.findById(authUser.userId());
 
         // orElse: Optional 객체가 비어있을 경우, 해당 값(시작 값)을 반환함
         Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
@@ -47,7 +47,11 @@ public class BidCommandService {
 
         Bid savedBid = bidRepository.save(bid);
 
-        pointServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), bidAmount, user.getId());
+        pointServiceApi.updateDepositPoint(
+                auction.getId(),
+                savedBid.getId(),
+                bidAmount,
+                user.getId());
 
         return BidResponse.from(savedBid);
     }

@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.auth.jwt;
+package org.example.lastcall.common.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.util.DateTimeUtil;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.auth.utils.CookieUtil; // ACCESS_COOKIE 상수 사용 시
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
@@ -25,7 +25,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -37,9 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req,
                                     HttpServletResponse res,
-                                    FilterChain chain) throws ServletException, IOException
-    {
-
+                                    FilterChain chain) throws ServletException, IOException {
         // 이미 인증되어 있으면 패스
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(req, res);
@@ -62,8 +59,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Number uidNum = claims.get("uid", Number.class);
             if (uidNum == null) {
                 log.warn("JWT에 uid 클레임이 없습니다.");
-                unauthorized(res);
-                return;
+//                unauthorized(res);
+//                return;
             }
             Long userId = uidNum.longValue();
 
@@ -74,13 +71,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             User user = userRepository.findById(userId).orElse(null);
             if (user == null) {
                 log.warn("사용자 없음: userId={}", userId);
-                unauthorized(res);
-                return;
+//                unauthorized(res);
+//                return;
             }
             if (user.isDeleted()) {
                 log.warn("삭제된 사용자 접근 차단: userId={}", userId);
-                unauthorized(res);
-                return;
+//                unauthorized(res);
+//                return;
             }
 
             // 비밀번호 변경 이후 발급된 토큰만 허용
@@ -89,15 +86,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 LocalDateTime tokenIat = DateTimeUtil.convertToLocalDateTime(claims.getIssuedAt());
                 if (tokenIat.isBefore(user.getPasswordChangedAt())) {
                     log.warn("토큰이 비밀번호 변경 이전에 발급됨. 토큰 거부. userId={}", userId);
-                    unauthorized(res);
-                    return;
+//                    unauthorized(res);
+//                    return;
                 }
             }
 
             // principal을 AuthUser로 (Long PK 중심)
             AuthUser authUser = new AuthUser(userId, publicId, roleName);
 
-            var authorities = List.of(new SimpleGrantedAuthority(role.getKey()));
+            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
             var authentication = new UsernamePasswordAuthenticationToken(authUser, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             SecurityContextHolder.getContext().setAuthentication(authentication);

@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.auth.utils;
 
 import lombok.RequiredArgsConstructor;
-import org.example.lastcall.common.config.AuthProperties;
+import org.example.lastcall.common.security.AuthProperties;
 import org.springframework.boot.web.server.Cookie;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class CookieUtil {
-
     private final AuthProperties authProperties;
 
     public static final String ACCESS_COOKIE = "access_token";

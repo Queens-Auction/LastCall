@@ -8,10 +8,10 @@ import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
-import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
-import org.example.lastcall.domain.auction.dto.response.AuctionReadResponse;
-import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
-import org.example.lastcall.domain.auction.service.AuctionService;
+import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
+import org.example.lastcall.domain.auction.dto.response.*;
+import org.example.lastcall.domain.auction.service.command.AuctionCommandService;
+import org.example.lastcall.domain.auction.service.query.AuctionQueryService;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Pageable;
@@ -25,9 +25,10 @@ import org.springframework.web.bind.annotation.*;
 // -> Swagger 그룹 이름 및 설명
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/auctions") // 오타 수정
+@RequestMapping("/api/v1/auctions")
 public class AuctionController {
-    private final AuctionService auctionService;
+    private final AuctionQueryService auctionQueryService;
+    private final AuctionCommandService auctionService;
 
     // 경매 등록 //
     @Operation(
@@ -35,7 +36,7 @@ public class AuctionController {
             description = "로그인한 사용자가 새로운 경매를 등록합니다. " +
                     "요청 본문에는 상품 정보, 시작가, 마감 시간 등이 포함됩니다."
     )
-    @PostMapping("/{productId}")
+    @PostMapping("/my/{productId}")
     public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@PathVariable("productId") Long productId,
                                                                       @Auth AuthUser authUser,
                                                                       @Valid @RequestBody AuctionCreateRequest request) {
@@ -59,7 +60,7 @@ public class AuctionController {
             @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        PageResponse<AuctionReadAllResponse> pageResponse = auctionService.getAllAuctions(category, pageable);
+        PageResponse<AuctionReadAllResponse> pageResponse = auctionQueryService.getAllAuctions(category, pageable);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("경매가 전체 조회되었습니다.", pageResponse)
         );
@@ -77,9 +78,107 @@ public class AuctionController {
             @PathVariable("auctionId") Long auctionId,
             @RequestHeader(value = "userId", required = false) Long userId   // 시큐리티 적용 후, @AuthenticationPrincipal AuthUser authUser 로 변경 예정
     ) {
-        AuctionReadResponse response = auctionService.getAuction(auctionId, userId);
+        AuctionReadResponse response = auctionQueryService.getAuction(auctionId, userId);
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("해당 경매가 조회되었습니다.", response)
         );
+    }
+
+    // 내가 판매한 경매 목록 조회 //
+    @Operation(
+            summary = "내가 판매한 경매 목록 조회",
+            description = "로그인한 사용자가 자신이 등록한(판매 중이거나 종료된) 모든 경매 목록을 조회합니다. " +
+                    "페이징 처리가 적용되어 있으며, 최신순으로 정렬됩니다."
+    )
+    @GetMapping("/my/selling")
+    public ResponseEntity<ApiResponse<PageResponse<MySellingResponse>>> getMySellingAuctions(
+            @Auth AuthUser authUser,
+            @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        PageResponse<MySellingResponse> pageResponse = auctionQueryService.getMySellingAuctions(authUser.userId(), pageable);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 판매한 경매 목록이 조회되었습니다.", pageResponse)
+        );
+    }
+
+    // 내가 판매한 경매 상세 조회 //
+    @Operation(
+            summary = "내가 판매한 경매 상세 조회",
+            description = "로그인한 사용자가 자신이 등록한 경매 중 특정 경매의 상세 정보를 조회합니다."
+    )
+    @GetMapping("/my/selling/{auctionId}")
+    public ResponseEntity<ApiResponse<MySellingResponse>> getMySellingDetailAuctions(@Auth AuthUser authUser,
+                                                                                     @PathVariable Long auctionId) {
+        MySellingResponse response = auctionQueryService.getMySellingDetailAuction(authUser.userId(), auctionId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 판매한 경매 중 해당 경매가 조회되었습니다.", response)
+        );
+    }
+
+    // 내가 참여한 경매 전체 조회 //
+    @Operation(
+            summary = "내가 참여한 경매 목록 조회",
+            description = "로그인한 사용자가 입찰에 참여했던 모든 경매 목록을 조회합니다. " +
+                    "페이징 처리가 적용되어 있으며, 최신순으로 정렬됩니다."
+    )
+    @GetMapping("/my/participated")
+    public ResponseEntity<ApiResponse<PageResponse<MyParticipatedResponse>>> getMyParticipatedAuctions(
+            @Auth AuthUser authUser,
+            @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        PageResponse<MyParticipatedResponse> pageResponse = auctionQueryService.getMyParticipatedAuctions(authUser.userId(), pageable);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 참여한 경매 목록이 조회되었습니다.", pageResponse)
+        );
+    }
+
+    // 내가 참여한 경매 단건 조회 //
+    @Operation(
+            summary = "내가 참여한 경매 상세 조회",
+            description = "로그인한 사용자가 입찰에 참여한 특정 경매의 상세 정보를 조회합니다."
+    )
+    @GetMapping("/my/participated/{auctionId}")
+    public ResponseEntity<ApiResponse<MyParticipatedResponse>> getMyParticipatedDetailAuction(@AuthenticationPrincipal AuthUser authUser,
+                                                                                              @PathVariable Long auctionId) {
+        MyParticipatedResponse response = auctionQueryService.getMyParticipatedDetailAuction(authUser.userId(), auctionId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내가 참여한 경매 중 해당 경매가 조회되었습니다.", response)
+        );
+    }
+
+    // 내 경매 수정 //
+    @Operation(
+            summary = "내 경매 수정",
+            description = "로그인한 사용자가 자신이 등록한 경매의 정보를 수정합니다. " +
+                    "시작가, 입찰 단위, 시작/종료 시간을 변경할 수 있습니다."
+    )
+    @PatchMapping("/my/{auctionId}")
+    public ResponseEntity<ApiResponse<AuctionResponse>> updateAuction(@Auth AuthUser authUser,
+                                                                      @PathVariable Long auctionId,
+                                                                      @Valid @RequestBody AuctionUpdateRequest request) {
+        AuctionResponse response = auctionService.updateAuction(authUser.userId(), auctionId, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내 경매가 수정되었습니다.", response)
+        );
+    }
+
+    // 내 경매 삭제 //
+    @Operation(
+            summary = "내 경매 삭제",
+            description = "로그인한 사용자가 자신이 등록한 경매를 삭제합니다. " +
+                    "해당 경매가 이미 시작되었거나 종료된 경우 삭제가 제한될 수 있습니다."
+    )
+    @DeleteMapping("/my/{auctionId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAuction(@Auth AuthUser authUser,
+                                                           @PathVariable Long auctionId) {
+        auctionService.deleteAuction(authUser.userId(), auctionId);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ApiResponse.success("내 경매가 삭제되었습니다.")
+        );
+
     }
 }

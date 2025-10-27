@@ -2,7 +2,7 @@ package org.example.lastcall.domain.product.sevice.command;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
-import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
@@ -30,7 +30,7 @@ import java.util.Optional;
 @Transactional
 public class ProductCommandService implements ProductCommandServiceApi {
     private final ProductRepository productRepository;
-    private final AuctionServiceApi auctionServiceApi;
+    private final AuctionQueryServiceApi auctionQueryServiceApi;
     private final UserServiceApi userServiceApi;
     private final ProductImageRepository productImageRepository;
     private final ProductValidator productValidator;
@@ -83,7 +83,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionServiceApi.validateAuctionStatusForModification(productId);
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
 
         // 소유자 확인
         if (!product.getUser().getId().equals(authUser.userId())) {
@@ -102,7 +102,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
             AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionServiceApi.validateAuctionStatusForModification(product.getId());
+        auctionQueryServiceApi.validateAuctionStatusForModification(product.getId());
 
         // 소유자 확인
         if (!product.getUser().getId().equals(authUser.userId())) {
@@ -150,7 +150,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionServiceApi.validateAuctionStatusForModification(productId);
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
 
         // 소유자 확인
         if (!product.getUser().getId().equals(authUser.userId())) {
@@ -184,7 +184,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public void deleteProduct(Long productId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionServiceApi.validateAuctionStatusForModification(productId);
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
 
         // 소유자 확인
         if (!product.getUser().getId().equals(authUser.userId())) {
@@ -202,7 +202,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public void deleteProductImage(Long productId, Long imageId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionServiceApi.validateAuctionStatusForModification(productId);
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
 
         // 소유자 확인
         if (!product.getUser().getId().equals(authUser.userId())) {

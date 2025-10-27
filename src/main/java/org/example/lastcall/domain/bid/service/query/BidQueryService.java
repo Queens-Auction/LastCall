@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
-import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.auction.service.query.AuctionFinder;
 import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;
@@ -22,12 +22,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BidQueryService implements BidQueryServiceApi {
-	private final BidRepository bidRepository;
-	private final AuctionServiceApi auctionServiceApi;
+    private final BidRepository bidRepository;
+    private final AuctionFinder auctionFinder;
 
 	// 경매별 전체 입찰 내역 조회
 	public PageResponse<BidGetAllResponse> getAllBids(Long auctionId, Pageable pageable) {
-		Auction auction = auctionServiceApi.findById(auctionId);
+		Auction auction = auctionFinder.findById(auctionId);
 
 		Page<Bid> bidPage = bidRepository.findAllByAuction(auction, pageable);
 
@@ -43,7 +43,7 @@ public class BidQueryService implements BidQueryServiceApi {
 	// 특정 경매의 최고 입찰가 조회
 	@Override
 	public Long getCurrentBidAmount(Long auctionId) {
-		Auction auction = auctionServiceApi.findById(auctionId);
+		Auction auction = auctionFinder.findById(auctionId);
 
 		return bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
 	}

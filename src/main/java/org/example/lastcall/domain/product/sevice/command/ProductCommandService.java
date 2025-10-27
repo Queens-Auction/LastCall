@@ -123,7 +123,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //썸네일 이미지 변경
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {
-        auctionServiceApi.validateAuctionScheduled(productId);
+        auctionServiceApi.validateAuctionStatusForModification(productId);
 
         //기존 썸네일 찾기
         Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);

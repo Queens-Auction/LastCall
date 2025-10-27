@@ -38,7 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse res,
                                     FilterChain chain) throws ServletException, IOException
     {
-
         // 이미 인증되어 있으면 패스
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(req, res);
@@ -80,6 +79,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.warn("삭제된 사용자 접근 차단: userId={}", userId);
                 unauthorized(res);
                 return;
+//                unauthorized(res);
+//                return;
+            }
+            if (user.isDeleted()) {
+                log.warn("삭제된 사용자 접근 차단: userId={}", userId);
+//                unauthorized(res);
+//                return;
             }
 
             // 비밀번호 변경 이후 발급된 토큰만 허용
@@ -90,13 +96,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.warn("토큰이 비밀번호 변경 이전에 발급됨. 토큰 거부. userId={}", userId);
                     unauthorized(res);
                     return;
+//                    unauthorized(res);
+//                    return;
                 }
             }
 
             // principal을 AuthUser로 (Long PK 중심)
             AuthUser authUser = new AuthUser(userId, publicId, roleName);
 
-            var authorities = List.of(new SimpleGrantedAuthority(role.getKey()));
+            var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
             var authentication = new UsernamePasswordAuthenticationToken(authUser, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
             SecurityContextHolder.getContext().setAuthentication(authentication);

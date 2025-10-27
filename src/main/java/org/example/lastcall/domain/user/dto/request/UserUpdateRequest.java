@@ -2,6 +2,7 @@ package org.example.lastcall.domain.user.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "사용자 정보 수정 요청 DTO")
 @JsonInclude(JsonInclude.Include.NON_NULL)

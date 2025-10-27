@@ -57,13 +57,19 @@ public class AuthCommandService {
 
         // 인증 기록 소비 처리
         emailVerification.updateStatus(EmailVerificationStatus.CONSUMED);
+      
+        if (userRepository.existsByNickname(request.getNickname())) {
+            throw new BusinessException(UserErrorCode.DUPLICATE_NICKNAME); // 409
+        }
 
         // 기존 사용자 여부 확인
         userRepository.findByEmail(emailVerification.getEmail())
                 .ifPresent(existingUser -> {
+
                     if (existingUser.isDeleted()) {
                         throw new BusinessException(UserErrorCode.DELETED_ACCOUNT);
                     }
+
                     throw new BusinessException(UserErrorCode.DUPLICATE_EMAIL);
                 });
 
@@ -85,6 +91,10 @@ public class AuthCommandService {
     @Transactional
     public LoginResponse login(final LoginRequest request) {
         String email = request.email().trim();
+
+        if (request == null) {
+            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
+        }
 
         // 1) 이메일 조회
         User user = userRepository.findByEmail(email)
@@ -190,14 +200,22 @@ public class AuthCommandService {
 
     @Transactional
     public void logout(final String requestedRefreshToken) {
-        // refresh token 유효성 검증 및 조회
+        // 해당 사용자의 모든 활성 refresh token 무효화 (REVOKED)
+        if (requestedRefreshToken == null) {
+            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
         RefreshToken refreshToken = authValidatorService.validateRefreshToken(requestedRefreshToken);
 
-        // 해당 사용자의 모든 활성 refresh token 무효화 (REVOKED)
         List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndStatus(
                 refreshToken.getUserId(),
                 RefreshTokenStatus.ACTIVE
         );
+
+        if (activeTokens == null || activeTokens.isEmpty()) {
+            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
         activeTokens.forEach(RefreshToken::revoke);
     }
 
@@ -208,6 +226,10 @@ public class AuthCommandService {
                 .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
         user.validatePassword(passwordEncoder, request.password());
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
+        }
 
         // 2) soft delete
         int updated = userRepository.softDeleteById(userId);

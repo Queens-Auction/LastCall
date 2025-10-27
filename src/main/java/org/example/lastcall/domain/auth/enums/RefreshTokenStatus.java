@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.auth.model;
+package org.example.lastcall.domain.auth.enums;
 
 public enum RefreshTokenStatus {
     ACTIVE("사용 가능한 토큰"),
@@ -7,8 +7,7 @@ public enum RefreshTokenStatus {
 
     private final String status;
 
-    RefreshTokenStatus(String status)
-    {
+    RefreshTokenStatus(String status) {
         this.status = status;
     }
 }

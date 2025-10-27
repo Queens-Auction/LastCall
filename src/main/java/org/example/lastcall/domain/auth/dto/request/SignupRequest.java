@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
-import org.example.lastcall.common.validation.UniqueNickname;
 
 import java.util.UUID;
 
@@ -18,7 +17,6 @@ public class SignupRequest {
 
     @Schema(description = "사용자 닉네임 (중복 불가)", example = "lastcaller")
     @NotBlank(message = "닉네임은 필수입니다.")
-    @UniqueNickname
     private String nickname;
 
     @Schema(description = "사용자 이름", example = "홍길동")

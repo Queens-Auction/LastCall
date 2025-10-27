@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 
+import java.time.LocalDateTime;
+
 @Schema(description = "사용자 프로필 응답 DTO")
 public record UserProfileResponse(
         @Schema(description = "사용자 ID", example = "101")
@@ -25,7 +27,13 @@ public record UserProfileResponse(
         String phoneNumber,
 
         @Schema(description = "회원 역할", example = "USER")
-        Role userRole
+        Role userRole,
+
+        @Schema(description = "계정 생성 시각")
+        LocalDateTime createdAt,
+
+        @Schema(description = "최근 수정 시각")
+        LocalDateTime modifiedAt
 ) {
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(
@@ -39,7 +47,9 @@ public record UserProfileResponse(
                         user.getDetailAddress()
                 ),
                 user.getPhoneNumber(),
-                user.getUserRole()
+                user.getUserRole(),
+                user.getCreatedAt(),
+                user.getModifiedAt()
         );
     }
 

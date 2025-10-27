@@ -15,11 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.ACTIVE;
 import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.REVOKED;
-import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
 
 @Service
 @RequiredArgsConstructor
-public class UserQueryService{
+public class UserQueryService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;

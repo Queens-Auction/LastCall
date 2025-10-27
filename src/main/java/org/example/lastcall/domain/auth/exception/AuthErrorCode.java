@@ -8,12 +8,13 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor
 public enum AuthErrorCode implements ErrorCode {
-    // 인증/인가 공통
+    // 인증/인가
     UNAUTHORIZED_ACCESS(HttpStatus.UNAUTHORIZED, "인증되지 않은 접근입니다."),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
+    INVALID_EMPTY_EMAIL_OR_PASSWORD(HttpStatus.BAD_REQUEST, "이메일과 비밀번호는 공백일 수 없습니다."),
 
-    // 비밀번호 검증 실패 (세분화 유지 시)
-    INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
+    // 비밀번호 검증 실패
+    INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않습니다."),
 
     // 계정 상태
     ACCOUNT_DELETED(HttpStatus.GONE, "탈퇴한 계정입니다."),

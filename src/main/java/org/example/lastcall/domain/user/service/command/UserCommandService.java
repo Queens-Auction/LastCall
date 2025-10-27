@@ -2,6 +2,7 @@ package org.example.lastcall.domain.user.service.command;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.exception.UserErrorCode;

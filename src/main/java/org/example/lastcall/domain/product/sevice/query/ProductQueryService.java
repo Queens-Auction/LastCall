@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,5 +79,16 @@ public class ProductQueryService implements ProductQueryServiceApi {
     public Product findById(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+    }
+
+    //상품 소유자 검증
+    @Override
+    public void validateProductOwner(Long productId, Long userId) {
+        Product product = productRepository.findByIdWithUser(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        if (!Objects.equals(product.getUser().getId(), userId)) {
+            throw new BusinessException(ProductErrorCode.UNAUTHORIZED_PRODUCT_OWNER);
+        }
     }
 }

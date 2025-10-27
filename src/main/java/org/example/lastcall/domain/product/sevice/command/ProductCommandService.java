@@ -85,7 +85,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         auctionServiceApi.validateAuctionStatusForModification(product.getId());
 
         //기존 이미지 불러오기
-        List<ProductImage> existingImages = productImageRepository.findAllByProductId(product.getId());
+        List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
         //새 이미지 객체생성
         List<ProductImage> newImages = requests.stream()
@@ -123,8 +123,10 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //썸네일 이미지 변경
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {
+        auctionServiceApi.validateAuctionStatusForModification(productId);
+
         //기존 썸네일 찾기
-        Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL);
+        Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
 
         //기존 썸네일이 있으면 일반 이미지로 변경하기
         currentThumbnail.ifPresent(image -> image.updateImageType(ImageType.DETAIL));
@@ -135,7 +137,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         newThumbnail.updateImageType(ImageType.THUMBNAIL);
 
         // 변경 이후의 해당 상품의 전체 이미지 목록 반환
-        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
+        List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 
         // 썸네일 갯수 검사
         long thumbnailCount = productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
@@ -166,6 +168,17 @@ public class ProductCommandService implements ProductCommandServiceApi {
         if (!productImage.getProduct().getId().equals(productId)) {
             throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);
         }
+        boolean isThumbnail = productImage.getImageType() == ImageType.THUMBNAIL;
+
         productImage.softDelete();
+
+        if (isThumbnail) {
+            List<ProductImage> remainingImages = productImageRepository.findByProductIdAndDeletedFalseOrderByIdAsc(productId);
+            if (!remainingImages.isEmpty()) {
+                ProductImage newThumbnail = remainingImages.get(0);
+                newThumbnail.updateImageType(ImageType.THUMBNAIL);
+            }
+        }
+
     }
 }

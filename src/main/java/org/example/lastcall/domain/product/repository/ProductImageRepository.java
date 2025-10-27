@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductImageRepository extends JpaRepository<ProductImage, Long> {
-    List<ProductImage> findAllByProductId(Long productId);
+    List<ProductImage> findAllByProductIdAndDeletedFalse(Long productId);
 
-    Optional<ProductImage> findByProductIdAndImageType(Long productId, ImageType imageType);
+    Optional<ProductImage> findByProductIdAndImageTypeAndDeletedFalse(Long productId, ImageType imageType);
 
     boolean existsByProductIdAndImageUrl(Long productId, String url);
 
@@ -24,6 +24,8 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
     void softDeleteByProductId(Long productId);
 
     //대표 이미지 조회
-    @Query("SELECT pi FROM ProductImage pi WHERE pi.product.id IN :productIds AND pi.imageType = 'THUMBNAIL'")
+    @Query("SELECT pi FROM ProductImage pi WHERE pi.product.id IN :productIds AND pi.imageType = 'THUMBNAIL' AND pi.deleted = false")
     List<ProductImage> findAllThumbnailsByProductIds(@Param("productIds") List<Long> productIds);
+
+    List<ProductImage> findByProductIdAndDeletedFalseOrderByIdAsc(Long productId);
 }

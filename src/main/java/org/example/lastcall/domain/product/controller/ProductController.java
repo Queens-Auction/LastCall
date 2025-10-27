@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.common.security.Auth;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
@@ -66,7 +66,7 @@ public class ProductController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> readAllProduct(@Auth AuthUser authUser,
                                                                                             Pageable pageable) {
-        PageResponse<ProductReadAllResponse> pageResponse = productQueryService.readAllProduct(authUser, pageable.getPageNumber(), pageable.getPageSize());
+        PageResponse<ProductReadAllResponse> pageResponse = productQueryService.getAllMyProduct(authUser, pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductReadAllResponse>> apiResponse = ApiResponse.success("상품을 전체 조회했습니다.", pageResponse);
 
         return ResponseEntity.ok(apiResponse);

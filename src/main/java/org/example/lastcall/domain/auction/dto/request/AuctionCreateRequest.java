@@ -9,10 +9,6 @@ import java.time.LocalDateTime;
 @Schema(description = "경매 등록 요청 DTO")
 @Getter
 public class AuctionCreateRequest {
-    @Schema(description = "상품 ID", example = "5")
-    @NotNull(message = "상품 id는 필수 입력값입니다.")
-    private Long productId;
-
     @Schema(description = "경매 시작 가격", example = "10000")
     @NotNull(message = "경매 시작 가격은 필수 입력값입니다.")
     private Long startingBid;

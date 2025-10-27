@@ -1,8 +1,8 @@
 package org.example.lastcall.common.security;
 
-import java.util.Objects;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.springframework.core.MethodParameter;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -19,7 +19,7 @@ public class AuthUserArgumentResolver implements HandlerMethodArgumentResolver {
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getPrincipal() == null)
+        if (auth == null || auth.getPrincipal() == null || auth instanceof AnonymousAuthenticationToken)
             return null;
         Object principal = auth.getPrincipal();
         if (principal instanceof AuthUser au) return au;

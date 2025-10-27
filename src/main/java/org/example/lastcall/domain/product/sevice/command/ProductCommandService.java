@@ -3,7 +3,7 @@ package org.example.lastcall.domain.product.sevice.command;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
@@ -72,7 +72,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //상품 정보 수정
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request) {
-        auctionServiceApi.validateAuctionScheduled(productId);
+        auctionServiceApi.validateAuctionStatusForModification(productId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
@@ -82,10 +82,10 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //상품 수정 시 이미지 추가
     public List<ProductImageResponse> appendProductImages(Long productId, List<ProductImageCreateRequest> requests) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionServiceApi.validateAuctionScheduled(product.getId());
+        auctionServiceApi.validateAuctionStatusForModification(product.getId());
 
         //기존 이미지 불러오기
-        List<ProductImage> existingImages = productImageRepository.findAllByProductId(product.getId());
+        List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
         //새 이미지 객체생성
         List<ProductImage> newImages = requests.stream()
@@ -123,8 +123,10 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //썸네일 이미지 변경
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId) {
+        auctionServiceApi.validateAuctionStatusForModification(productId);
+
         //기존 썸네일 찾기
-        Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL);
+        Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
 
         //기존 썸네일이 있으면 일반 이미지로 변경하기
         currentThumbnail.ifPresent(image -> image.updateImageType(ImageType.DETAIL));
@@ -135,7 +137,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         newThumbnail.updateImageType(ImageType.THUMBNAIL);
 
         // 변경 이후의 해당 상품의 전체 이미지 목록 반환
-        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
+        List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 
         // 썸네일 갯수 검사
         long thumbnailCount = productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
@@ -149,7 +151,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //상품 삭제
     public void deleteProduct(Long productId) {
         //경매 중, 경매 완료인 상품은 삭제 불가능
-        auctionServiceApi.validateAuctionScheduled(productId);
+        auctionServiceApi.validateAuctionStatusForModification(productId);
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
@@ -161,11 +163,22 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
     //이미지 단건 삭제
     public void deleteProductImage(Long productId, Long imageId) {
-        auctionServiceApi.validateAuctionScheduled(productId);
+        auctionServiceApi.validateAuctionStatusForModification(productId);
         ProductImage productImage = productImageRepository.findById(imageId).orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
         if (!productImage.getProduct().getId().equals(productId)) {
             throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);
         }
+        boolean isThumbnail = productImage.getImageType() == ImageType.THUMBNAIL;
+
         productImage.softDelete();
+
+        if (isThumbnail) {
+            List<ProductImage> remainingImages = productImageRepository.findByProductIdAndDeletedFalseOrderByIdAsc(productId);
+            if (!remainingImages.isEmpty()) {
+                ProductImage newThumbnail = remainingImages.get(0);
+                newThumbnail.updateImageType(ImageType.THUMBNAIL);
+            }
+        }
+
     }
 }

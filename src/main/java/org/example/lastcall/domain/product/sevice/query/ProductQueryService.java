@@ -3,7 +3,7 @@ package org.example.lastcall.domain.product.sevice.query;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
@@ -31,8 +31,8 @@ public class ProductQueryService implements ProductQueryServiceApi {
     private final ProductImageRepository productImageRepository;
 
     //내 상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)
-    public PageResponse<ProductReadAllResponse> readAllProduct(AuthUser authuser, int page, int size) {
-        Page<Product> products = productRepository.findAllByUserId(authuser.userId(), PageRequest.of(page, size));
+    public PageResponse<ProductReadAllResponse> getAllMyProduct(AuthUser authuser, int page, int size) {
+        Page<Product> products = productRepository.findAllByUserIdAndDeletedFalse(authuser.userId(), PageRequest.of(page, size));
         List<Long> productIds = products.stream()
                 .map(Product::getId)
                 .toList();
@@ -50,7 +50,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     public ProductReadOneResponse readProduct(Long productId) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
-        List<ProductImageResponse> images = productImageRepository.findAllByProductId(productId).stream()
+        List<ProductImageResponse> images = productImageRepository.findAllByProductIdAndDeletedFalse(productId).stream()
                 .map(ProductImageResponse::from)
                 .toList();
 
@@ -61,7 +61,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     @Override
     @Transactional(readOnly = true)
     public ProductImageResponse readThumbnailImage(Long productId) {
-        ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageType(productId, ImageType.THUMBNAIL)
+        ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
         return ProductImageResponse.from(thumbnailImage);
     }
@@ -70,7 +70,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     @Override
     @Transactional(readOnly = true)
     public List<ProductImageResponse> readAllProductImage(Long productId) {
-        List<ProductImage> productImages = productImageRepository.findAllByProductId(productId);
+        List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
         return ProductImageResponse.from(productImages);
     }
 

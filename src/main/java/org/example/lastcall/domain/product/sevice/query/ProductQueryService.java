@@ -47,7 +47,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     }
 
     //상품 단건 조회
-    public ProductReadOneResponse readProduct(Long productId) {
+    public ProductReadOneResponse getProduct(Long productId) {
         Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         List<ProductImageResponse> images = productImageRepository.findAllByProductIdAndDeletedFalse(productId).stream()

@@ -67,7 +67,7 @@ public class ProductController {
             description = "로그인한 사용자가 등록한 상품 전체를 조회합니다."
     )
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> readAllProduct(
+    public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> getAllMyProduct(
             @Auth AuthUser authUser,
             Pageable pageable) {
         PageResponse<ProductReadAllResponse> pageResponse = productQueryService.getAllMyProduct(authUser, pageable.getPageNumber(), pageable.getPageSize());
@@ -82,8 +82,8 @@ public class ProductController {
             description = "상품의 상세 정보와 등록된 이미지 목록을 함께 조회합니다."
     )
     @GetMapping("/{productId}")
-    public ResponseEntity<ApiResponse<ProductReadOneResponse>> readProduct(@PathVariable Long productId) {
-        ProductReadOneResponse response = productQueryService.readProduct(productId);
+    public ResponseEntity<ApiResponse<ProductReadOneResponse>> getProduct(@PathVariable Long productId) {
+        ProductReadOneResponse response = productQueryService.getProduct(productId);
         ApiResponse<ProductReadOneResponse> apiResponse = ApiResponse.success("상품 단건 조회에 성공했습니다.", response);
 
         return ResponseEntity.ok(apiResponse);

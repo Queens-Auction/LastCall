@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.AuctionServiceApi;
-import org.example.lastcall.domain.auth.model.AuthUser;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;
 import org.example.lastcall.domain.bid.service.query.BidQueryServiceApi;

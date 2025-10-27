@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.user.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.entity.BaseEntity;
@@ -20,6 +21,7 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, columnDefinition = "BINARY(16)")
     private UUID publicId;
 
     @Column(name = "username", nullable = false, length = 10)
@@ -62,8 +64,7 @@ public class User extends BaseEntity {
                  String postcode,
                  String detailAddress,
                  String phoneNumber,
-                 Role userRole)
-    {
+                 Role userRole) {
         this.publicId = publicId;
         this.username = username;
         this.nickname = nickname;
@@ -99,20 +100,18 @@ public class User extends BaseEntity {
                 userRole);
     }
 
-    public void changeNickname(String nickname)
-    {
+    public void changeNickname(String nickname) {
         this.nickname = nickname;
     }
 
-    public void changePhoneNumber(String phoneNumber)
-    {
+    public void changePhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
 
     }
+
     public void changeAddress(String address,
                               String postcode,
-                              String detailAddress)
-    {
+                              String detailAddress) {
         if (address != null)
         {
             this.address = address;
@@ -135,9 +134,7 @@ public class User extends BaseEntity {
         this.password = encodedPassword;
     }
 
-    public void markPasswordChangedNow()
-    {
+    public void markPasswordChangedNow() {
         this.passwordChangedAt = LocalDateTime.now();
     }
-
 }

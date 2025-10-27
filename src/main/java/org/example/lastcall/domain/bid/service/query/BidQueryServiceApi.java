@@ -13,22 +13,25 @@ public interface BidQueryServiceApi {
 	// 특정 경매의 최고 입찰가 조회
 	Long getCurrentBidAmount(Long auctionId);
 
-	// 이전 최고 입찰자, 최고 입찰가를 찾는 로직
+	// 이전 최고 입찰자, 최고 입찰가 조회
 	Optional<Bid> findPreviousHighestBidByAuction(Auction auction);
 
-	// 최고 입찰자, 최고가 입찰가를 찾는 로직
+	// 최고 입찰자, 최고 입찰가 조회
 	Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction);
 
-    // 특정 경매에서 특정 유저의 마지막 입찰 기록 조회 로직
-    Optional<Bid> findLastBidExceptBidId(Long auctionId, Long userId, Long currentBidId);
+	// 특정 경매에서 특정 유저의 마지막 입찰 기록 조회
+	Optional<Bid> findLastBidExceptBidId(
+		Long auctionId,
+		Long userId,
+		Long currentBidId);
 
-	// ID로 입찰을 가져오는 로직
-	Bid getBid(Long bidId);
+	// ID로 입찰 단건 조회
+	Bid findById(Long bidId);
 
 	// 특정 유저가 입찰한 경매 목록 조회
 	List<Long> getParticipatedAuctionIds(Long userId);
 
-	// 특정 유저가 특정 경매에서 입찰한 최고 금액 조회
+	// 특정 경매에서 특정 유저의 입찰 최고가 조회
 	Long getMyBidAmount(Long auctionId, Long userId);
 
 	// 특정 유저가 특정 경매에서 최고 입찰자인지 여부 조회

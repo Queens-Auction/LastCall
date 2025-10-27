@@ -55,7 +55,7 @@ public class AuctionService implements AuctionServiceApi {
 
     // 경매 전체 조회 //
     @Transactional(readOnly = true)
-    public PageResponse<AuctionReadAllResponse> readAllAuctions(Category category, Pageable pageable) {
+    public PageResponse<AuctionReadAllResponse> getAllAuctions(Category category, Pageable pageable) {
         // 1. 경매 목록 조회 (최신순)
         Page<Auction> auctions = auctionRepository.findAllActiveAuctionsByCategory(category, pageable);
         // 2. 엔티티 -> DTO 변환
@@ -80,7 +80,7 @@ public class AuctionService implements AuctionServiceApi {
     // 공개용 , 로그인 전용 API 분리한 이유 : 순환 참조 방지
     // 여기서 bidService 호출 시 순환참조 발생
     @Transactional(readOnly = true)
-    public AuctionReadResponse readAuction(Long auctionId, Long userId) {
+    public AuctionReadResponse getAuction(Long auctionId, Long userId) {
         // 1. 경매 조회
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));

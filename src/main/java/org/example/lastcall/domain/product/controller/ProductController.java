@@ -66,7 +66,7 @@ public class ProductController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> readAllProduct(@Auth AuthUser authUser,
                                                                                             Pageable pageable) {
-        PageResponse<ProductReadAllResponse> pageResponse = productQueryService.readAllProduct(authUser, pageable.getPageNumber(), pageable.getPageSize());
+        PageResponse<ProductReadAllResponse> pageResponse = productQueryService.getAllMyProduct(authUser, pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductReadAllResponse>> apiResponse = ApiResponse.success("상품을 전체 조회했습니다.", pageResponse);
 
         return ResponseEntity.ok(apiResponse);

@@ -16,7 +16,7 @@ import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.sevice.query.ProductQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.repository.UserRepository;
+import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,39 +30,32 @@ import java.util.Optional;
 @Transactional
 public class AuctionService implements AuctionServiceApi {
     private final AuctionRepository auctionRepository;
-    private final UserRepository userRepository;
+    private final UserServiceApi userService;
     private final ProductQueryServiceApi productService;
+    //private final BidQueryService bidService;
 
     // 경매 등록 //
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
         // 1. 상품 존재 여부 확인
-        Product product = productService.findById(productId);
-        // 2. 상품 소유자 검증
-        if (!product.getUser().getId().equals(userId)) {
-            throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
-        }
-        // 3. 중복 경매 등록 방지
+        // productService.validateProductOwner(productId, userId); 연결되면 주석 풀기
+        // 2. 중복 경매 등록 방지
         if (auctionRepository.existsActiveAuction(productId)) {
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
-        // 4. User 엔티티 조회
-        User user = userRepository.findById(userId).orElseThrow(
-                () -> new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER)
-        );
+        // 3. User 조회
+        User user = userService.findById(userId);
+        // 4. 상품 조회
+        Product product = productService.findById(productId);
         // 5. 경매 등록
-        Auction auction = Auction.of(
-                user,
-                product,
-                request
-        );
+        Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);
 
-        return AuctionResponse.from(auction);
+        return AuctionResponse.fromCreate(auction);
     }
 
     // 경매 전체 조회 //
     @Transactional(readOnly = true)
-    public PageResponse<AuctionReadAllResponse> readAllAuctions(Category category, Pageable pageable) {
+    public PageResponse<AuctionReadAllResponse> getAllAuctions(Category category, Pageable pageable) {
         // 1. 경매 목록 조회 (최신순)
         Page<Auction> auctions = auctionRepository.findAllActiveAuctionsByCategory(category, pageable);
         // 2. 엔티티 -> DTO 변환
@@ -70,7 +63,11 @@ public class AuctionService implements AuctionServiceApi {
                 .map(auction -> {
                     // 현재 경매에 연결된 상품의 이미지 조회
                     ProductImageResponse image = productService.readThumbnailImage(auction.getProduct().getId());
-                    return AuctionReadAllResponse.from(auction, image.getImageUrl());
+                    // 참여자(입찰자) 수 계산
+                    //int participantCount = bidService.getParticipantCount(auction.getId()); 연결되면 주석풀기 (cqrs 구조 변경 후 진행해야함)
+                    int participantCount = 0;
+
+                    return AuctionReadAllResponse.from(auction, image.getImageUrl(), participantCount);
                 })
                 .toList();
 
@@ -83,19 +80,25 @@ public class AuctionService implements AuctionServiceApi {
     // 공개용 , 로그인 전용 API 분리한 이유 : 순환 참조 방지
     // 여기서 bidService 호출 시 순환참조 발생
     @Transactional(readOnly = true)
-    public AuctionReadResponse readAuction(Long auctionId, Long userId) {
+    public AuctionReadResponse getAuction(Long auctionId, Long userId) {
         // 1. 경매 조회
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
         // 2. 상품 이미지 조회
         List<ProductImageResponse> images = productService.readAllProductImage(auction.getProduct().getId());
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 
+        boolean participated = false;
+        // 공개용/로그인용 같이 쓰기 -> cqrs 분리 후 주석풀기
+        //if (userId != null) {
+        //    participated = bidService.existsByAuctionIdAndUserId(auctionId, userId);
+        //}
+
         return AuctionReadResponse.from(
                 auction,
                 auction.getProduct(),
                 imageUrl,
-                false // 항상 false 로 전달 -> 공개용 임을 명시
+                participated
         );
     }
 
@@ -119,7 +122,7 @@ public class AuctionService implements AuctionServiceApi {
     // 입찰 가능한 경매 여부 검증
     @Override
     public Auction getBiddableAuction(Long auctionId) {
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         if (auction.getStatus() == AuctionStatus.SCHEDULED

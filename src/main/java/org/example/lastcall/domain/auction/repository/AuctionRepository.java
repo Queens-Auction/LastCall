@@ -32,7 +32,8 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     @Query("SELECT a " +
             "FROM Auction a " +
             "WHERE a.status IN('ONGOING', 'SCHEDULED') " +
-            "AND (:category is NULL OR a.product.category = :category)")
+            "AND (:category is NULL OR a.product.category = :category) " +
+            "AND a.deleted=false ")
     Page<Auction> findAllActiveAuctionsByCategory(
             @Param("category") Category category,
             Pageable pageable);
@@ -43,7 +44,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     // 판매자가 등록한 모든 경매 목록 조회 (페이징)
     @Query("SELECT a " +
             "FROM Auction a " +
-            "WHERE a.user.id = :userId")
+            "WHERE a.user.id = :userId ")
     Page<Auction> findBySellerId(Long userId, Pageable pageable);
 
     // 판매자가 등록한 특정 경매 단건 조회
@@ -53,8 +54,18 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
             "AND a.id = :auctionId")
     Optional<Auction> findBySellerIdAndAuctionId(Long userId, Long auctionId);
 
+    // 사용자가 입찰에 참여한 경매 ID 목록을 기준으로 경매 페이지 조회
     Page<Auction> findByIdIn(List<Long> auctionIds, Pageable pageable);
 
     // 상품 ID로 연결된 경매 조회
+    @Query("SELECT a " +
+            "FROM Auction a " +
+            "WHERE a.product.id = :productId AND a.deleted = false")
     Optional<Auction> findByProductId(Long productId);
+
+    // 삭제된 경매는 제외하고 조회
+    @Query("SELECT a " +
+            "FROM Auction a " +
+            "WHERE a.id = :auctionId AND a.deleted = false ")
+    Optional<Auction> findActiveById(Long auctionId);
 }

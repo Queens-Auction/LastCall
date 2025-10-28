@@ -19,13 +19,12 @@ import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALRE
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional()
 public class UserCommandService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    @Transactional
     public UserProfileResponse updateMyProfile(Long userId, UserUpdateRequest req) {
         if (req == null || req.isEmpty()) {
             throw new BusinessException(UserErrorCode.NO_FIELDS_TO_UPDATE); // 없으면 추가 추천
@@ -55,7 +54,6 @@ public class UserCommandService {
         return UserProfileResponse.from(user);
     }
 
-    @Transactional
     public void changeMyPassword(Long userId, PasswordChangeRequest req) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));

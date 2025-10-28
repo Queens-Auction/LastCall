@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auctions")
 public class AuctionController {
     private final AuctionQueryService auctionQueryService;
-    private final AuctionCommandService auctionService;
+    private final AuctionCommandService auctionCommandService;
 
     // 경매 등록 //
     @Operation(
@@ -40,7 +40,7 @@ public class AuctionController {
     public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@PathVariable("productId") Long productId,
                                                                       @Auth AuthUser authUser,
                                                                       @Valid @RequestBody AuctionCreateRequest request) {
-        AuctionResponse response = auctionService.createAuction(productId, authUser.userId(), request);
+        AuctionResponse response = auctionCommandService.createAuction(productId, authUser.userId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.success("경매가 등록되었습니다.", response)
         );
@@ -158,7 +158,7 @@ public class AuctionController {
     public ResponseEntity<ApiResponse<AuctionResponse>> updateAuction(@Auth AuthUser authUser,
                                                                       @PathVariable Long auctionId,
                                                                       @Valid @RequestBody AuctionUpdateRequest request) {
-        AuctionResponse response = auctionService.updateAuction(authUser.userId(), auctionId, request);
+        AuctionResponse response = auctionCommandService.updateAuction(authUser.userId(), auctionId, request);
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("내 경매가 수정되었습니다.", response)
@@ -174,7 +174,7 @@ public class AuctionController {
     @DeleteMapping("/me/{auctionId}")
     public ResponseEntity<ApiResponse<Void>> deleteAuction(@Auth AuthUser authUser,
                                                            @PathVariable Long auctionId) {
-        auctionService.deleteAuction(authUser.userId(), auctionId);
+        auctionCommandService.deleteAuction(authUser.userId(), auctionId);
 
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("내 경매가 삭제되었습니다.")

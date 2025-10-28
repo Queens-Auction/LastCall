@@ -43,7 +43,7 @@ public class EmailVerificationController {
             summary = "이메일 인증 코드 검증",
             description = "사용자가 입력한 인증 코드를 검증하고, 유효 시 인증 완료 상태로 변경합니다."
     )
-    @PutMapping("/email-verifications/status")
+    @PostMapping("/email-verifications/status")
     public ResponseEntity<ApiResponse<VerifyEmailVerificationCodeDto.Response>> verifyEmailVerificationCode(
             @Valid @RequestBody VerifyEmailVerificationCodeDto.Request request) {
         var result = emailVerificationService.verifyEmailVerificationCode(request);

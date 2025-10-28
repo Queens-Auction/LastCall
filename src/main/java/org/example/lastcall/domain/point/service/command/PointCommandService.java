@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.entity.Auction;
-import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.auction.service.query.AuctionFinder;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;
@@ -32,7 +32,7 @@ public class PointCommandService implements PointCommandServiceApi {
     private final PointLogRepository pointLogRepository;
     private final UserServiceApi userServiceApi;
     private final BidQueryServiceApi bidQueryServiceApi;
-    private final AuctionServiceApi auctionServiceApi;
+    private final AuctionFinder auctionFinder;
 
     // 포인트 등록 (충전)
     public PointResponse createPoint(AuthUser authUser, @Valid PointCreateRequest request) {
@@ -105,7 +105,7 @@ public class PointCommandService implements PointCommandServiceApi {
                         PointLogType.ADDITIONAL_DEPOSIT,
                         "입찰 금액 증가로 인한 추가 예치 처리",
                         difference,
-                        auctionServiceApi.findById(auctionId)
+                        auctionFinder.findById(auctionId)
                 );
 
                 // 포인트 로그에 저장
@@ -127,7 +127,7 @@ public class PointCommandService implements PointCommandServiceApi {
                     PointLogType.DEPOSIT,
                     "입찰금 예치 처리",
                     bidAmount,
-                    auctionServiceApi.findById(auctionId)
+                    auctionFinder.findById(auctionId)
             );
             pointLogRepository.save(log);
         }
@@ -137,7 +137,7 @@ public class PointCommandService implements PointCommandServiceApi {
     @Override
     public void depositToSettlement(Long userId, Long auctionId, Long amount) {
         // 경매 및 최고 입찰 조회
-        Auction auction = auctionServiceApi.findById(auctionId);
+        Auction auction = auctionFinder.findById(auctionId);
         Bid highestBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
                 () -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
         );

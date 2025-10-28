@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.point.dto;
+package org.example.lastcall.domain.point.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

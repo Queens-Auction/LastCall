@@ -36,7 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req,
                                     HttpServletResponse res,
-                                    FilterChain chain) throws ServletException, IOException {
+                                    FilterChain chain) throws ServletException, IOException
+    {
         // 이미 인증되어 있으면 패스
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(req, res);
@@ -59,8 +60,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Number uidNum = claims.get("uid", Number.class);
             if (uidNum == null) {
                 log.warn("JWT에 uid 클레임이 없습니다.");
-//                unauthorized(res);
-//                return;
+                unauthorized(res);
+                return;
             }
             Long userId = uidNum.longValue();
 
@@ -71,6 +72,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             User user = userRepository.findById(userId).orElse(null);
             if (user == null) {
                 log.warn("사용자 없음: userId={}", userId);
+                unauthorized(res);
+                return;
+            }
+            if (user.isDeleted()) {
+                log.warn("삭제된 사용자 접근 차단: userId={}", userId);
+                unauthorized(res);
+                return;
 //                unauthorized(res);
 //                return;
             }
@@ -86,6 +94,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 LocalDateTime tokenIat = DateTimeUtil.convertToLocalDateTime(claims.getIssuedAt());
                 if (tokenIat.isBefore(user.getPasswordChangedAt())) {
                     log.warn("토큰이 비밀번호 변경 이전에 발급됨. 토큰 거부. userId={}", userId);
+                    unauthorized(res);
+                    return;
 //                    unauthorized(res);
 //                    return;
                 }

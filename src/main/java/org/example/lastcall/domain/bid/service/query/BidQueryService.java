@@ -20,13 +20,12 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class BidQueryService implements BidQueryServiceApi {
 	private final BidRepository bidRepository;
 	private final AuctionServiceApi auctionServiceApi;
 
 	// 경매별 전체 입찰 내역 조회
-	@Transactional(readOnly = true)
 	public PageResponse<BidGetAllResponse> getAllBids(Long auctionId, Pageable pageable) {
 		Auction auction = auctionServiceApi.findById(auctionId);
 
@@ -35,14 +34,13 @@ public class BidQueryService implements BidQueryServiceApi {
 		return PageResponse.of(bidPage.map(BidGetAllResponse::from));
 	}
 
+	// 특정 경매에 해당 사용자의 입찰 존재 여부 확인
 	@Override
 	public boolean existsByAuctionIdAndUserId(Long auctionId, Long userId) {
-		// if (auctionId == null || userId == null) {
-		// 	throw new BusinessException(BidErrorCode.INVALID_BID_CHECK_REQUEST);
-		// }
 		return bidRepository.existsByAuctionIdAndUserId(auctionId, userId);
 	}
 
+	// 특정 경매의 최고 입찰가 조회
 	@Override
 	public Long getCurrentBidAmount(Long auctionId) {
 		Auction auction = auctionServiceApi.findById(auctionId);
@@ -50,29 +48,36 @@ public class BidQueryService implements BidQueryServiceApi {
 		return bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
 	}
 
+	// 이전 최고 입찰자, 최고 입찰가 조회
 	@Override
 	public Optional<Bid> findPreviousHighestBidByAuction(Auction auction) {
 		return bidRepository.findPreviousHighestBidByAuction(auction);
 	}
 
+	// 최고 입찰자, 최고 입찰가 조회
 	@Override
 	public Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction) {
 		return bidRepository.findTopByAuctionOrderByBidAmountDesc(auction);
 	}
 
-    @Override
-    public Optional<Bid> findLastBidExceptBidId(Long auctionId, Long userId, Long currentBidId) {
-        return bidRepository.findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(auctionId, userId, currentBidId);
-    }
-
+	// 특정 경매에서 특정 유저의 마지막 입찰 기록 조회
 	@Override
-	public Bid getBid(Long bidId) {
+	public Optional<Bid> findLastBidExceptBidId(
+		Long auctionId,
+		Long userId,
+		Long currentBidId) {
+		return bidRepository.findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(auctionId, userId, currentBidId);
+	}
+
+	// ID로 입찰 단건 조회
+	@Override
+	public Bid findById(Long bidId) {
 		return bidRepository.findById(bidId).orElseThrow(
 			() -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
 		);
 	}
 
-	// 내가 참여한 경매 목록 조회
+	// 특정 유저가 입찰한 경매 목록 조회
 	@Override
 	public List<Long> getParticipatedAuctionIds(Long userId) {
 		return bidRepository.findDistinctAuctionsByUserId(userId);
@@ -86,11 +91,17 @@ public class BidQueryService implements BidQueryServiceApi {
 		return myBidAmount != null && myBidAmount.equals(currentBid);
 	}
 
-	// 특정 유저가 해당 경매에서 입찰한 금액 중 가장 높은 금액 조회
+	// 특정 경매에서 특정 유저의 입찰 최고가 조회
 	@Override
 	public Long getMyBidAmount(Long auctionId, Long userId) {
 		return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId)
 			.map(Bid::getBidAmount)
 			.orElse(null);
+	}
+
+	// 특정 경매의 참여자 수 (입찰자 수) 조회
+	@Override
+	public int countDistinctParticipants(Long auctionId) {
+		return bidRepository.countDistinctByAuctionId(auctionId);
 	}
 }

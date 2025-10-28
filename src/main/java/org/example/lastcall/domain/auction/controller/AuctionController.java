@@ -36,7 +36,7 @@ public class AuctionController {
             description = "로그인한 사용자가 새로운 경매를 등록합니다. " +
                     "요청 본문에는 상품 정보, 시작가, 마감 시간 등이 포함됩니다."
     )
-    @PostMapping("/my/{productId}")
+    @PostMapping("/me/{productId}")
     public ResponseEntity<ApiResponse<AuctionResponse>> createAuction(@PathVariable("productId") Long productId,
                                                                       @Auth AuthUser authUser,
                                                                       @Valid @RequestBody AuctionCreateRequest request) {
@@ -90,7 +90,7 @@ public class AuctionController {
             description = "로그인한 사용자가 자신이 등록한(판매 중이거나 종료된) 모든 경매 목록을 조회합니다. " +
                     "페이징 처리가 적용되어 있으며, 최신순으로 정렬됩니다."
     )
-    @GetMapping("/my/selling")
+    @GetMapping("/me/selling")
     public ResponseEntity<ApiResponse<PageResponse<MySellingResponse>>> getMySellingAuctions(
             @Auth AuthUser authUser,
             @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -106,7 +106,7 @@ public class AuctionController {
             summary = "내가 판매한 경매 상세 조회",
             description = "로그인한 사용자가 자신이 등록한 경매 중 특정 경매의 상세 정보를 조회합니다."
     )
-    @GetMapping("/my/selling/{auctionId}")
+    @GetMapping("/me/selling/{auctionId}")
     public ResponseEntity<ApiResponse<MySellingResponse>> getMySellingDetailAuctions(@Auth AuthUser authUser,
                                                                                      @PathVariable Long auctionId) {
         MySellingResponse response = auctionQueryService.getMySellingDetailAuction(authUser.userId(), auctionId);
@@ -122,7 +122,7 @@ public class AuctionController {
             description = "로그인한 사용자가 입찰에 참여했던 모든 경매 목록을 조회합니다. " +
                     "페이징 처리가 적용되어 있으며, 최신순으로 정렬됩니다."
     )
-    @GetMapping("/my/participated")
+    @GetMapping("/me/participated")
     public ResponseEntity<ApiResponse<PageResponse<MyParticipatedResponse>>> getMyParticipatedAuctions(
             @Auth AuthUser authUser,
             @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -138,8 +138,8 @@ public class AuctionController {
             summary = "내가 참여한 경매 상세 조회",
             description = "로그인한 사용자가 입찰에 참여한 특정 경매의 상세 정보를 조회합니다."
     )
-    @GetMapping("/my/participated/{auctionId}")
-    public ResponseEntity<ApiResponse<MyParticipatedResponse>> getMyParticipatedDetailAuction(@AuthenticationPrincipal AuthUser authUser,
+    @GetMapping("/me/participated/{auctionId}")
+    public ResponseEntity<ApiResponse<MyParticipatedResponse>> getMyParticipatedDetailAuction(@Auth AuthUser authUser,
                                                                                               @PathVariable Long auctionId) {
         MyParticipatedResponse response = auctionQueryService.getMyParticipatedDetailAuction(authUser.userId(), auctionId);
 
@@ -154,7 +154,7 @@ public class AuctionController {
             description = "로그인한 사용자가 자신이 등록한 경매의 정보를 수정합니다. " +
                     "시작가, 입찰 단위, 시작/종료 시간을 변경할 수 있습니다."
     )
-    @PatchMapping("/my/{auctionId}")
+    @PatchMapping("/me/{auctionId}")
     public ResponseEntity<ApiResponse<AuctionResponse>> updateAuction(@Auth AuthUser authUser,
                                                                       @PathVariable Long auctionId,
                                                                       @Valid @RequestBody AuctionUpdateRequest request) {
@@ -171,7 +171,7 @@ public class AuctionController {
             description = "로그인한 사용자가 자신이 등록한 경매를 삭제합니다. " +
                     "해당 경매가 이미 시작되었거나 종료된 경우 삭제가 제한될 수 있습니다."
     )
-    @DeleteMapping("/my/{auctionId}")
+    @DeleteMapping("/me/{auctionId}")
     public ResponseEntity<ApiResponse<Void>> deleteAuction(@Auth AuthUser authUser,
                                                            @PathVariable Long auctionId) {
         auctionService.deleteAuction(authUser.userId(), auctionId);
@@ -179,6 +179,5 @@ public class AuctionController {
         return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.success("내 경매가 삭제되었습니다.")
         );
-
     }
 }

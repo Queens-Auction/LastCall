@@ -8,7 +8,8 @@ import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;
 import org.example.lastcall.domain.bid.repository.BidRepository;
-import org.example.lastcall.domain.point.service.PointServiceApi;
+import org.example.lastcall.domain.point.service.command.PointCommandServiceApi;
+import org.example.lastcall.domain.point.service.query.PointQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,8 @@ public class BidCommandService {
 	private final BidRepository bidRepository;
 	private final AuctionServiceApi auctionServiceApi;
 	private final UserServiceApi userServiceApi;
-	private final PointServiceApi pointServiceApi;
+	private final PointCommandServiceApi pointCommandServiceApi;
+	private final PointQueryServiceApi pointQueryServiceApi;
 
 	// 입찰 등록
 	public BidResponse createBid(Long auctionId, AuthUser authUser) {
@@ -42,13 +44,13 @@ public class BidCommandService {
 		Long bidAmount = currentMaxBid + auction.getBidStep();
 
 		// 경매에 참여할만큼 포인트가 충분한 지 검증함
-		pointServiceApi.validateSufficientPoints(user.getId(), bidAmount);
+		pointQueryServiceApi.validateSufficientPoints(user.getId(), bidAmount);
 
 		Bid bid = new Bid(bidAmount, auction, user);
 
 		Bid savedBid = bidRepository.save(bid);
 
-		pointServiceApi.updateDepositPoint(
+		pointCommandServiceApi.updateDepositPoint(
 			auction.getId(),
 			savedBid.getId(),
 			bidAmount,

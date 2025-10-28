@@ -17,7 +17,8 @@ public enum ProductErrorCode implements ErrorCode {
     THUMBNAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "대표 이미지가 존재하지 않습니다."),
     IMAGE_NOT_BELONGS_TO_PRODUCT(HttpStatus.BAD_REQUEST, "해당 상품에 속한 이미지가 아닙니다."),
     MAX_IMAGE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지는 최대 10장입니다."),
-    UNAUTHORIZED_PRODUCT_OWNER(HttpStatus.FORBIDDEN, "상품의 소유자가 아닙니다.");
+    UNAUTHORIZED_PRODUCT_OWNER(HttpStatus.FORBIDDEN, "상품의 소유자가 아닙니다."),
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 리소스에 접근할 권한이 없습니다.");
 
     private final HttpStatus status;
     private final String message;

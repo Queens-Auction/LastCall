@@ -22,7 +22,7 @@ public class EmailVerificationController {
             summary = "이메일 인증 코드 발송",
             description = "회원가입 전 이메일로 인증 코드를 발송합니다."
     )
-    @PutMapping("/email-verifications")
+    @PostMapping("/email-verifications")
     public ResponseEntity<ApiResponse<Object>> sendEmailVerificationCode(
             @Valid @RequestBody EmailVerificationSendRequest.Request request) {
         emailVerificationService.sendEmailVerificationCode(request);
@@ -43,7 +43,7 @@ public class EmailVerificationController {
             summary = "이메일 인증 코드 검증",
             description = "사용자가 입력한 인증 코드를 검증하고, 유효 시 인증 완료 상태로 변경합니다."
     )
-    @PutMapping("/email-verifications/status")
+    @PostMapping("/email-verifications/status")
     public ResponseEntity<ApiResponse<VerifyEmailVerificationCodeDto.Response>> verifyEmailVerificationCode(
             @Valid @RequestBody VerifyEmailVerificationCodeDto.Request request) {
         var result = emailVerificationService.verifyEmailVerificationCode(request);

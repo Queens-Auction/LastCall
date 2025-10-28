@@ -6,7 +6,7 @@ import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
 import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
-import org.example.lastcall.domain.auction.entity.AuctionStatus;
+import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.entity.Product;

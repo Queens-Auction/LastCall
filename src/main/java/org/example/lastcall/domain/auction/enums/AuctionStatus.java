@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.auction.entity;
+package org.example.lastcall.domain.auction.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

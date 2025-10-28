@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import org.example.lastcall.domain.auction.entity.Auction;
-import org.example.lastcall.domain.auction.entity.AuctionStatus;
+import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.product.entity.Product;
 
 import java.time.LocalDateTime;

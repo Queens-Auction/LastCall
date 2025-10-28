@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.auction.repository;
 
 import org.example.lastcall.domain.auction.entity.Auction;
-import org.example.lastcall.domain.auction.entity.AuctionStatus;
+import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.product.entity.Category;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

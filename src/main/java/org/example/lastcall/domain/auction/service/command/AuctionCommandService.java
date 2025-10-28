@@ -70,6 +70,6 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
-        auction.softDelete();
+        auction.markAsDeleted();
     }
 }

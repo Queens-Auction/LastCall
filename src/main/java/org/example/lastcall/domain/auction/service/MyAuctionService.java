@@ -119,7 +119,7 @@ public class MyAuctionService {
 
     // 내가 참여한 경매 단건 조회 //
     public MyParticipatedResponse getMyParticipatedDetailAuction(Long userId, Long auctionId) {
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         Product product = auction.getProduct();
@@ -146,7 +146,7 @@ public class MyAuctionService {
 
     // 내 경매 수정 //
     public AuctionResponse updateAuction(Long userId, Long auctionId, AuctionUpdateRequest request) {
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         if (!auction.getUser().getId().equals(userId)) {
@@ -156,12 +156,12 @@ public class MyAuctionService {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
         auction.update(request);
-        return AuctionResponse.from(auction);
+        return AuctionResponse.fromUpdate(auction);
     }
 
     // 내 경매 삭제 //
     public void deleteAuction(Long userId, Long auctionId) {
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         if (!auction.getUser().getId().equals(userId)) {

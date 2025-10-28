@@ -20,13 +20,12 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class BidQueryService implements BidQueryServiceApi {
 	private final BidRepository bidRepository;
 	private final AuctionServiceApi auctionServiceApi;
 
 	// 경매별 전체 입찰 내역 조회
-	@Transactional(readOnly = true)
 	public PageResponse<BidGetAllResponse> getAllBids(Long auctionId, Pageable pageable) {
 		Auction auction = auctionServiceApi.findById(auctionId);
 
@@ -98,5 +97,11 @@ public class BidQueryService implements BidQueryServiceApi {
 		return bidRepository.findTopByAuctionIdAndUserIdOrderByBidAmountDesc(auctionId, userId)
 			.map(Bid::getBidAmount)
 			.orElse(null);
+	}
+
+	// 특정 경매의 참여자 수 (입찰자 수) 조회
+	@Override
+	public int countDistinctParticipants(Long auctionId) {
+		return bidRepository.countDistinctByAuctionId(auctionId);
 	}
 }

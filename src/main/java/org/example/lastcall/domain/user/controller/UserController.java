@@ -13,11 +13,9 @@ import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.example.lastcall.domain.user.dto.request.PasswordChangeRequest;
 import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
 import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
-import org.example.lastcall.domain.user.service.command.UserCommandService;
 import org.example.lastcall.domain.user.service.query.UserQueryService;
 import org.example.lastcall.domain.user.exception.UserErrorCode;
 import org.example.lastcall.domain.user.service.command.UserCommandService;
-import org.example.lastcall.domain.user.service.query.UserQueryService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +26,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
 public class UserController {
-    private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
+    private final UserCommandService userCommandService;
     private final CookieUtil cookieUtil;
 
     @Operation(
@@ -41,7 +39,7 @@ public class UserController {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
-        UserProfileResponse dto = userCommandService.getMyProfile(authUser.userId());
+        UserProfileResponse dto = userQueryService.getMyProfile(authUser.userId());
         return ApiResponse.success("내 정보 조회 성공", dto);
     }
 
@@ -68,7 +66,7 @@ public class UserController {
             }
         }
 
-        UserProfileResponse response = userQueryService.updateMyProfile(authUser.userId(), request);
+        UserProfileResponse response = userCommandService.updateMyProfile(authUser.userId(), request);
         return ApiResponse.success("내 정보 수정 성공", response);
     }
 
@@ -83,7 +81,7 @@ public class UserController {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
-        userQueryService.changeMyPassword(authUser.userId(), request);
+        userCommandService.changeMyPassword(authUser.userId(), request);
 
         // 쿠키 삭제 (비밀번호 변경 후 모든 세션 무효화)
         ResponseCookie delAT = cookieUtil.deleteCookieOfAccessToken();

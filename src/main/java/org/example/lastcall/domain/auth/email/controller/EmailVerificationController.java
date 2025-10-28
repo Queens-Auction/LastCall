@@ -22,7 +22,7 @@ public class EmailVerificationController {
             summary = "이메일 인증 코드 발송",
             description = "회원가입 전 이메일로 인증 코드를 발송합니다."
     )
-    @PostMapping("/email-verifications")
+    @PutMapping("/email-verifications")
     public ResponseEntity<ApiResponse<Object>> sendEmailVerificationCode(
             @Valid @RequestBody EmailVerificationSendRequest.Request request) {
         emailVerificationService.sendEmailVerificationCode(request);

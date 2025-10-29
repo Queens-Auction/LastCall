@@ -57,7 +57,7 @@ public class UserCommandService {
     public void changeMyPassword(Long userId, PasswordChangeRequest req) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
-        if (user.isDeleted()) throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
+        if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
 
         // 기존 비밀번호 검증
         user.validatePassword(passwordEncoder, req.oldPassword());

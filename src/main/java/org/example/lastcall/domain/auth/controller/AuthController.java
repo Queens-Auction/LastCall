@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
-import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
 import org.example.lastcall.domain.auth.dto.request.TokenReissueRequest;
@@ -15,14 +14,13 @@ import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.auth.service.command.AuthCommandService;
-import org.example.lastcall.domain.auth.service.validator.AuthValidatorService;
 import org.example.lastcall.domain.auth.exception.AuthErrorCode;
-import org.example.lastcall.domain.auth.service.command.AuthCommandService;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "인증(Auth) API", description = "회원가입, 로그인, 로그아웃, 회원탈퇴 등 인증 관련 기능 제공")
@@ -89,7 +87,7 @@ public class AuthController {
             description = "로그인한 사용자가 본인 계정을 탈퇴합니다. 탈퇴 후 인증 쿠키는 삭제됩니다."
     )
     @PostMapping("/withdraw")
-    public ResponseEntity<ApiResponse<Void>> withdraw(@Auth AuthUser authUser,
+    public ResponseEntity<ApiResponse<Void>> withdraw(@AuthenticationPrincipal AuthUser authUser,
                                                       @Valid @RequestBody WithdrawRequest withdrawRequest) {
         if(authUser == null){
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);

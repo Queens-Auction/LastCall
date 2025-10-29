@@ -2,7 +2,7 @@ package org.example.lastcall.domain.bid.service.command;
 
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.entity.Auction;
-import org.example.lastcall.domain.auction.service.AuctionServiceApi;
+import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
@@ -22,15 +22,15 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class BidCommandService {
 	private final BidRepository bidRepository;
-	private final AuctionServiceApi auctionServiceApi;
+	private final AuctionQueryServiceApi auctionQueryServiceApi;
 	private final UserServiceApi userServiceApi;
 	private final PointCommandServiceApi pointCommandServiceApi;
 	private final PointQueryServiceApi pointQueryServiceApi;
 
-	// 입찰 등록
-	public BidResponse createBid(Long auctionId, AuthUser authUser) {
-		// 입찰이 가능한 경매인지 확인하고, 경매를 받아옴
-		Auction auction = auctionServiceApi.getBiddableAuction(auctionId);
+    // 입찰 등록
+    public BidResponse createBid(Long auctionId, AuthUser authUser) {
+        // 입찰이 가능한 경매인지 확인하고, 경매를 받아옴
+        Auction auction = auctionQueryServiceApi.getBiddableAuction(auctionId);
 
 		if (auction.getUser().getId().equals(authUser.userId())) {
 			throw new BusinessException(BidErrorCode.SELLER_CANNOT_BID);

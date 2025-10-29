@@ -1,25 +1,37 @@
+### 경매 등록
+POST http://localhost:8080/api/v1/auctions/me/3
+Content-Type: application/json
+
+{
+  "startingBid": 10000,
+  "bidStep": 500,
+  "startTime": "2025-10-29T10:00:00",
+  "endTime": "2025-10-31T10:00:00"
+}
+
 ### 내 경매 조회 (판매)
-GET http://localhost:8080/api/v1/my/auctions/selling
+GET http://localhost:8080/api/v1/auctions/me/selling
 
 ### 내 경매 단건 조회 (판매)
-GET http://localhost:8080/api/v1/my/auctions/selling/23
+GET http://localhost:8080/api/v1/auctions/me/selling/3
 
 ### 내 경매 조회 (참여)
-GET http://localhost:8080/api/v1/my/auctions/participated
+GET http://localhost:8080/api/v1/auctions/me/participated
 
 ### 내 경매 단건 조회 (참여)
-GET http://localhost:8080/api/v1/my/auctions/participated/21
+GET http://localhost:8080/api/v1/auctions/me/participated/2
+
 
 ### 내 경매 수정
-PATCH http://localhost:8080/api/v1/my/auctions/24
+PATCH http://localhost:8080/api/v1/auctions/me/2
 Content-Type: application/json
 
 {
   "startingBid": 20000,
   "bidStep": 1000,
-  "startTime": "2025-10-24T15:00:00",
-  "endTime": "2025-10-27T22:00:00"
+  "startTime": "2025-10-30T15:00:00",
+  "endTime": "2025-10-31T22:00:00"
 }
 
 ### 내 경매 삭제
-DELETE http://localhost:8080/api/v1/my/auctions/20
+DELETE http://localhost:8080/api/v1/auctions/me/3

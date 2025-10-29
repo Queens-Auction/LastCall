@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
+import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.user.entity.User;
 
@@ -97,7 +98,9 @@ public class Auction extends BaseEntity {
     // 경매 상태 계산 (엔티티 내부에서 처리)
     private AuctionStatus determineStatus() {
         LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(this.getStartTime())) {
+        if (this.status != null && status.equals(AuctionStatus.DELETED)) {
+            return AuctionStatus.DELETED;
+        } else if (now.isBefore(this.getStartTime())) {
             return AuctionStatus.SCHEDULED;
         } else if (now.isAfter(this.getEndTime())) {
             return AuctionStatus.CLOSED;
@@ -110,6 +113,9 @@ public class Auction extends BaseEntity {
     // -> 조회 시점 상태 계산 메서드
     @Transient
     public AuctionStatus getDynamicStatus() {
+        if (this.status == AuctionStatus.DELETED) {
+            return this.status;
+        }
         this.status = determineStatus();
         return this.status;
     }
@@ -121,5 +127,11 @@ public class Auction extends BaseEntity {
         this.startTime = request.getStartTime();
         this.endTime = request.getEndTime();
         this.status = determineStatus();
+    }
+
+    // 경매 삭제 시 status 반영
+    public void markAsDeleted() {
+        this.status = AuctionStatus.DELETED;
+        this.softDelete();
     }
 }

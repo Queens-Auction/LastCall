@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.auction.entity;
+package org.example.lastcall.domain.auction.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -15,5 +15,8 @@ public enum AuctionStatus {
     ONGOING,
 
     @Schema(description = "경매가 종료된 상태")
-    CLOSED
+    CLOSED,
+
+    @Schema(description = "경매가 삭제된 상태")
+    DELETED
 }

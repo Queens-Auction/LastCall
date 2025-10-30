@@ -36,7 +36,7 @@ public class SecurityConfig {
                         // 기존 허용 경로
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/auctions/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/email-verifications").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/email-verifications/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/email-verifications/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").permitAll()

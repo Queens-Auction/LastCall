@@ -70,7 +70,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
                 })
                 .toList();
 
-        productValidator.ensureSingleThumbnail(images);
+        productValidator.validateThumbnailConsistency(productId, images);
 
         List<ProductImage> savedImages = productImageRepository.saveAll(images);
 
@@ -133,7 +133,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         }
 
         //썸네일 한 개만 유지
-        productValidator.ensureSingleThumbnail(allImages);
+        productValidator.validateThumbnailConsistency(productId, allImages);
 
         //중복 URL 체크
         productValidator.validateDuplicateUrlsForAll(allImages);

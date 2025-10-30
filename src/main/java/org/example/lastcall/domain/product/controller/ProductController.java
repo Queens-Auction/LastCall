@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
@@ -20,6 +19,7 @@ import org.example.lastcall.domain.product.sevice.query.ProductQueryService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,7 +38,7 @@ public class ProductController {
     )
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
-            @Auth AuthUser authUser,
+            @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody ProductCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.success("상품을 등록했습니다.", productService.createProduct(authUser, request))
@@ -53,7 +53,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> createProductImage(
             @PathVariable Long productId,
             @RequestBody List<ProductImageCreateRequest> requests,
-            @Auth AuthUser authUser) {
+            @AuthenticationPrincipal AuthUser authUser) {
         List<ProductImageResponse> response = productService.createProductImages(productId, requests, authUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -68,7 +68,7 @@ public class ProductController {
     )
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> getAllMyProduct(
-            @Auth AuthUser authUser,
+            @AuthenticationPrincipal AuthUser authUser,
             Pageable pageable) {
         PageResponse<ProductReadAllResponse> pageResponse = productQueryService.getAllMyProduct(authUser, pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductReadAllResponse>> apiResponse = ApiResponse.success("상품을 전체 조회했습니다.", pageResponse);
@@ -98,7 +98,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @PathVariable Long productId,
             @Valid @RequestBody ProductUpdateRequest request,
-            @Auth AuthUser authUser) {
+            @AuthenticationPrincipal AuthUser authUser) {
         ProductResponse response = productService.updateProduct(productId, request, authUser);
         ApiResponse<ProductResponse> apiResponse = ApiResponse.success("상품 정보 업데이트에 성공했습니다.", response);
 
@@ -114,7 +114,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> appendProductImages(
             @PathVariable Long productId,
             @RequestBody List<ProductImageCreateRequest> requests,
-            @Auth AuthUser authUser) {
+            @AuthenticationPrincipal AuthUser authUser) {
         List<ProductImageResponse> response = productService.appendProductImages(productId, requests, authUser);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("상품 이미지를 추가등록했습니다.", response));
@@ -129,7 +129,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> updateThumbnailImage(
             @PathVariable Long productId,
             @PathVariable Long imageId,
-            @Auth AuthUser authUser) {
+            @AuthenticationPrincipal AuthUser authUser) {
         List<ProductImageResponse> response = productService.updateThumbnailImage(productId, imageId, authUser);
         ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("대표 이미지 변경에 성공했습니다.", response);
 
@@ -144,7 +144,7 @@ public class ProductController {
     @DeleteMapping("/{productId}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(
             @PathVariable Long productId,
-            @Auth AuthUser authUser) {
+            @AuthenticationPrincipal AuthUser authUser) {
         productService.deleteProduct(productId, authUser);
 
         return ResponseEntity.ok(ApiResponse.success("상품이 삭제되었습니다."));
@@ -159,7 +159,7 @@ public class ProductController {
     public ResponseEntity<ApiResponse<Void>> deleteProductImage(
             @PathVariable Long productId,
             @PathVariable Long imageId,
-            @Auth AuthUser authUser) {
+            @AuthenticationPrincipal AuthUser authUser) {
         productService.deleteProductImage(productId, imageId, authUser);
 
         return ResponseEntity.ok(ApiResponse.success("이미지 삭제에 성공했습니다."));

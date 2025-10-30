@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
@@ -16,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "입찰(Bid) API", description = "경매 입찰 생성 및 조회 기능 제공")
@@ -33,7 +33,7 @@ public class BidController {
                     "경매 진행 중일 경우에만 가능하며, 이전 최고가보다 높은 금액으로 자동 계산됩니다."
     )
     @PostMapping
-    public ResponseEntity<ApiResponse<BidResponse>> createBid(@PathVariable Long auctionId, @Auth AuthUser authUser) {
+    public ResponseEntity<ApiResponse<BidResponse>> createBid(@PathVariable Long auctionId, @AuthenticationPrincipal AuthUser authUser) {
         BidResponse bid = bidCommandService.createBid(auctionId, authUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("입찰이 완료되었습니다.", bid));

@@ -36,8 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req,
                                     HttpServletResponse res,
-                                    FilterChain chain) throws ServletException, IOException
-    {
+                                    FilterChain chain) throws ServletException, IOException {
         // 이미 인증되어 있으면 패스
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(req, res);
@@ -53,25 +52,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             Claims claims = jwtUtil.validateAndGetClaims(token);
 
-            // sub = UUID
             String publicId = claims.getSubject();
-
-            // uid = PK(Long)
             Number uidNum = claims.get("uid", Number.class);
+            String roleName = claims.get("role", String.class);
+
             if (uidNum == null) {
-                log.warn("JWT에 uid 클레임이 없습니다.");
+                log.warn("JWT 클레임 누락(uid or role)");
+                SecurityContextHolder.clearContext();
                 unauthorized(res);
                 return;
             }
-            Long userId = uidNum.longValue();
 
-            String roleName = claims.get("role", String.class);
+            Long userId = uidNum.longValue();
             Role role = Role.valueOf(roleName);
 
-            // DB에서 사용자 조회 (삭제 여부/비번변경 시각 확인)
+            // DB에서 사용자 조회
             User user = userRepository.findById(userId).orElse(null);
-            if (user == null) {
+            if (user == null || user.isDeleted()) {
                 log.warn("사용자 없음: userId={}", userId);
+                SecurityContextHolder.clearContext();
                 unauthorized(res);
                 return;
             }
@@ -79,29 +78,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.warn("삭제된 사용자 접근 차단: userId={}", userId);
                 unauthorized(res);
                 return;
-//                unauthorized(res);
-//                return;
-            }
-            if (user.isDeleted()) {
-                log.warn("삭제된 사용자 접근 차단: userId={}", userId);
-//                unauthorized(res);
-//                return;
             }
 
             // 비밀번호 변경 이후 발급된 토큰만 허용
             // 토큰 발급 시각(iat) < passwordChangedAt 이면 거부
             if (user.getPasswordChangedAt() != null) {
                 LocalDateTime tokenIat = DateTimeUtil.convertToLocalDateTime(claims.getIssuedAt());
-                if (tokenIat.isBefore(user.getPasswordChangedAt())) {
-                    log.warn("토큰이 비밀번호 변경 이전에 발급됨. 토큰 거부. userId={}", userId);
-                    unauthorized(res);
+                if (tokenIat != null && tokenIat.isBefore(user.getPasswordChangedAt())) {
+                    log.warn("비밀번호 변경 이후 이전 토큰 거부: userId={}", userId);
+                    SecurityContextHolder.clearContext();
+                    chain.doFilter(req, res);
                     return;
-//                    unauthorized(res);
-//                    return;
                 }
             }
 
-            // principal을 AuthUser로 (Long PK 중심)
+            // 인증 세팅
             AuthUser authUser = new AuthUser(userId, publicId, roleName);
 
             var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));

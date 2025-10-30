@@ -1,6 +1,5 @@
 package org.example.lastcall.domain.point.controller;
 
-import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.point.dto.request.PointCreateRequest;
 import org.example.lastcall.domain.point.dto.response.PointResponse;
@@ -8,6 +7,7 @@ import org.example.lastcall.domain.point.service.command.PointCommandService;
 import org.example.lastcall.domain.point.service.query.PointQueryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,7 +35,7 @@ public class PointController {
 	)
 	@PostMapping("/earn")
 	public ResponseEntity<PointResponse> createPoint(
-		@Auth AuthUser authUser,
+        @AuthenticationPrincipal AuthUser authUser,
 		@RequestBody @Valid PointCreateRequest request) {
 
 		PointResponse pointResponse = pointCommandService.createPoint(authUser, request);
@@ -49,7 +49,7 @@ public class PointController {
 		description = "로그인한 사용자의 현재 포인트 잔액을 조회합니다."
 	)
 	@GetMapping
-	public ResponseEntity<PointResponse> getUserPoint(@Auth AuthUser authUser) {
+	public ResponseEntity<PointResponse> getUserPoint(@AuthenticationPrincipal AuthUser authUser) {
 
 		PointResponse pointResponse = pointQueryService.getUserPoint(authUser);
 

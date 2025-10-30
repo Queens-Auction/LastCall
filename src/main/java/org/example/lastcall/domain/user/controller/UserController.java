@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
-import org.example.lastcall.common.security.Auth;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
@@ -19,6 +18,7 @@ import org.example.lastcall.domain.user.service.command.UserCommandService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "회원(User) API", description = "회원 정보 조회, 수정, 비밀번호 변경 기능 제공")
@@ -35,7 +35,7 @@ public class UserController {
             description = "로그인한 사용자의 프로필 정보를 조회합니다."
     )
     @GetMapping("/me")
-    public ApiResponse<UserProfileResponse> getMyProfile(@Auth AuthUser authUser) {
+    public ApiResponse<UserProfileResponse> getMyProfile(@AuthenticationPrincipal AuthUser authUser) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
@@ -48,7 +48,7 @@ public class UserController {
             description = "닉네임, 주소, 전화번호 등 사용자의 정보를 수정합니다."
     )
     @PatchMapping("/me")
-    public ApiResponse<UserProfileResponse> updateMe(@Auth AuthUser authUser,
+    public ApiResponse<UserProfileResponse> updateMe(@AuthenticationPrincipal AuthUser authUser,
                                                      @RequestBody(required = false) UserUpdateRequest request) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
@@ -76,7 +76,7 @@ public class UserController {
     )
     @PatchMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
-            @Auth AuthUser authUser,
+            @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PasswordChangeRequest request) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);

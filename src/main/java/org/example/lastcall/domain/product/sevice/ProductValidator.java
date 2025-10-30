@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -53,17 +54,27 @@ public class ProductValidator {
         }
     }
 
-    //대표 썸네일 지정 메서드
-    public void ensureSingleThumbnail(List<ProductImage> images) {
-        long thumbnailCount = images.stream()
+    // 상품 이미지 등록 시 중복 썸네일 체크 포함
+    public void validateThumbnailConsistency(Long productId, List<ProductImage> newImages) {
+        // 1. DB에 이미 존재하는 해당 상품 썸네일 조회
+        Optional<ProductImage> existingThumbnails = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
+
+        // 2. 요청에서 썸네일로 지정된 이미지 개수 카운트
+        long newThumbnailCount = newImages.stream()
                 .filter(img -> img.getImageType() == ImageType.THUMBNAIL)
                 .count();
-        if (thumbnailCount > 1) {
+
+        long totalThumbnails = (existingThumbnails.isPresent() ? 1 : 0) + newThumbnailCount;
+
+        // 3. DB + 요청 합쳐서 1개 이상이면 예외
+        if (totalThumbnails > 1) {
             throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
         }
-        //썸네일 없을 경우 첫 번째 이미지로 결정
-        if (thumbnailCount == 0 && !images.isEmpty()) {
-            images.get(0).markAsThumbnail();
+
+        // 4. 새 요청에 썸네일이 없으면 첫 번째 이미지로 자동 지정
+        if (newThumbnailCount == 0 && !newImages.isEmpty()) {
+            newImages.get(0).markAsThumbnail();
         }
     }
+
 }

@@ -15,6 +15,7 @@ import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,10 @@ public class ProductQueryService implements ProductQueryServiceApi {
 
     //내 상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)
     public PageResponse<ProductReadAllResponse> getAllMyProduct(AuthUser authuser, int page, int size) {
-        Page<Product> products = productRepository.findAllByUserIdAndDeletedFalse(authuser.userId(), PageRequest.of(page, size));
+        Page<Product> products = productRepository.findAllByUserIdAndDeletedFalse(
+                authuser.userId(),
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
+        );
         List<Long> productIds = products.stream()
                 .map(Product::getId)
                 .toList();

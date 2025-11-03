@@ -50,9 +50,9 @@ public class ProductController {
             description = "등록된 상품에 이미지를 추가합니다."
     )
     @PostMapping("/{productId}/images")
-    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> createProductImage(
+    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> uploadImages(
             @PathVariable Long productId,
-            @RequestBody List<ProductImageCreateRequest> requests,
+            @RequestPart("images") List<ProductImageCreateRequest> requests,
             @AuthenticationPrincipal AuthUser authUser) {
         List<ProductImageResponse> response = productService.createProductImages(productId, requests, authUser);
 
@@ -113,7 +113,7 @@ public class ProductController {
     @PostMapping("/{productId}/images/append")
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> appendProductImages(
             @PathVariable Long productId,
-            @RequestBody List<ProductImageCreateRequest> requests,
+            @RequestPart("images") List<ProductImageCreateRequest> requests,
             @AuthenticationPrincipal AuthUser authUser) {
         List<ProductImageResponse> response = productService.appendProductImages(productId, requests, authUser);
         return ResponseEntity.status(HttpStatus.CREATED)

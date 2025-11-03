@@ -34,6 +34,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     private final UserServiceApi userServiceApi;
     private final ProductImageRepository productImageRepository;
     private final ProductValidator productValidator;
+    private final S3Service s3Service;
 
     //상품 등록
     public ProductResponse createProduct(AuthUser authuser, ProductCreateRequest request) {
@@ -60,13 +61,13 @@ public class ProductCommandService implements ProductCommandServiceApi {
         productValidator.validateImageCount(requests);
         productValidator.validateDuplicateUrls(requests, product.getId());
 
-        //프론트에서 선택한 이미지(isThumbnail()=true)가 대표 이미지가 되도록 설정
         List<ProductImage> images = requests.stream()
                 .map(req -> {
-                    ImageType type = (req.getIsThumbnail() != null && req.getIsThumbnail())
+                    String imageUrl = s3Service.uploadToS3(req.getMultipartFile(), "products/" + productId);
+                    ImageType imageType = (req.getIsThumbnail() != null && req.getIsThumbnail())
                             ? ImageType.THUMBNAIL
                             : ImageType.DETAIL;
-                    return ProductImage.of(product, type, req.getImageUrl());
+                    return ProductImage.of(product, imageType, imageUrl);
                 })
                 .toList();
 
@@ -112,34 +113,33 @@ public class ProductCommandService implements ProductCommandServiceApi {
         //기존 이미지 불러오기
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
+        //중복 URL 체크
+        productValidator.validateDuplicateUrls(requests, productId);
+
         //새 이미지 객체생성
-        List<ProductImage> newImages = requests.stream()
+        List<ProductImage> images = requests.stream()
                 .map(req -> {
-                    ImageType type = (req.getIsThumbnail() != null && req.getIsThumbnail())
+                    String imageUrl = s3Service.uploadToS3(req.getMultipartFile(), "products/" + productId);
+                    ImageType imageType = (req.getIsThumbnail() != null && req.getIsThumbnail())
                             ? ImageType.THUMBNAIL
                             : ImageType.DETAIL;
-                    return ProductImage.of(product, type, req.getImageUrl());
+                    return ProductImage.of(product, imageType, imageUrl);
                 })
                 .toList();
 
         //전체 이미지 합치기
         List<ProductImage> allImages = new ArrayList<>();
         allImages.addAll(existingImages);
-        allImages.addAll(newImages);
+        allImages.addAll(images);
 
         //총 이미지 갯수 검증
-        if (allImages.size() > 10) {
-            throw new BusinessException(ProductErrorCode.MAX_IMAGE_COUNT_EXCEEDED);
-        }
+        productValidator.validateImageCount(allImages);
 
         //썸네일 한 개만 유지
         productValidator.validateThumbnailConsistency(productId, allImages);
 
-        //중복 URL 체크
-        productValidator.validateDuplicateUrlsForAll(allImages);
-
         //새 이미지들만 저장
-        List<ProductImage> savedImages = productImageRepository.saveAll(newImages);
+        List<ProductImage> savedImages = productImageRepository.saveAll(images);
 
         return savedImages.stream()
                 .map(ProductImageResponse::from)

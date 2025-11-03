@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.point.entity;
+package org.example.lastcall.domain.point.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;

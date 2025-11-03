@@ -15,7 +15,7 @@ import org.example.lastcall.domain.point.dto.request.PointCreateRequest;
 import org.example.lastcall.domain.point.dto.response.PointResponse;
 import org.example.lastcall.domain.point.entity.Point;
 import org.example.lastcall.domain.point.entity.PointLog;
-import org.example.lastcall.domain.point.entity.PointLogType;
+import org.example.lastcall.domain.point.enums.PointLogType;
 import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.point.repository.PointLogRepository;
 import org.example.lastcall.domain.point.repository.PointRepository;

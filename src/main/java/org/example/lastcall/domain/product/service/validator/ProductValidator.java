@@ -2,7 +2,9 @@ package org.example.lastcall.domain.product.service.validator;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
+import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
@@ -47,6 +49,12 @@ public class ProductValidator {
             if (!newUrls.add(fileName)) {
                 throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_REQUEST);
             }
+        }
+    }
+
+    public void checkOwnership(Product product, AuthUser authUser) {
+        if (!product.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
         }
     }
 

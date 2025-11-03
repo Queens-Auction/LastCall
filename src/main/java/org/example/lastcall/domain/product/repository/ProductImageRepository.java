@@ -15,8 +15,6 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     Optional<ProductImage> findByProductIdAndImageTypeAndDeletedFalse(Long productId, ImageType imageType);
 
-    boolean existsByProductIdAndImageUrl(Long productId, String url);
-
     long countByProductIdAndImageType(Long productId, ImageType imageType);
 
     @Modifying

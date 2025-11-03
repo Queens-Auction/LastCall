@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.product.repository;
 
-import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.ProductImage;
+import org.example.lastcall.domain.product.enums.ImageType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

@@ -2,8 +2,8 @@ package org.example.lastcall.domain.product.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import org.example.lastcall.domain.product.entity.Category;
 import org.example.lastcall.domain.product.entity.Product;
+import org.example.lastcall.domain.product.enums.Category;
 
 import java.time.LocalDateTime;
 

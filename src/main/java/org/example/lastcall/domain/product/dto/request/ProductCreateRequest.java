@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import org.example.lastcall.domain.product.entity.Category;
+import org.example.lastcall.domain.product.enums.Category;
 
 @Schema(description = "상품 등록 요청 DTO")
 @Getter

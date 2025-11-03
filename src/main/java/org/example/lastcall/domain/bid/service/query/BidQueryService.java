@@ -22,8 +22,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BidQueryService implements BidQueryServiceApi {
-    private final BidRepository bidRepository;
-    private final AuctionFinder auctionFinder;
+	private final BidRepository bidRepository;
+	private final AuctionFinder auctionFinder;
 
 	// 경매별 전체 입찰 내역 조회
 	public PageResponse<BidGetAllResponse> getAllBids(Long auctionId, Pageable pageable) {
@@ -103,5 +103,11 @@ public class BidQueryService implements BidQueryServiceApi {
 	@Override
 	public int countDistinctParticipants(Long auctionId) {
 		return bidRepository.countDistinctByAuctionId(auctionId);
+	}
+
+	// 특정 경매의 모든 입찰 기록 조회
+	@Override
+	public List<Bid> findAllByAuctionId(Long auctionId) {
+		return bidRepository.findAllByAuctionId(auctionId);
 	}
 }

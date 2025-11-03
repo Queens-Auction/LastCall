@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
+import org.example.lastcall.domain.product.enums.ImageType;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

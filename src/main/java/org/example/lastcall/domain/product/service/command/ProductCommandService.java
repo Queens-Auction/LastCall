@@ -15,7 +15,7 @@ import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
-import org.example.lastcall.domain.product.service.ProductValidator;
+import org.example.lastcall.domain.product.service.validator.ProductValidator;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;

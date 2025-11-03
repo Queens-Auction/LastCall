@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.product.service;
+package org.example.lastcall.domain.product.service.validator;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;

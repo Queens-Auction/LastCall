@@ -15,7 +15,7 @@ import org.example.lastcall.domain.bid.service.query.BidQueryServiceApi;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.enums.Category;
-import org.example.lastcall.domain.product.sevice.query.ProductQueryServiceApi;
+import org.example.lastcall.domain.product.service.query.ProductQueryServiceApi;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

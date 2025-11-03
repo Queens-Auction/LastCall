@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.product.sevice.query;
+package org.example.lastcall.domain.product.service.query;
 
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.entity.Product;

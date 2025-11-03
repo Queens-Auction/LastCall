@@ -10,7 +10,7 @@ import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.sevice.query.ProductQueryService;
+import org.example.lastcall.domain.product.service.query.ProductQueryService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;

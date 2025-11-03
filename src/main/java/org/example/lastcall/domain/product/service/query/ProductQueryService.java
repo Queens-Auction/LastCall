@@ -64,7 +64,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     //대표이미지 조회
     @Override
     @Transactional(readOnly = true)
-    public ProductImageResponse readThumbnailImage(Long productId) {
+    public ProductImageResponse findThumbnailImage(Long productId) {
         ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
         return ProductImageResponse.from(thumbnailImage);
@@ -73,7 +73,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     //상품별 이미지 전체 조회
     @Override
     @Transactional(readOnly = true)
-    public List<ProductImageResponse> readAllProductImage(Long productId) {
+    public List<ProductImageResponse> findAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
         return ProductImageResponse.from(productImages);
     }

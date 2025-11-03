@@ -40,7 +40,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
         List<AuctionReadAllResponse> responses = auctions.stream()
                 .map(auction -> {
                     // 현재 경매에 연결된 상품의 이미지 조회
-                    ProductImageResponse image = productQueryServiceApi.readThumbnailImage(auction.getProduct().getId());
+                    ProductImageResponse image = productQueryServiceApi.findThumbnailImage(auction.getProduct().getId());
                     // 참여자(입찰자) 수 계산
                     int participantCount = bidQueryServiceApi.countDistinctParticipants(auction.getId());
 
@@ -58,7 +58,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
         // 2. 상품 이미지 조회
-        List<ProductImageResponse> images = productQueryServiceApi.readAllProductImage(auction.getProduct().getId());
+        List<ProductImageResponse> images = productQueryServiceApi.findAllProductImage(auction.getProduct().getId());
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 
         boolean participated = false;
@@ -84,7 +84,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
             Product product = auction.getProduct();
             // 썸네일 이미지 조회
             String imageUrl = productQueryServiceApi
-                    .readThumbnailImage(product.getId())
+                    .findThumbnailImage(product.getId())
                     .getImageUrl();
             // 최고 입찰가 조회
             Long currentBid = bidQueryServiceApi.getCurrentBidAmount(auction.getId());
@@ -110,7 +110,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
 
         // 썸네일 가져오기
         String imageUrl = productQueryServiceApi
-                .readThumbnailImage(product.getId())
+                .findThumbnailImage(product.getId())
                 .getImageUrl();
 
         // 최고 입찰가
@@ -137,7 +137,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
             Product product = auction.getProduct();
 
             String imageUrl = productQueryServiceApi
-                    .readThumbnailImage(product.getId())
+                    .findThumbnailImage(product.getId())
                     .getImageUrl();
 
             // 최고 입찰가 조회
@@ -171,7 +171,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
         Product product = auction.getProduct();
 
         String imageUrl = productQueryServiceApi
-                .readThumbnailImage(product.getId())
+                .findThumbnailImage(product.getId())
                 .getImageUrl();
 
         Long currentBid = bidQueryServiceApi.getCurrentBidAmount(auction.getId());

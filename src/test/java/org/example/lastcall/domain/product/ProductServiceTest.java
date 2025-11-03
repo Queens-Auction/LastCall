@@ -9,8 +9,8 @@
 // import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 // import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
 // import org.example.lastcall.domain.product.dto.response.ProductResponse;
-// import org.example.lastcall.domain.product.entity.Category;
-// import org.example.lastcall.domain.product.entity.ImageType;
+// import org.example.lastcall.domain.product.enums.Category;
+// import org.example.lastcall.domain.product.enums.ImageType;
 // import org.example.lastcall.domain.product.entity.Product;
 // import org.example.lastcall.domain.product.entity.ProductImage;
 // import org.example.lastcall.domain.product.exception.ProductErrorCode;

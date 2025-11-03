@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.product.sevice.command;
+package org.example.lastcall.domain.product.service.command;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;

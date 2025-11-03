@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.domain.point.enums.PointLogType;
 import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.user.entity.User;
 

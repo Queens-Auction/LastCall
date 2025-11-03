@@ -18,7 +18,8 @@ public enum ProductErrorCode implements ErrorCode {
     IMAGE_NOT_BELONGS_TO_PRODUCT(HttpStatus.BAD_REQUEST, "해당 상품에 속한 이미지가 아닙니다."),
     MAX_IMAGE_COUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "이미지는 최대 10장입니다."),
     UNAUTHORIZED_PRODUCT_OWNER(HttpStatus.FORBIDDEN, "상품의 소유자가 아닙니다."),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 리소스에 접근할 권한이 없습니다.");
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 리소스에 접근할 권한이 없습니다."),
+    RUNTIME_EXCEPTION(HttpStatus.BAD_REQUEST, "S3 업로드 실패!");
 
     private final HttpStatus status;
     private final String message;

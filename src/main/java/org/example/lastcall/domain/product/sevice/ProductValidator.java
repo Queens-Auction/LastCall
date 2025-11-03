@@ -13,43 +13,46 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class ProductValidator {
     private final ProductImageRepository productImageRepository;
 
-    //이미지 중복 검사 메서드
+    //이미지 중복 검사 메서드 : 업로드하려는 이미지들의 중복 여부(추가 올리는 이미지도 포함)를 검사한다.
+    //DB에 이미 존재하는 이미지 URL과의 중복
+    //새로 업로드한 이미지들끼리의 중복
     public void validateDuplicateUrls(List<ProductImageCreateRequest> requests, Long productId) {
-        //요청 내부 중복 검사
-        Set<String> urlSet = new HashSet<>();
+        // DB에 이미 저장된 이미지 URL 조회
+        List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
+        Set<String> existingUrls = existingImages.stream()
+                .map(ProductImage::getImageUrl)
+                .collect(Collectors.toSet());
+
+        // 새로 들어온 이미지들의 URL 추출
+        Set<String> newUrls = new HashSet<>();
+
         for (ProductImageCreateRequest req : requests) {
-            if (!urlSet.add(req.getImageUrl())) {
+            // S3 업로드 이전이라면 URL 대신 파일 이름으로 비교하거나
+            // 업로드 후라면 imageURL로 비교
+            String fileName = req.getMultipartFile().getOriginalFilename();
+
+            // 기존 DB에 같은 파일이 존재하면 예외 발생
+            if (existingUrls.contains(fileName)) {
+                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
+            }
+
+            // 요청 안에서도 중복된 파일명 있으면 예외 발생
+            if (!newUrls.add(fileName)) {
                 throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_REQUEST);
-            }
-        }
-
-        // 같은 상품 내 DB 이미지 중복 검사
-        for (String url : urlSet) {
-            if (productImageRepository.existsByProductIdAndImageUrl(productId, url)) {
-                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
-            }
-        }
-    }
-
-
-    public void validateDuplicateUrlsForAll(List<ProductImage> allImages) {
-        Set<String> urls = new HashSet<>();
-        for (ProductImage image : allImages) {
-            if (!urls.add(image.getImageUrl())) {
-                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
             }
         }
     }
 
     //이미지 갯수 제한 매서드
-    public void validateImageCount(List<ProductImageCreateRequest> requests) {
-        if (requests.size() > 10) {
+    public <T> void validateImageCount(List<T> images) {
+        if (images.size() > 10) {
             throw new BusinessException(ProductErrorCode.TOO_MANY_IMAGES);
         }
     }

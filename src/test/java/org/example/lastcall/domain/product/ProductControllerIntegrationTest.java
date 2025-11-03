@@ -1,6 +1,6 @@
 // package org.example.lastcall.domain.product;
 //
-// import org.example.lastcall.domain.product.entity.Category;
+// import org.example.lastcall.domain.product.enums.Category;
 // import org.example.lastcall.domain.product.entity.Product;
 // import org.example.lastcall.domain.product.repository.ProductRepository;
 // import org.example.lastcall.domain.user.entity.User;

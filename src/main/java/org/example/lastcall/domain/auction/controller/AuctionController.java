@@ -12,7 +12,7 @@ import org.example.lastcall.domain.auction.dto.response.*;
 import org.example.lastcall.domain.auction.service.command.AuctionCommandService;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryService;
 import org.example.lastcall.domain.auth.enums.AuthUser;
-import org.example.lastcall.domain.product.entity.Category;
+import org.example.lastcall.domain.product.enums.Category;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;

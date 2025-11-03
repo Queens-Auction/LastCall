@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.example.lastcall.domain.product.entity.Category;
+import org.example.lastcall.domain.product.enums.Category;
 
 @Schema(description = "상품 수정 요청 DTO")
 @Getter

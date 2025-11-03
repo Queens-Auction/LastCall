@@ -1,7 +1,7 @@
 // package org.example.lastcall.domain.product;
 //
-// import org.example.lastcall.domain.product.entity.Category;
-// import org.example.lastcall.domain.product.entity.ImageType;
+// import org.example.lastcall.domain.product.enums.Category;
+// import org.example.lastcall.domain.product.enums.ImageType;
 // import org.example.lastcall.domain.product.entity.Product;
 // import org.example.lastcall.domain.product.entity.ProductImage;
 // import org.example.lastcall.domain.product.repository.ProductImageRepository;

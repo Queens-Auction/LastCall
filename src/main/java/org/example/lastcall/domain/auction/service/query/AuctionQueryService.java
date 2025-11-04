@@ -75,28 +75,9 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
     }
 
     // 내가 판매한 경매 목록 조회 //
-    @Transactional(readOnly = true)
     public PageResponse<MySellingResponse> getMySellingAuctions(Long userId, Pageable pageable) {
-        // 1. 경매 목록 조회
-        Page<Auction> auctions = auctionRepository.findBySellerId(userId, pageable);
-        // 2. DTO 변환
-        Page<MySellingResponse> responses = auctions.map(auction -> {
-            Product product = auction.getProduct();
-            // 썸네일 이미지 조회
-            String imageUrl = productQueryServiceApi
-                    .findThumbnailImage(product.getId())
-                    .getImageUrl();
-            // 최고 입찰가 조회
-            Long currentBid = bidQueryServiceApi.getCurrentBidAmount(auction.getId());
-
-            return MySellingResponse.from(
-                    auction,
-                    product,
-                    imageUrl,
-                    currentBid
-            );
-        });
-        return PageResponse.of(responses);
+        Page<MySellingResponse> auctions = auctionRepository.findMySellingAuctions(userId, pageable);
+        return PageResponse.of(auctions);
     }
 
     // 내가 판매한 경매 상세 조회 //

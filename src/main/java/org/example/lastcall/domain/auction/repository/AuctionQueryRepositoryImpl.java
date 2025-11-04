@@ -32,6 +32,53 @@ import java.util.Optional;
 public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     private final JPAQueryFactory jpaQueryFactory;
 
+    // 공통 Q타입 필드 선언 //
+    private final QAuction a = QAuction.auction;
+    private final QProduct p = QProduct.product;
+    private final QProductImage i = QProductImage.productImage;
+    private final QBid b = QBid.bid;
+
+    // 공통 메서드 //
+
+    /**
+     * [서브쿼리 1] 내 최고 입찰 금액
+     * - 해당 경매에서 현재 로그인한 사용자가 입찰한 금액 중 최고가를 조회
+     * - b.auction.id = a.id → 외부 쿼리와 연관
+     */
+    // 내 최고 입찰가 서브쿼리
+    private Expression<Long> myMaxBidSubquery(Long userId) {
+        return JPAExpressions.select(b.bidAmount.max())
+                .from(b)
+                .where(b.auction.id.eq(a.id)
+                        .and(b.user.id.eq(userId)));
+    }
+
+    /**
+     * [서브쿼리 2] 썸네일 이미지 URL
+     * - product_image 테이블에서 썸네일(THUMBNAIL) 타입 이미지를 1건 조회
+     * - limit(1) 적용으로 불필요한 중복 방지
+     */
+    // 썸네일 서브쿼리
+    private Expression<String> thumbnailSubquery() {
+        return JPAExpressions
+                .select(i.imageUrl)
+                .from(i)
+                .where(i.product.id.eq(a.product.id)
+                        .and(i.imageType.eq(ImageType.THUMBNAIL))
+                        .and(i.deleted.isFalse()))
+                .limit(1);
+    }
+
+    // 삭제되지 않은 경매 조건
+    private BooleanBuilder defaultAuctionCondition() {
+        return new BooleanBuilder().and(a.deleted.isFalse());
+    }
+
+    // null-safe PageImpl 생성
+    private <T> Page<T> toPage(List<T> results, Pageable pageable, Long total) {
+        return new PageImpl<>(results, pageable, total != null ? total : 0);
+    }
+
     /**
      * 경매 전체 조회 (카테고리별 필터 + 동적 정렬)
      * 기본 정렬: 최신순 (createdAt desc, id desc)
@@ -40,21 +87,13 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     // 경매 전체 조회
     @Override
     public Page<AuctionReadAllResponse> findAllAuctionSummaries(Category category, Pageable pageable) {
-        // QueryDSL Q타입 초기화
-        QAuction a = QAuction.auction;
-        QProduct p = QProduct.product;
-        QProductImage i = QProductImage.productImage;
-        QBid b = QBid.bid;
-
         /**
          * 1️. 동적 필터 구성 (카테고리 + 기본 조건)
          *  - 삭제되지 않은 경매만 조회
          *  - 진행 중(ONGOING) 또는 예정된(SCHEDULED) 경매만 포함
          *  - 카테고리는 선택적으로 필터링
          */
-        BooleanBuilder whereBuilder = new BooleanBuilder()
-                // 삭제되지 않은 경매만
-                .and(a.deleted.isFalse())
+        BooleanBuilder whereBuilder = defaultAuctionCondition()
                 // 진행 중 또는 예정된 경매만
                 .and(a.status.in(AuctionStatus.ONGOING, AuctionStatus.SCHEDULED));
 
@@ -86,7 +125,6 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 switch (property) {
                     // 마감 임박순
                     case "endTime" -> orderSpecifiers.add(asc ? a.endTime.asc() : a.endTime.desc());
-
                     // 인기순(입찰 참여자순)
                     case "participantCount" -> orderSpecifiers.add(
                             asc ? Expressions.numberPath(Long.class, "participantCount").asc()
@@ -94,7 +132,6 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 }
             });
         }
-
         /**
          * 3. 정렬 조건 비어 있을 경우 대비
          *  - 예외적인 상황(NPE) 방지
@@ -115,18 +152,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 .select(Projections.constructor(AuctionReadAllResponse.class,
                         a.id,
                         // 썸네일 이미지 - 서브쿼리
-                        ExpressionUtils.as(
-                                JPAExpressions
-                                        .select(i.imageUrl)
-                                        .from(i)
-                                        .where(
-                                                i.product.id.eq(p.id)
-                                                        .and(i.imageType.eq(ImageType.THUMBNAIL))
-                                                        .and(i.deleted.isFalse())
-                                        )
-                                        .limit(1),
-                                "imageUrl"
-                        ),
+                        ExpressionUtils.as(thumbnailSubquery(), "imageUrl"),
                         p.name,
                         // 입찰 참여자수 - 서브쿼리
                         ExpressionUtils.as(
@@ -144,7 +170,6 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
-
         /**
          * 5️. 전체 데이터 개수 조회 (페이징 total count)
          *  - 동일 조건(whereBuilder) 사용
@@ -156,24 +181,18 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 .join(a.product, p)
                 .where(whereBuilder)
                 .fetchOne();
-
         /**
          * 6️. PageImpl 반환
          *  - results: 조회 결과
          *  - pageable: 요청 페이지 정보
          *  - total: 전체 개수(null-safe)
          */
-        return new PageImpl<>(results, pageable, total != null ? total : 0);
+        return toPage(results, pageable, total);
     }
 
     // 내가 참여한 경매 목록 조회
     @Override
     public Page<MyParticipatedResponse> findMyParticipatedAuctions(Long userId, Pageable pageable) {
-        QAuction a = QAuction.auction;
-        QBid b = QBid.bid;
-        QProduct p = QProduct.product;
-        QProductImage i = QProductImage.productImage;
-
         /**
          * 1️. 사용자가 입찰한 경매 ID 목록 (페이징 적용)
          *   - DISTINCT: 동일 경매에 여러 번 입찰해도 중복 제거
@@ -192,7 +211,6 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
         if (auctionIds.isEmpty()) {
             return Page.empty(pageable);
         }
-
         /**
          * 2. 참여 경매 정보 조회 (JOIN 최소화 + 서브쿼리 기반)
          *   - JOIN 최소화: auction ↔ product만 조인
@@ -223,7 +241,6 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                         a.status, a.startTime, a.endTime) // 최신순 정렬
                 .orderBy(a.createdAt.desc())
                 .fetch();
-
         /**
          * 3. 전체 데이터 개수 조회
          *   - countDistinct: 동일 경매 중복 제거
@@ -234,14 +251,13 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 .from(b)
                 .where(b.user.id.eq(userId))
                 .fetchOne();
-
         /**
          * 4. PageImpl 반환
          *  - results: 조회 결과
          *  - pageable: 요청 페이지 정보
          *  - total: 전체 개수(null-safe)
          */
-        return new PageImpl<>(results, pageable, total != null ? total : 0);
+        return toPage(results, pageable, total);
     }
 
     /**
@@ -252,35 +268,6 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     // 내가 참여한 경매 단건 조회 //
     @Override
     public Optional<MyParticipatedResponse> findMyParticipatedAuctionDetail(Long auctionId, Long userId) {
-        QAuction a = QAuction.auction;
-        QProduct p = QProduct.product;
-        QProductImage i = QProductImage.productImage;
-        QBid b = QBid.bid;
-
-        /**
-         * [서브쿼리 1] 내 최고 입찰 금액
-         *  - 해당 경매에서 현재 로그인한 사용자가 입찰한 금액 중 최고가를 조회
-         *  - b.auction.id = a.id → 외부 쿼리와 연관
-         */
-        Expression<Long> myMaxBidSubquery = JPAExpressions
-                .select(b.bidAmount.max())
-                .from(b)
-                .where(b.auction.id.eq(a.id)
-                        .and(b.user.id.eq(userId)));
-
-        /**
-         * [서브쿼리 2] 썸네일 이미지 URL
-         *  - product_image 테이블에서 썸네일(THUMBNAIL) 타입 이미지를 1건 조회
-         *  - limit(1) 적용으로 불필요한 중복 방지
-         */
-        Expression<String> thumbnailSubquery = JPAExpressions
-                .select(i.imageUrl)
-                .from(i)
-                .where(i.product.id.eq(a.product.id)
-                        .and(i.imageType.eq(ImageType.THUMBNAIL))
-                        .and(i.deleted.isFalse()))
-                .limit(1);
-
         /**
          * [메인 쿼리]
          *  - Auction + Product JOIN
@@ -291,7 +278,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 jpaQueryFactory
                         .select(Projections.fields(MyParticipatedResponse.class,
                                 a.id.as("id"),
-                                ExpressionUtils.as(thumbnailSubquery, "imageUrl"),
+                                ExpressionUtils.as(thumbnailSubquery(), "imageUrl"),
                                 p.name.as("productName"),
                                 p.description.as("productDescription"),
                                 a.currentBid,
@@ -299,18 +286,16 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                                 a.startTime,
                                 a.endTime,
                                 // 내 최고 입찰가 매핑
-                                ExpressionUtils.as(myMaxBidSubquery, "myBidAmount"),
+                                ExpressionUtils.as(myMaxBidSubquery(userId), "myBidAmount"),
                                 // 현재 최고 입찰자인지 여부 확인 (exists 로 boolean 반환)
                                 ExpressionUtils.as(
                                         JPAExpressions.selectOne()
                                                 .from(b)
                                                 .where(b.auction.id.eq(a.id)
                                                         .and(b.user.id.eq(userId))
-                                                        .and(b.bidAmount.eq(myMaxBidSubquery)))
+                                                        .and(b.bidAmount.eq(myMaxBidSubquery(userId))))
                                                 .exists(),
-                                        "isLeading"
-                                )
-                        ))
+                                        "isLeading")))
                         .from(a)
                         .join(a.product, p)
                         .where(a.id.eq(auctionId), a.deleted.isFalse())

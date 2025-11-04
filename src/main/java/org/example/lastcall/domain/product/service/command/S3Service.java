@@ -20,6 +20,7 @@ public class S3Service {
     public String uploadToS3(MultipartFile file, String directory) {
         try {
             String fileName = directory + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            System.out.println("Uploading to S3 -> key: " + fileName + ", size: " + file.getSize());
 
             s3Client.putObject(builder -> builder
                             .bucket(bucketName)
@@ -28,7 +29,10 @@ public class S3Service {
                             .build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
 
-            return "https://" + bucketName + ".s3.ap-northeast-2.amazonaws.com/" + fileName;
+            String url = s3Client.utilities()
+                    .getUrl(builder -> builder.bucket(bucketName).key(fileName))
+                    .toExternalForm();
+            return url;
         } catch (IOException e) {
             throw new BusinessException(ProductErrorCode.RUNTIME_EXCEPTION);
         }

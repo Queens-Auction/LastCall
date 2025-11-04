@@ -20,10 +20,12 @@ import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -48,19 +50,23 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //이미지 등록 (여러 장 등록)
     public List<ProductImageResponse> createProductImages(Long productId,
                                                           List<ProductImageCreateRequest> requests,
+                                                          List<MultipartFile> image,
                                                           AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         productValidator.checkOwnership(product, authUser);
         productValidator.validateImageCount(requests);
-        productValidator.validateDuplicateUrls(requests, product.getId());
+        productValidator.validateDuplicateFilesBeforeUpload(requests, image, productId);
+        productValidator.validateThumbnailConsistencyForCreate(productId, requests);
 
-        List<ProductImage> images = requests.stream()
-                .map(req -> productImageService.uploadAndCreateProductImage(product, req, productId))
+        List<ProductImage> images = IntStream.range(0, requests.size())
+                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
+                        product,
+                        requests.get(i),
+                        image.get(i),
+                        productId))
                 .toList();
-
-        productValidator.validateThumbnailConsistency(productId, images);
 
         return productImageRepository.saveAll(images).stream()
                 .map(ProductImageResponse::from)
@@ -83,6 +89,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //상품 수정 시 이미지 추가
     public List<ProductImageResponse> appendProductImages(Long productId,
                                                           List<ProductImageCreateRequest> requests,
+                                                          List<MultipartFile> image,
                                                           AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
@@ -92,11 +99,15 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
-        productValidator.validateDuplicateUrls(requests, productId);
+        productValidator.validateDuplicateFilesBeforeUpload(requests, image, productId);
 
         //새 이미지 객체생성
-        List<ProductImage> newImages = requests.stream()
-                .map(req -> productImageService.uploadAndCreateProductImage(product, req, productId))
+        List<ProductImage> newImages = IntStream.range(0, requests.size())
+                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
+                        product,
+                        requests.get(i),
+                        image.get(i),
+                        productId))
                 .toList();
 
         //전체 이미지 합치기
@@ -104,7 +115,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         allImages.addAll(newImages);
 
         productValidator.validateImageCount(allImages);
-        productValidator.validateThumbnailConsistency(productId, allImages);
+        productValidator.validateThumbnailConsistencyForAppend(allImages);
 
         return productImageRepository.saveAll(newImages).stream()
                 .map(ProductImageResponse::from)

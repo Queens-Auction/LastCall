@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -53,8 +54,9 @@ public class ProductController {
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> uploadImages(
             @PathVariable Long productId,
             @RequestPart("images") List<ProductImageCreateRequest> requests,
+            @RequestPart("image") List<MultipartFile> image,
             @AuthenticationPrincipal AuthUser authUser) {
-        List<ProductImageResponse> response = productService.createProductImages(productId, requests, authUser);
+        List<ProductImageResponse> response = productService.createProductImages(productId, requests, image, authUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.success("상품 이미지를 등록했습니다.", response)
@@ -114,8 +116,9 @@ public class ProductController {
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> appendProductImages(
             @PathVariable Long productId,
             @RequestPart("images") List<ProductImageCreateRequest> requests,
+            @RequestPart("image") List<MultipartFile> image,
             @AuthenticationPrincipal AuthUser authUser) {
-        List<ProductImageResponse> response = productService.appendProductImages(productId, requests, authUser);
+        List<ProductImageResponse> response = productService.appendProductImages(productId, requests, image, authUser);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("상품 이미지를 추가등록했습니다.", response));
     }

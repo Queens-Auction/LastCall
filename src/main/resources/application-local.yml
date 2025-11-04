@@ -1,6 +1,8 @@
 spring:
   cloud:
     aws:
+      credentials:
+        profile-name: dev
       region:
         static: ap-northeast-2
       parameter-store:

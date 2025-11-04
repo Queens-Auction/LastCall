@@ -10,10 +10,11 @@ import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,32 +23,30 @@ import java.util.stream.Collectors;
 public class ProductValidator {
     private final ProductImageRepository productImageRepository;
 
-    //이미지 중복 검사 메서드 : 업로드하려는 이미지들의 중복 여부(추가 올리는 이미지도 포함)를 검사한다.
-    //DB에 이미 존재하는 이미지 URL과의 중복
-    //새로 업로드한 이미지들끼리의 중복
-    public void validateDuplicateUrls(List<ProductImageCreateRequest> requests, Long productId) {
-        // DB에 이미 저장된 이미지 URL 조회
-        List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
-        Set<String> existingUrls = existingImages.stream()
-                .map(ProductImage::getImageUrl)
-                .collect(Collectors.toSet());
-
-        // 새로 들어온 이미지들의 URL 추출
-        Set<String> newUrls = new HashSet<>();
-
-        for (ProductImageCreateRequest req : requests) {
-            // S3 업로드 이전이라면 URL 대신 파일 이름으로 비교하거나
-            // 업로드 후라면 imageURL로 비교
-            String fileName = req.getMultipartFile().getOriginalFilename();
-
-            // 기존 DB에 같은 파일이 존재하면 예외 발생
-            if (existingUrls.contains(fileName)) {
-                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
-            }
-
-            // 요청 안에서도 중복된 파일명 있으면 예외 발생
-            if (!newUrls.add(fileName)) {
+    //이미지 중복 검사 메서드
+    public void validateDuplicateFilesBeforeUpload(List<ProductImageCreateRequest> requests,
+                                                   List<MultipartFile> images,
+                                                   Long productId) {
+        if (requests.size() != images.size()) {
+            throw new BusinessException(ProductErrorCode.INVALID_REQUEST);
+        }
+        //요청 내부 중복 검사
+        Set<String> fileNameSet = new HashSet<>();
+        for (MultipartFile file : images) {
+            String fileName = file.getOriginalFilename();
+            if (!fileNameSet.add(fileName)) {
                 throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_REQUEST);
+            }
+        }
+
+        // 같은 상품 내 DB 이미지 중복 검사
+        List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
+        Set<String> existingFileNames = existingImages.stream()
+                .map(img -> Paths.get(img.getImageUrl()).getFileName().toString())
+                .collect(Collectors.toSet());
+        for (String fileName : fileNameSet) {
+            if (existingFileNames.contains(fileName)) {
+                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
             }
         }
     }
@@ -65,27 +64,29 @@ public class ProductValidator {
         }
     }
 
-    // 상품 이미지 등록 시 중복 썸네일 체크 포함
-    public void validateThumbnailConsistency(Long productId, List<ProductImage> newImages) {
-        // 1. DB에 이미 존재하는 해당 상품 썸네일 조회
-        Optional<ProductImage> existingThumbnails = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
-
-        // 2. 요청에서 썸네일로 지정된 이미지 개수 카운트
-        long newThumbnailCount = newImages.stream()
-                .filter(img -> img.getImageType() == ImageType.THUMBNAIL)
+    public void validateThumbnailConsistencyForCreate(Long productId, List<ProductImageCreateRequest> requests) {
+        boolean hasExistingThumbnail = productImageRepository
+                .existsByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
+        long newThumbnailCount = requests.stream()
+                .filter(req -> req.getIsThumbnail() == true)
                 .count();
-
-        long totalThumbnails = (existingThumbnails.isPresent() ? 1 : 0) + newThumbnailCount;
-
-        // 3. DB + 요청 합쳐서 1개 이상이면 예외
+        long totalThumbnails = (hasExistingThumbnail ? 1 : 0) + newThumbnailCount;
         if (totalThumbnails > 1) {
             throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
         }
 
-        // 4. 새 요청에 썸네일이 없으면 첫 번째 이미지로 자동 지정
-        if (newThumbnailCount == 0 && !newImages.isEmpty()) {
-            newImages.get(0).markAsThumbnail();
+        if (newThumbnailCount == 0 && !requests.isEmpty() && !hasExistingThumbnail) {
+            requests.set(0, requests.get(0).toBuilder().isThumbnail(true).build());
         }
     }
 
+    public void validateThumbnailConsistencyForAppend(List<ProductImage> allImages) {
+        long thumbnailCount = allImages.stream()
+                .filter(img -> img.getImageType() == ImageType.THUMBNAIL)
+                .count();
+
+        if (thumbnailCount > 1) {
+            throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
+        }
+    }
 }

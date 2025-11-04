@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/users/me/password").permitAll()
+                        .requestMatchers("/actuator/**").permitAll() // <-- 필수
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

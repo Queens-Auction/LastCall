@@ -2,7 +2,6 @@ package org.example.lastcall.domain.auction.repository;
 
 import org.example.lastcall.domain.auction.dto.response.MySellingResponse;
 import org.example.lastcall.domain.auction.entity.Auction;
-import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,9 +23,6 @@ public interface AuctionRepository extends JpaRepository<Auction, Long>, Auction
             " )"
     )
     boolean existsActiveAuction(@Param("productId") Long productId);
-
-    // 상품에 진행 중인 경매 존재 여부 검증
-    boolean existsByProductIdAndStatus(Long productId, AuctionStatus status);
 
     // 내가 판매한 경매 목록 조회 (페이징)
     @Query("""

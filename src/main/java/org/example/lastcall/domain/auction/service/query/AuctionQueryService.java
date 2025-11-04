@@ -100,35 +100,8 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
 
     // 내가 참여한 경매 단건 조회 //
     public MyParticipatedResponse getMyParticipatedDetailAuction(Long userId, Long auctionId) {
-        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
-                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-
-        // 사용자 참여 여부 검증
-        boolean participated = bidQueryServiceApi.existsByAuctionIdAndUserId(auctionId, userId);
-        if (!participated) {
-            throw new BusinessException(AuctionErrorCode.USER_NOT_PARTICIPATED_IN_AUCTION);
-        }
-
-        Product product = auction.getProduct();
-
-        String imageUrl = productQueryServiceApi
-                .findThumbnailImage(product.getId())
-                .getImageUrl();
-
-        Long currentBid = bidQueryServiceApi.getCurrentBidAmount(auction.getId());
-
-        Boolean isLeading = bidQueryServiceApi.isUserLeading(auction.getId(), userId);
-
-        Long myBidAmount = bidQueryServiceApi.getMyBidAmount(auction.getId(), userId);
-
-        return MyParticipatedResponse.fromDetail(
-                auction,
-                product,
-                imageUrl,
-                currentBid,
-                myBidAmount,
-                isLeading
-        );
+        return auctionRepository.findMyParticipatedAuctionDetail(auctionId, userId)
+                .orElseThrow(() -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
     }
 
     // 상품 수정 시, 해당 상품이 연결된 경매 확인 후 수정 가능 여부 검증

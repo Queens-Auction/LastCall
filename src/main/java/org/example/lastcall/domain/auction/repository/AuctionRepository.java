@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface AuctionRepository extends JpaRepository<Auction, Long>, AuctionQueryRepository {
@@ -60,9 +59,6 @@ public interface AuctionRepository extends JpaRepository<Auction, Long>, Auction
             "WHERE a.user.id = :userId " +
             "AND a.id = :auctionId")
     Optional<Auction> findBySellerIdAndAuctionId(Long userId, Long auctionId);
-
-    // 사용자가 입찰에 참여한 경매 ID 목록을 기준으로 경매 페이지 조회
-    Page<Auction> findByIdIn(List<Long> auctionIds, Pageable pageable);
 
     // 상품 ID로 연결된 경매 조회
     @Query("SELECT a " +

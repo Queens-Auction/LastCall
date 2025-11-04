@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.auction.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
@@ -24,19 +25,19 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Repository // 서비스에 의존성 주입을 위해 필요 -> 단순 일반 클래스이기 때문에 자동으로 빈 인식X
 @RequiredArgsConstructor
 public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     private final JPAQueryFactory jpaQueryFactory;
 
-    // 경매 전체 조회
-
     /**
      * 경매 전체 조회 (카테고리별 필터 + 동적 정렬)
      * 기본 정렬: 최신순 (createdAt desc, id desc)
      * 지원 정렬: endTime(마감임박순), participantCount(참여자순)
      */
+    // 경매 전체 조회
     @Override
     public Page<AuctionReadAllResponse> findAllAuctionSummaries(Category category, Pageable pageable) {
         // QueryDSL Q타입 초기화
@@ -241,5 +242,79 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
          *  - total: 전체 개수(null-safe)
          */
         return new PageImpl<>(results, pageable, total != null ? total : 0);
+    }
+
+    /**
+     * - 시도1. 서브쿼리 기반 작성
+     * - 시도2. 조인 기반으로 수정 -> 중복 조회 해결 x
+     * - 시도3. 서브쿼리 + 조인 기반으로 해결
+     */
+    // 내가 참여한 경매 단건 조회 //
+    @Override
+    public Optional<MyParticipatedResponse> findMyParticipatedAuctionDetail(Long auctionId, Long userId) {
+        QAuction a = QAuction.auction;
+        QProduct p = QProduct.product;
+        QProductImage i = QProductImage.productImage;
+        QBid b = QBid.bid;
+
+        /**
+         * [서브쿼리 1] 내 최고 입찰 금액
+         *  - 해당 경매에서 현재 로그인한 사용자가 입찰한 금액 중 최고가를 조회
+         *  - b.auction.id = a.id → 외부 쿼리와 연관
+         */
+        Expression<Long> myMaxBidSubquery = JPAExpressions
+                .select(b.bidAmount.max())
+                .from(b)
+                .where(b.auction.id.eq(a.id)
+                        .and(b.user.id.eq(userId)));
+
+        /**
+         * [서브쿼리 2] 썸네일 이미지 URL
+         *  - product_image 테이블에서 썸네일(THUMBNAIL) 타입 이미지를 1건 조회
+         *  - limit(1) 적용으로 불필요한 중복 방지
+         */
+        Expression<String> thumbnailSubquery = JPAExpressions
+                .select(i.imageUrl)
+                .from(i)
+                .where(i.product.id.eq(a.product.id)
+                        .and(i.imageType.eq(ImageType.THUMBNAIL))
+                        .and(i.deleted.isFalse()))
+                .limit(1);
+
+        /**
+         * [메인 쿼리]
+         *  - Auction + Product JOIN
+         *  - Bid, Image는 서브쿼리로 처리하여 JOIN 최소화
+         *  - isLeading (내가 현재 최고 입찰자인지)도 서브쿼리로 boolean 계산
+         */
+        return Optional.ofNullable(
+                jpaQueryFactory
+                        .select(Projections.fields(MyParticipatedResponse.class,
+                                a.id.as("id"),
+                                ExpressionUtils.as(thumbnailSubquery, "imageUrl"),
+                                p.name.as("productName"),
+                                p.description.as("productDescription"),
+                                a.currentBid,
+                                a.status,
+                                a.startTime,
+                                a.endTime,
+                                // 내 최고 입찰가 매핑
+                                ExpressionUtils.as(myMaxBidSubquery, "myBidAmount"),
+                                // 현재 최고 입찰자인지 여부 확인 (exists 로 boolean 반환)
+                                ExpressionUtils.as(
+                                        JPAExpressions.selectOne()
+                                                .from(b)
+                                                .where(b.auction.id.eq(a.id)
+                                                        .and(b.user.id.eq(userId))
+                                                        .and(b.bidAmount.eq(myMaxBidSubquery)))
+                                                .exists(),
+                                        "isLeading"
+                                )
+                        ))
+                        .from(a)
+                        .join(a.product, p)
+                        .where(a.id.eq(auctionId), a.deleted.isFalse())
+                        .fetchOne()
+        );
     }
 }

@@ -34,21 +34,8 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
 
     // 경매 전체 조회 //
     public PageResponse<AuctionReadAllResponse> getAllAuctions(Category category, Pageable pageable) {
-        // 1. 경매 목록 조회 (최신순)
-        Page<Auction> auctions = auctionRepository.findAllActiveAuctionsByCategory(category, pageable);
-        // 2. 엔티티 -> DTO 변환
-        List<AuctionReadAllResponse> responses = auctions.stream()
-                .map(auction -> {
-                    // 현재 경매에 연결된 상품의 이미지 조회
-                    ProductImageResponse image = productQueryServiceApi.findThumbnailImage(auction.getProduct().getId());
-                    // 참여자(입찰자) 수 계산
-                    int participantCount = bidQueryServiceApi.countDistinctParticipants(auction.getId());
-
-                    return AuctionReadAllResponse.from(auction, image.getImageUrl(), participantCount);
-                })
-                .toList();
-        // 3. PageResponse로 변환하여 페이징 응답 반환
-        return PageResponse.of(auctions, responses);
+        Page<AuctionReadAllResponse> auctions = auctionRepository.findAllAuctionSummaries(category, pageable);
+        return PageResponse.of(auctions);
     }
 
     // 경매 단건 상세 조회 //

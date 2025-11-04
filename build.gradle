@@ -68,6 +68,8 @@ dependencies {
 
     // Actuator // 애플리케이션의 상태 (Health, Metrics, 환경정보, Thread Dump 등)를 관찰하고 관리할 수 있도록 도와주는 모듈
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Actuator가 Prometheus와 연동되도록 해주는 의존성
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
 }
 

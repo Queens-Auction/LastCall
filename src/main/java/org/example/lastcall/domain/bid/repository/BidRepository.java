@@ -39,5 +39,18 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 	List<Long> findDistinctAuctionsByUserId(@Param("userId") Long userId);
 
 	// 특정 경매의 참여자 수 (입찰자 수) 조회
+	@Query("""
+		    SELECT COUNT(DISTINCT b.user.id)
+		    FROM Bid b
+		    WHERE b.auction.id = :auctionId
+		""")
 	int countDistinctByAuctionId(Long auctionId);
+
+	// 특정 경매의 모든 입찰 기록 조회
+	@Query("""
+		    SELECT b FROM Bid b
+		    JOIN FETCH b.user
+		    WHERE b.auction.id = :auctionId
+		""")
+	List<Bid> findAllByAuctionId(@Param("auctionId") Long auctionId);
 }

@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.product.sevice.query;
+package org.example.lastcall.domain.product.service.query;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
@@ -7,9 +7,9 @@ import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadOneResponse;
-import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
+import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
@@ -64,7 +64,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     //대표이미지 조회
     @Override
     @Transactional(readOnly = true)
-    public ProductImageResponse readThumbnailImage(Long productId) {
+    public ProductImageResponse findThumbnailImage(Long productId) {
         ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
         return ProductImageResponse.from(thumbnailImage);
@@ -73,7 +73,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     //상품별 이미지 전체 조회
     @Override
     @Transactional(readOnly = true)
-    public List<ProductImageResponse> readAllProductImage(Long productId) {
+    public List<ProductImageResponse> findAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
         return ProductImageResponse.from(productImages);
     }

@@ -54,27 +54,33 @@ public class ProductValidator {
         }
     }
 
-    // 상품 이미지 등록 시 중복 썸네일 체크 포함
-    public void validateThumbnailConsistency(Long productId, List<ProductImage> newImages) {
-        // 1. DB에 이미 존재하는 해당 상품 썸네일 조회
-        Optional<ProductImage> existingThumbnails = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
+    public void validateThumbnailConsistencyForCreate(Long productId, List<ProductImage> newImages) {
+        Optional<ProductImage> existingThumbnails = productImageRepository
+                .findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
 
-        // 2. 요청에서 썸네일로 지정된 이미지 개수 카운트
         long newThumbnailCount = newImages.stream()
                 .filter(img -> img.getImageType() == ImageType.THUMBNAIL)
                 .count();
 
         long totalThumbnails = (existingThumbnails.isPresent() ? 1 : 0) + newThumbnailCount;
 
-        // 3. DB + 요청 합쳐서 1개 이상이면 예외
         if (totalThumbnails > 1) {
             throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
         }
 
-        // 4. 새 요청에 썸네일이 없으면 첫 번째 이미지로 자동 지정
-        if (newThumbnailCount == 0 && !newImages.isEmpty()) {
+        // create일 때만 자동 지정
+        if (newThumbnailCount == 0 && !newImages.isEmpty() && existingThumbnails.isEmpty()) {
             newImages.get(0).markAsThumbnail();
         }
     }
 
+    public void validateThumbnailConsistencyForAppend(List<ProductImage> allImages) {
+        long thumbnailCount = allImages.stream()
+                .filter(img -> img.getImageType() == ImageType.THUMBNAIL)
+                .count();
+
+        if (thumbnailCount > 1) {
+            throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
+        }
+    }
 }

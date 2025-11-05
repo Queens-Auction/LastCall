@@ -24,7 +24,8 @@ public class Point extends BaseEntity {
     private PointLogType type;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    // unique 추가 -> DB 데이터 정합성 보장 위해 (한 유저당 하나의 포인트)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private User user;
 
     @Column(name = "available_point", nullable = false, columnDefinition = "BIGINT DEFAULT 0")

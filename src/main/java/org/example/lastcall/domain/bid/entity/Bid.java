@@ -14,6 +14,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -23,7 +24,11 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "bids")
+@Table(name = "bids", indexes = {
+	@Index(name = "idx_auction_id", columnList = "auction_id"),
+	@Index(name = "idx_user_id", columnList = "user_id"),
+	@Index(name = "idx_auction_and_user", columnList = "auction_id, user_id")
+})
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)    // 외부에서 new Bid() 하는 것을 막기 위함
 public class Bid {

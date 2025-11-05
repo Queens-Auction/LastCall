@@ -35,7 +35,7 @@ public class S3Service {
                     .toExternalForm();
             return url;
         } catch (IOException e) {
-            throw new BusinessException(ProductErrorCode.RUNTIME_EXCEPTION);
+            throw new BusinessException(ProductErrorCode.RUNTIME_EXCEPTION_FOR_IMAGE_UPLOAD);
         }
     }
 

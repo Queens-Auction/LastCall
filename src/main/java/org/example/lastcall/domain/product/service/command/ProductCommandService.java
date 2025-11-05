@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -53,25 +54,22 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //이미지 등록 (여러 장 등록)
     public List<ProductImageResponse> createProductImages(Long productId,
                                                           List<ProductImageCreateRequest> requests,
-                                                          List<MultipartFile> image,
+                                                          List<MultipartFile> images,
                                                           AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        if (product.isDeleted()) {
+            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
+        }
 
         productValidator.checkOwnership(product, authUser);
         productValidator.validateImageCount(requests);
-        productValidator.validateDuplicateFilesBeforeUpload(requests, image, productId);
         productValidator.validateThumbnailConsistencyForCreate(productId, requests);
 
-        List<ProductImage> images = IntStream.range(0, requests.size())
-                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
-                        product,
-                        requests.get(i),
-                        image.get(i),
-                        productId))
-                .toList();
-
-        return productImageRepository.saveAll(images).stream()
+        // 공통 메서드 호출
+        List<ProductImage> imagesToSave = uploadAndGenerateImages(product, requests, images, productId);
+        // DB 저장
+        return productImageRepository.saveAll(imagesToSave).stream()
                 .map(ProductImageResponse::from)
                 .toList();
     }
@@ -80,6 +78,9 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        if (product.isDeleted()) {
+            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
+        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidator.checkOwnership(product, authUser);
@@ -92,26 +93,21 @@ public class ProductCommandService implements ProductCommandServiceApi {
     //상품 수정 시 이미지 추가
     public List<ProductImageResponse> appendProductImages(Long productId,
                                                           List<ProductImageCreateRequest> requests,
-                                                          List<MultipartFile> image,
+                                                          List<MultipartFile> images,
                                                           AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        if (product.isDeleted()) {
+            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
+        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(product.getId());
         productValidator.checkOwnership(product, authUser);
 
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
-        productValidator.validateDuplicateFilesBeforeUpload(requests, image, productId);
-
-        //새 이미지 객체생성
-        List<ProductImage> newImages = IntStream.range(0, requests.size())
-                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
-                        product,
-                        requests.get(i),
-                        image.get(i),
-                        productId))
-                .toList();
+        // 공통 메서드 호출
+        List<ProductImage> newImages = uploadAndGenerateImages(product, requests, images, productId);
 
         //전체 이미지 합치기
         List<ProductImage> allImages = new ArrayList<>(existingImages);
@@ -129,6 +125,9 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        if (product.isDeleted()) {
+            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
+        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidator.checkOwnership(product, authUser);
@@ -160,6 +159,9 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public void deleteProduct(Long productId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+        if (product.isDeleted()) {
+            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
+        }
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidator.checkOwnership(product, authUser);
 
@@ -182,8 +184,11 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public void deleteProductImage(Long productId, Long imageId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
+        if (product.isDeleted()) {
+            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
+        }
 
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidator.checkOwnership(product, authUser);
 
         ProductImage productImage = productImageRepository.findById(imageId).orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
@@ -204,6 +209,24 @@ public class ProductCommandService implements ProductCommandServiceApi {
                 newThumbnail.updateImageType(ImageType.THUMBNAIL);
             }
         }
+    }
 
+    // 공통 메서드 : 이미지 업로드 + 해시 생성 + 중복 체크
+    private List<ProductImage> uploadAndGenerateImages(Product product,
+                                                       List<ProductImageCreateRequest> requests,
+                                                       List<MultipartFile> images,
+                                                       Long productId) {
+        // 파일 해시 계산 + 중복 체크
+        Map<MultipartFile, String> fileToHash = productImageService.validateAndGenerateHashes(images, productId);
+
+        // S3 업로드 + ProductImage 객체 생성
+        return IntStream.range(0, requests.size())
+                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
+                        product,
+                        requests.get(i),
+                        images.get(i),
+                        fileToHash.get(images.get(i)),
+                        productId))
+                .toList();
     }
 }

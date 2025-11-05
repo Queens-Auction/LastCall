@@ -3,8 +3,8 @@ package org.example.lastcall.domain.product.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.example.lastcall.common.response.PageResponse;
-import org.example.lastcall.domain.product.entity.ImageType;
 import org.example.lastcall.domain.product.entity.ProductImage;
+import org.example.lastcall.domain.product.enums.ImageType;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

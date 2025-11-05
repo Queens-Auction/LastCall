@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.product.entity;
+package org.example.lastcall.domain.product.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

@@ -4,8 +4,8 @@
 // import org.example.lastcall.domain.auction.service.AuctionServiceApi;
 // import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 // import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
-// import org.example.lastcall.domain.product.entity.Category;
-// import org.example.lastcall.domain.product.entity.ImageType;
+// import org.example.lastcall.domain.product.enums.Category;
+// import org.example.lastcall.domain.product.enums.ImageType;
 // import org.example.lastcall.domain.product.entity.Product;
 // import org.example.lastcall.domain.product.entity.ProductImage;
 // import org.example.lastcall.domain.product.exception.ProductErrorCode;

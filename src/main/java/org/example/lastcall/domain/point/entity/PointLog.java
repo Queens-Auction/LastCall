@@ -2,11 +2,13 @@ package org.example.lastcall.domain.point.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.bid.entity.Bid;
+import org.example.lastcall.domain.point.enums.PointLogType;
 import org.example.lastcall.domain.user.entity.User;
 
 @Entity
@@ -75,5 +77,16 @@ public class PointLog extends BaseEntity {
         log.auction = auction;
         return log;
     }
+
+    @Builder
+    public static PointLog of(Long userId, Long auctionId, Long amount, PointLogType type) {
+        return PointLog.builder()
+                .userId(userId)
+                .auctionId(auctionId)
+                .amount(amount)
+                .type(type)
+                .build();
+    }
+
 
 }

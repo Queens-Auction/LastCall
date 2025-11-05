@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.product.service.command;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -30,6 +31,7 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class ProductCommandService implements ProductCommandServiceApi {
     private final ProductRepository productRepository;
     private final AuctionQueryServiceApi auctionQueryServiceApi;
@@ -161,8 +163,17 @@ public class ProductCommandService implements ProductCommandServiceApi {
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidator.checkOwnership(product, authUser);
 
+        //상품에 연결된 이미지 전체 조회
+        List<ProductImage> images = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
+        //s3에서 실제 이미지 삭제
+        for (ProductImage image : images) {
+            try {
+                s3Service.deleteFile(image.getImageUrl());
+            } catch (Exception e) {
+                log.warn("[WARN] Failed to delete image from S3: {}", image.getImageUrl(), e);
+            }
+        }
         product.softDelete();
-
         //상품에 연결된 이미지까지 soft delete
         productImageRepository.softDeleteByProductId(productId);
     }

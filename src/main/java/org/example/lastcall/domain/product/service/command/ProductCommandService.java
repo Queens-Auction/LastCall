@@ -37,6 +37,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     private final ProductImageRepository productImageRepository;
     private final ProductValidator productValidator;
     private final ProductImageService productImageService;
+    private final S3Service s3Service;
 
     //상품 등록
     public ProductResponse createProduct(AuthUser authuser, ProductCreateRequest request) {
@@ -180,6 +181,9 @@ public class ProductCommandService implements ProductCommandServiceApi {
         }
         boolean isThumbnail = productImage.getImageType() == ImageType.THUMBNAIL;
 
+        //1.S3에서 실제 파일 삭제
+        s3Service.deleteFile(productImage.getImageUrl());
+        //2.DB에서 소프트딜리트
         productImage.softDelete();
 
         if (isThumbnail) {

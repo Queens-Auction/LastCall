@@ -13,6 +13,7 @@ import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
+import org.example.lastcall.domain.product.service.command.S3Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 public class ProductQueryService implements ProductQueryServiceApi {
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+    private final S3Service s3Service;
 
     //내 상품 전체 조회(상품 아이디와 상품명만 조회 : 내 상품 관리용 상품 전체 조회)
     public PageResponse<ProductReadAllResponse> getAllMyProduct(AuthUser authuser, int page, int size) {
@@ -37,16 +39,8 @@ public class ProductQueryService implements ProductQueryServiceApi {
                 authuser.userId(),
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
         );
-        List<Long> productIds = products.stream()
-                .map(Product::getId)
-                .toList();
+        Map<Long, String> thumbnailUrlMap = getThumbnailUrlMap(products);
 
-        //대표 이미지들 한 번에 조회
-        List<ProductImage> thumbnails = productImageRepository.findAllThumbnailsByProductIds(productIds);
-
-        //productId -> imageUrl 매핑
-        Map<Long, String> thumbnailUrlMap = thumbnails.stream()
-                .collect(Collectors.toMap(pi -> pi.getProduct().getId(), ProductImage::getImageUrl));
         return ProductReadAllResponse.from(products, thumbnailUrlMap);
     }
 
@@ -55,7 +49,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
         Product product = productRepository.findById(productId).orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         List<ProductImageResponse> images = productImageRepository.findAllByProductIdAndDeletedFalse(productId).stream()
-                .map(ProductImageResponse::from)
+                .map(image -> ProductImageResponse.from(image, s3Service))
                 .toList();
 
         return ProductReadOneResponse.from(product, images);
@@ -67,7 +61,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     public ProductImageResponse findThumbnailImage(Long productId) {
         ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
-        return ProductImageResponse.from(thumbnailImage);
+        return ProductImageResponse.from(thumbnailImage, s3Service);
     }
 
     //상품별 이미지 전체 조회
@@ -75,7 +69,7 @@ public class ProductQueryService implements ProductQueryServiceApi {
     @Transactional(readOnly = true)
     public List<ProductImageResponse> findAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
-        return ProductImageResponse.from(productImages);
+        return ProductImageResponse.from(productImages, s3Service);
     }
 
     //상품 조회
@@ -94,5 +88,18 @@ public class ProductQueryService implements ProductQueryServiceApi {
         if (!Objects.equals(product.getUser().getId(), userId)) {
             throw new BusinessException(ProductErrorCode.UNAUTHORIZED_PRODUCT_OWNER);
         }
+    }
+
+    private Map<Long, String> getThumbnailUrlMap(Page<Product> products) {
+        List<Long> productIds = products.stream()
+                .map(Product::getId)
+                .toList();
+
+        return productImageRepository.findAllThumbnailsByProductIds(productIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        pi -> pi.getProduct().getId(),
+                        pi -> s3Service.generateImageUrl(pi.getImageKey())
+                ));
     }
 }

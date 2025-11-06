@@ -10,21 +10,25 @@ spring:
     show-sql: true
 
 server:
-  port: 8080
+  port: 9090
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: "health,info,metrics,prometheus"
   endpoint:
     health:
       show-details: always
+  metrics:
+    tags:
+      application: spring-app
 
 logging:
   level:
-    root: INFO
-    org.springframework.web: DEBUG
-    org.springframework.core.env: DEBUG
-    org.springframework.boot.context.config: DEBUG
-    com.zaxxer.hikari: DEBUG
+    root: info
+    org.springframework.web: warn
+    org.springframework.core.env: warn
+    org.springframework.boot.context.config: warn
+    com.zaxxer.hikari: error
+    org.example.lastcall: debug

@@ -34,21 +34,8 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
 
     // 경매 전체 조회 //
     public PageResponse<AuctionReadAllResponse> getAllAuctions(Category category, Pageable pageable) {
-        // 1. 경매 목록 조회 (최신순)
-        Page<Auction> auctions = auctionRepository.findAllActiveAuctionsByCategory(category, pageable);
-        // 2. 엔티티 -> DTO 변환
-        List<AuctionReadAllResponse> responses = auctions.stream()
-                .map(auction -> {
-                    // 현재 경매에 연결된 상품의 이미지 조회
-                    ProductImageResponse image = productQueryServiceApi.findThumbnailImage(auction.getProduct().getId());
-                    // 참여자(입찰자) 수 계산
-                    int participantCount = bidQueryServiceApi.countDistinctParticipants(auction.getId());
-
-                    return AuctionReadAllResponse.from(auction, image.getImageUrl(), participantCount);
-                })
-                .toList();
-        // 3. PageResponse로 변환하여 페이징 응답 반환
-        return PageResponse.of(auctions, responses);
+        Page<AuctionReadAllResponse> auctions = auctionRepository.findAllAuctionSummaries(category, pageable);
+        return PageResponse.of(auctions);
     }
 
     // 경매 단건 상세 조회 //
@@ -75,28 +62,9 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
     }
 
     // 내가 판매한 경매 목록 조회 //
-    @Transactional(readOnly = true)
     public PageResponse<MySellingResponse> getMySellingAuctions(Long userId, Pageable pageable) {
-        // 1. 경매 목록 조회
-        Page<Auction> auctions = auctionRepository.findBySellerId(userId, pageable);
-        // 2. DTO 변환
-        Page<MySellingResponse> responses = auctions.map(auction -> {
-            Product product = auction.getProduct();
-            // 썸네일 이미지 조회
-            String imageUrl = productQueryServiceApi
-                    .findThumbnailImage(product.getId())
-                    .getImageUrl();
-            // 최고 입찰가 조회
-            Long currentBid = bidQueryServiceApi.getCurrentBidAmount(auction.getId());
-
-            return MySellingResponse.from(
-                    auction,
-                    product,
-                    imageUrl,
-                    currentBid
-            );
-        });
-        return PageResponse.of(responses);
+        Page<MySellingResponse> auctions = auctionRepository.findMySellingAuctions(userId, pageable);
+        return PageResponse.of(auctions);
     }
 
     // 내가 판매한 경매 상세 조회 //
@@ -126,68 +94,14 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
 
     // 내가 참여한 경매 전체 조회 //
     public PageResponse<MyParticipatedResponse> getMyParticipatedAuctions(Long userId, Pageable pageable) {
-        // 사용자가 입찰한 경매 ID 목록 조회
-        List<Long> auctionIds = bidQueryServiceApi.getParticipatedAuctionIds(userId);
-
-        // 경매 ID 목록으로 해당 경매 페이지로 나눠 조회
-        Page<Auction> auctions = auctionRepository.findByIdIn(auctionIds, pageable);
-
-        // 각 경매에 대한 상품, 이미지, 최고 입찰가, 내 최고 입찰 여부 등 정보매핑
-        Page<MyParticipatedResponse> responses = auctions.map(auction -> {
-            Product product = auction.getProduct();
-
-            String imageUrl = productQueryServiceApi
-                    .findThumbnailImage(product.getId())
-                    .getImageUrl();
-
-            // 최고 입찰가 조회
-            Long currentBid = bidQueryServiceApi.getCurrentBidAmount(auction.getId());
-
-            // 내가 최고입찰자인지 여부 확인
-            Boolean isLeading = bidQueryServiceApi.isUserLeading(auction.getId(), userId);
-
-            return MyParticipatedResponse.from(
-                    auction,
-                    product,
-                    imageUrl,
-                    currentBid,
-                    isLeading
-            );
-        });
-        return PageResponse.of(responses);
+        Page<MyParticipatedResponse> page = auctionRepository.findMyParticipatedAuctions(userId, pageable);
+        return PageResponse.of(page);
     }
 
     // 내가 참여한 경매 단건 조회 //
     public MyParticipatedResponse getMyParticipatedDetailAuction(Long userId, Long auctionId) {
-        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
-                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-
-        // 사용자 참여 여부 검증
-        boolean participated = bidQueryServiceApi.existsByAuctionIdAndUserId(auctionId, userId);
-        if (!participated) {
-            throw new BusinessException(AuctionErrorCode.USER_NOT_PARTICIPATED_IN_AUCTION);
-        }
-
-        Product product = auction.getProduct();
-
-        String imageUrl = productQueryServiceApi
-                .findThumbnailImage(product.getId())
-                .getImageUrl();
-
-        Long currentBid = bidQueryServiceApi.getCurrentBidAmount(auction.getId());
-
-        Boolean isLeading = bidQueryServiceApi.isUserLeading(auction.getId(), userId);
-
-        Long myBidAmount = bidQueryServiceApi.getMyBidAmount(auction.getId(), userId);
-
-        return MyParticipatedResponse.fromDetail(
-                auction,
-                product,
-                imageUrl,
-                currentBid,
-                myBidAmount,
-                isLeading
-        );
+        return auctionRepository.findMyParticipatedAuctionDetail(auctionId, userId)
+                .orElseThrow(() -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
     }
 
     // 상품 수정 시, 해당 상품이 연결된 경매 확인 후 수정 가능 여부 검증

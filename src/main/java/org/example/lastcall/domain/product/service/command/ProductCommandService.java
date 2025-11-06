@@ -20,10 +20,12 @@ import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
     private final UserServiceApi userServiceApi;
     private final ProductImageRepository productImageRepository;
     private final ProductValidator productValidator;
+    private final ProductImageService productImageService;
 
     //상품 등록
     public ProductResponse createProduct(AuthUser authuser, ProductCreateRequest request) {
@@ -45,36 +48,27 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     //이미지 등록 (여러 장 등록)
-    public List<ProductImageResponse> createProductImages(
-            Long productId,
-            List<ProductImageCreateRequest> requests,
-            AuthUser authUser) {
+    public List<ProductImageResponse> createProductImages(Long productId,
+                                                          List<ProductImageCreateRequest> requests,
+                                                          List<MultipartFile> image,
+                                                          AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
-        // 소유자 확인
-        if (!product.getUser().getId().equals(authUser.userId())) {
-            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
-        }
-
+        productValidator.checkOwnership(product, authUser);
         productValidator.validateImageCount(requests);
-        productValidator.validateDuplicateUrls(requests, product.getId());
+        productValidator.validateDuplicateFilesBeforeUpload(requests, image, productId);
+        productValidator.validateThumbnailConsistencyForCreate(productId, requests);
 
-        //프론트에서 선택한 이미지(isThumbnail()=true)가 대표 이미지가 되도록 설정
-        List<ProductImage> images = requests.stream()
-                .map(req -> {
-                    ImageType type = (req.getIsThumbnail() != null && req.getIsThumbnail())
-                            ? ImageType.THUMBNAIL
-                            : ImageType.DETAIL;
-                    return ProductImage.of(product, type, req.getImageUrl());
-                })
+        List<ProductImage> images = IntStream.range(0, requests.size())
+                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
+                        product,
+                        requests.get(i),
+                        image.get(i),
+                        productId))
                 .toList();
 
-        productValidator.validateThumbnailConsistencyForCreate(productId, images);
-
-        List<ProductImage> savedImages = productImageRepository.saveAll(images);
-
-        return savedImages.stream()
+        return productImageRepository.saveAll(images).stream()
                 .map(ProductImageResponse::from)
                 .toList();
     }
@@ -83,12 +77,9 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
 
-        // 소유자 확인
-        if (!product.getUser().getId().equals(authUser.userId())) {
-            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
-        }
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
+        productValidator.checkOwnership(product, authUser);
 
         product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
 
@@ -96,52 +87,37 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     //상품 수정 시 이미지 추가
-    public List<ProductImageResponse> appendProductImages(
-            Long productId,
-            List<ProductImageCreateRequest> requests,
-            AuthUser authUser) {
+    public List<ProductImageResponse> appendProductImages(Long productId,
+                                                          List<ProductImageCreateRequest> requests,
+                                                          List<MultipartFile> image,
+                                                          AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
         auctionQueryServiceApi.validateAuctionStatusForModification(product.getId());
+        productValidator.checkOwnership(product, authUser);
 
-        // 소유자 확인
-        if (!product.getUser().getId().equals(authUser.userId())) {
-            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
-        }
-
-        //기존 이미지 불러오기
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
+        productValidator.validateDuplicateFilesBeforeUpload(requests, image, productId);
+
         //새 이미지 객체생성
-        List<ProductImage> newImages = requests.stream()
-                .map(req -> {
-                    ImageType type = (req.getIsThumbnail() != null && req.getIsThumbnail())
-                            ? ImageType.THUMBNAIL
-                            : ImageType.DETAIL;
-                    return ProductImage.of(product, type, req.getImageUrl());
-                })
+        List<ProductImage> newImages = IntStream.range(0, requests.size())
+                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
+                        product,
+                        requests.get(i),
+                        image.get(i),
+                        productId))
                 .toList();
 
         //전체 이미지 합치기
-        List<ProductImage> allImages = new ArrayList<>();
-        allImages.addAll(existingImages);
+        List<ProductImage> allImages = new ArrayList<>(existingImages);
         allImages.addAll(newImages);
 
-        //총 이미지 갯수 검증
-        if (allImages.size() > 10) {
-            throw new BusinessException(ProductErrorCode.MAX_IMAGE_COUNT_EXCEEDED);
-        }
-
-        //썸네일 한 개만 유지
+        productValidator.validateImageCount(allImages);
         productValidator.validateThumbnailConsistencyForAppend(allImages);
 
-        //중복 URL 체크
-        productValidator.validateDuplicateUrlsForAll(allImages);
-
-        //새 이미지들만 저장
-        List<ProductImage> savedImages = productImageRepository.saveAll(newImages);
-
-        return savedImages.stream()
+        return productImageRepository.saveAll(newImages).stream()
                 .map(ProductImageResponse::from)
                 .toList();
     }
@@ -150,12 +126,9 @@ public class ProductCommandService implements ProductCommandServiceApi {
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
 
-        // 소유자 확인
-        if (!product.getUser().getId().equals(authUser.userId())) {
-            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
-        }
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
+        productValidator.checkOwnership(product, authUser);
 
         //기존 썸네일 찾기
         Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
@@ -185,12 +158,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
-
-        // 소유자 확인
-        if (!product.getUser().getId().equals(authUser.userId())) {
-            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
-        }
-
+        productValidator.checkOwnership(product, authUser);
 
         product.softDelete();
 
@@ -204,10 +172,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
 
-        // 소유자 확인
-        if (!product.getUser().getId().equals(authUser.userId())) {
-            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
-        }
+        productValidator.checkOwnership(product, authUser);
 
         ProductImage productImage = productImageRepository.findById(imageId).orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
         if (!productImage.getProduct().getId().equals(productId)) {

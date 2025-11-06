@@ -25,7 +25,7 @@ public class Point extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     // unique 추가 -> DB 데이터 정합성 보장 위해 (한 유저당 하나의 포인트)
-    @JoinColumn(name = "user_id", nullable = false, updatable = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Column(name = "available_point", nullable = false, columnDefinition = "BIGINT DEFAULT 0")

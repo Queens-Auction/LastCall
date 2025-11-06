@@ -14,7 +14,15 @@ import org.example.lastcall.domain.user.entity.User;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "point_logs")
+@Table(
+        name = "point_logs",
+        indexes = {
+                @Index(name = "idx_point_log_user_created", columnList = "user_id, created_at DESC"),
+                // FK 인덱스 : DB 호환성 위해 명시적 추가
+                // user_id 는 복합 인덱스 사용 중이고, bid_id 는 사용 빈도 낮음
+                @Index(name = "idx_point_log_auction", columnList = "auction_id"),
+                @Index(name = "idx_point_log_point", columnList = "point_id")
+        })
 public class PointLog extends BaseEntity {
 
     @Id

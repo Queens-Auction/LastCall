@@ -28,9 +28,8 @@ public class ProductImageService {
                                                     String fileHash,
                                                     Long productId) {
         String imageKey = s3Service.uploadToS3(file, "products/" + productId);
-        String imageUrl = s3Service.generateImageUrl(imageKey);
         ImageType imageType = Boolean.TRUE.equals(request.getIsThumbnail()) ? ImageType.THUMBNAIL : ImageType.DETAIL;
-        return ProductImage.of(product, imageType, imageUrl, fileHash);
+        return ProductImage.of(product, imageType, imageKey, fileHash);
     }
 
     //중복체크

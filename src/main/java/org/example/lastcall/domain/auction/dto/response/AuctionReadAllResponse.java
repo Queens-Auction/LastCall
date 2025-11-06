@@ -20,10 +20,18 @@ public class AuctionReadAllResponse {
     private String productName;
 
     @Schema(description = "현재 참여자 수", example = "8")
-    private int participantCount;
+    private Long participantCount;
+
+    // DTO Projection 용 생성자 (JPQL 구문에서 사용 -> N+1 해결)
+    public AuctionReadAllResponse(Long id, String imageUrl, String productName, Long participantCount) {
+        this.id = id;
+        this.imageUrl = imageUrl;
+        this.productName = productName;
+        this.participantCount = (participantCount != null) ? participantCount : 0L;
+    }
 
     // 정적 팩토리 메서드 (from)
-    public static AuctionReadAllResponse from(Auction auction, String imageUrl, int participantCount) {
+    public static AuctionReadAllResponse from(Auction auction, String imageUrl, Long participantCount) {
         return AuctionReadAllResponse.builder()
                 .id(auction.getId())
                 .imageUrl(imageUrl)

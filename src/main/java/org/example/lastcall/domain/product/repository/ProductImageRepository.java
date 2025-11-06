@@ -1,5 +1,6 @@
 package org.example.lastcall.domain.product.repository;
 
+import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,8 +16,6 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     Optional<ProductImage> findByProductIdAndImageTypeAndDeletedFalse(Long productId, ImageType imageType);
 
-    boolean existsByProductIdAndImageUrl(Long productId, String url);
-
     long countByProductIdAndImageType(Long productId, ImageType imageType);
 
     @Modifying
@@ -28,4 +27,8 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
     List<ProductImage> findAllThumbnailsByProductIds(@Param("productIds") List<Long> productIds);
 
     List<ProductImage> findByProductIdAndDeletedFalseOrderByIdAsc(Long productId);
+
+    Long product(Product product);
+
+    boolean existsByProductIdAndImageTypeAndDeletedFalse(Long productId, ImageType imageType);
 }

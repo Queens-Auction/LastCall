@@ -7,6 +7,12 @@ spring:
     username: ${db.username}
     password: ${db.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    aws:
+      region:
+        static: ap-northeast-2
+    s3:
+      bucket: ${AWS_S3_BUCKET_NAME}
   jpa:
     hibernate:
       ddl-auto: update

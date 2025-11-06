@@ -1,8 +1,10 @@
 package org.example.lastcall.domain.auction.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.product.entity.Product;
@@ -12,6 +14,9 @@ import java.time.LocalDateTime;
 @Schema(description = "내가 참여한 경매 조회 응답 DTO")
 @Getter
 @Builder
+// 둘 다 필요! (없으면 에러 발생)
+@AllArgsConstructor
+@NoArgsConstructor
 public class MyParticipatedResponse {
     @Schema(description = "경매 ID", example = "101")
     private Long id;

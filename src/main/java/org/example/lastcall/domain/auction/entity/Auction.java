@@ -17,7 +17,19 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "auctions")
+@Table(
+        name = "auctions",
+        indexes = {
+                @Index(name = "idx_auction_deleted", columnList = "deleted"),
+                // 아래 두 건은 인텔리제이에서 조회 속도 테스트 시 데이터가 적어 효과가 미비함
+                // -> nGrinder로 부하테스트에서 성능 확인 예정
+                // -> 부하 테스트에서도 효과가 미비하면 삭제 예정
+                @Index(name = "idx_auction_created_at", columnList = "created_at"),
+                @Index(name = "idx_auction_user_deleted_created", columnList = "user_id, deleted, created_at DESC"),
+                // FK 인덱스 : DB 호환성 위해 명시적 추가
+                @Index(name = "idx_auction_user_id", columnList = "user_id"),
+                @Index(name = "idx_auction_product_id", columnList = "product_id")
+        })
 public class Auction extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

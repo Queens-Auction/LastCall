@@ -8,6 +8,9 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Configuration
 public class AuctionConfig {
     // 교환기(Exchange), 큐(Queue), 라우팅 키 를 상수 정의
@@ -15,11 +18,13 @@ public class AuctionConfig {
     public static final String QUEUE_NAME = "auction.queue";
     public static final String ROUTING_KEY = "auction.key";
 
-    // topic 타입 교환기 생성
-    // -> 여러 라우팅 키 패턴 매칭 가능
+    // Delay Exchange 설정 (지연 큐)
+    // -> 메시지 바로 큐로 보내지 않고, 지정된 시간(x-delay)만큼 대기 후 전달
     @Bean
-    public TopicExchange exchange() {
-        return new TopicExchange(EXCHANGE_NAME);
+    public CustomExchange delayExchange() {
+        Map<String, Object> args = new HashMap<>();
+        args.put("x-delayed-type", "direct");
+        return new CustomExchange(EXCHANGE_NAME, "x-delayed-message", true, false, args);
     }
 
     // 메시지 저장할 Queue 생성 (지속성 true)
@@ -30,8 +35,12 @@ public class AuctionConfig {
 
     // Exchange 와 Queue 를 ROUTING_KEY 로 연결
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    public Binding binding(Queue queue, CustomExchange delayExchange) {
+        // to.(delayExchange) : 메시지가 통과할 교환기 지정 -> 이 메시지는 지연큐 통해 들어옴을 명시
+        // .with(ROUTING_KEY) : 어떤 라우팅 키로 메시지 구분할지 결정
+        // .noargs() : .with()로 지정한 라우팅 키 외에 추가 파라미터 없을 때 사용하는 메서드
+        //             -> 기본 라우팅만 하고 다른 옵션 없다는 의미
+        return BindingBuilder.bind(queue).to(delayExchange).with(ROUTING_KEY).noargs();
     }
 
     // Jackson 사용한 JSON 직렬화/역직렬화 변환기(Converter)

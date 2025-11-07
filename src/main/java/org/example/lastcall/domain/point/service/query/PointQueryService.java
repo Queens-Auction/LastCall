@@ -8,6 +8,7 @@ import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.point.repository.PointRepository;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,8 @@ public class PointQueryService implements PointQueryServiceApi {
 	private final UserServiceApi userServiceApi;
 
 	// 유저 포인트 조회
+	// @Cacheable: 캐시 정보를 메모리 상에 저장하거나 조회해오는 기능 수행
+	@Cacheable(value = "userPoints", key = "#authUser.userId()")
 	public PointResponse getUserPoint(AuthUser authUser) {
 
 		User user = userServiceApi.findById(authUser.userId());

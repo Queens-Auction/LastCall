@@ -146,4 +146,22 @@ public class Auction extends BaseEntity {
         this.status = AuctionStatus.DELETED;
         this.softDelete();
     }
+
+    // 경매 종료 여부 확인
+    public boolean canClose() {
+        return this.status != AuctionStatus.CLOSED
+                && this.status != AuctionStatus.DELETED;
+    }
+
+    // 경매 종료 처리
+    public void close() {
+        this.status = AuctionStatus.CLOSED;
+    }
+
+    // 경매 낙찰자 확정
+    public void assignWinner(Long winnerId, Long winningBid) {
+        this.winnerId = winnerId;
+        this.currentBid = winningBid;
+        this.status = AuctionStatus.CLOSED;
+    }
 }

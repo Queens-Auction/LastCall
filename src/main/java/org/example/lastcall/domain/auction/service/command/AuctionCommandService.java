@@ -9,8 +9,12 @@ import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
+import org.example.lastcall.domain.bid.entity.Bid;
+import org.example.lastcall.domain.bid.service.query.BidQueryServiceApi;
+import org.example.lastcall.domain.point.service.command.PointCommandService;
+import org.example.lastcall.domain.point.service.query.PointQueryServiceApi;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.service.query.ProductQueryService;
+import org.example.lastcall.domain.product.service.query.ProductQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;
@@ -23,7 +27,10 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
 
     private final AuctionRepository auctionRepository;
     private final UserServiceApi userServiceApi;
-    private final ProductQueryService productQueryService;
+    private final ProductQueryServiceApi productQueryService;
+    private final PointQueryServiceApi pointQueryServiceApi;
+    private final BidQueryServiceApi bidQueryServiceApi;
+    private final PointCommandService pointCommandServiceApi;
 
     // 경매 등록 //
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
@@ -71,5 +78,32 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
         auction.markAsDeleted();
+    }
+
+    // 경매 상태 변경 (closed)
+    public void closeAuction(Long auctionId) {
+        // 1. 경매 엔티티 조회
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        // 2. 종료 여부 검증
+        if (!auction.canClose()) {
+            throw new BusinessException(AuctionErrorCode.AUCTION_ALREADY_CLOSED);
+        }
+
+        // 4. 최고 입찰자 조회
+        Bid topBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElse(null);
+
+        if (topBid != null) {
+            Long winnerId = topBid.getUser().getId();
+            Long bidAmount = topBid.getBidAmount();
+
+            // 낙찰자 호출
+            auction.assignWinner(winnerId, bidAmount);
+
+            // 포인트 처리 (예치 -> 가용)
+            pointCommandServiceApi.depositToAvailablePoint(winnerId, auction.getId(), bidAmount);
+        }
+        auctionRepository.save(auction);
     }
 }

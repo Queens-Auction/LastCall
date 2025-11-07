@@ -33,6 +33,7 @@ Content-Type: image/jpeg
 < /Users/t2024-m0159/Desktop/testImage2.jpeg
 --boundary--
 
+
 ###나의 상품 전체 조회
 GET http://localhost:8080/api/v1/products/me
 
@@ -51,10 +52,10 @@ Content-Type: application/json
 DELETE http://localhost:8080/api/v1/products/14
 
 ###이미지 변경 업데이트
-PATCH http://localhost:8080/api/v1/products/1/image/1
+PATCH http://localhost:8080/api/v1/products/1/images/1
 
 ###이미지 삭제
-DELETE http://localhost:8080/api/v1/products/14/image/19
+DELETE http://localhost:8080/api/v1/products/14/images/19
 
 ### 기존 이미지에 추가 이미지 등록
 POST http://localhost:8080/api/v1/products/519/images/append

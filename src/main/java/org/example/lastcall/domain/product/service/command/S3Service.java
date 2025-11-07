@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.io.IOException;
 
@@ -36,5 +37,22 @@ public class S3Service {
         } catch (IOException e) {
             throw new BusinessException(ProductErrorCode.RUNTIME_EXCEPTION);
         }
+    }
+
+    public void deleteFile(String imageUrl) {
+        String key = extractKeyFromUrl(imageUrl);
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+        s3Client.deleteObject(deleteObjectRequest);
+    }
+
+    private String extractKeyFromUrl(String imageUrl) {
+        int index = imageUrl.indexOf(".com/");
+        if (index != -1) {
+            return imageUrl.substring(index + 5);//".com/"이후 문자열
+        }
+        throw new BusinessException(ProductErrorCode.INVALID_IMAGE_URL);
     }
 }

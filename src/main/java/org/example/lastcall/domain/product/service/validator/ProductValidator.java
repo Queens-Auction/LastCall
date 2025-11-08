@@ -10,46 +10,13 @@ import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class ProductValidator {
     private final ProductImageRepository productImageRepository;
-
-    //이미지 중복 검사 메서드
-    public void validateDuplicateFilesBeforeUpload(List<ProductImageCreateRequest> requests,
-                                                   List<MultipartFile> images,
-                                                   Long productId) {
-        if (requests.size() != images.size()) {
-            throw new BusinessException(ProductErrorCode.INVALID_REQUEST);
-        }
-        //요청 내부 중복 검사
-        Set<String> fileNameSet = new HashSet<>();
-        for (MultipartFile file : images) {
-            String fileName = file.getOriginalFilename();
-            if (!fileNameSet.add(fileName)) {
-                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_REQUEST);
-            }
-        }
-
-        // 같은 상품 내 DB 이미지 중복 검사
-        List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
-        Set<String> existingFileNames = existingImages.stream()
-                .map(img -> Paths.get(img.getImageUrl()).getFileName().toString())
-                .collect(Collectors.toSet());
-        for (String fileName : fileNameSet) {
-            if (existingFileNames.contains(fileName)) {
-                throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
-            }
-        }
-    }
 
     public void checkOwnership(Product product, AuthUser authUser) {
         if (!product.getUser().getId().equals(authUser.userId())) {

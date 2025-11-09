@@ -38,8 +38,7 @@ public class AuctionConfig {
     public Binding binding(Queue queue, CustomExchange delayExchange) {
         // to.(delayExchange) : 메시지가 통과할 교환기 지정 -> 이 메시지는 지연큐 통해 들어옴을 명시
         // .with(ROUTING_KEY) : 어떤 라우팅 키로 메시지 구분할지 결정
-        // .noargs() : .with()로 지정한 라우팅 키 외에 추가 파라미터 없을 때 사용하는 메서드
-        //             -> 기본 라우팅만 하고 다른 옵션 없다는 의미
+        // .noargs() : .with()로 지정한 라우팅 키 외에 추가가 없어 기본 연결로 끝낸다는 뜻
         return BindingBuilder.bind(queue).to(delayExchange).with(ROUTING_KEY).noargs();
     }
 

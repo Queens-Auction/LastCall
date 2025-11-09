@@ -49,19 +49,32 @@ public class AuctionConfig {
         return rabbitTemplate;
     }
 
+    // [경매 시작 전용]
+    // 메시지 저장할 Queue 생성 (지속성 true)
+    @Bean
+    public Queue startQueue() {
+        return new Queue(START_QUEUE_NAME);
+    }
+
+    // Exchange 와 Queue 를 ROUTING_KEY 로 연결
+    @Bean
+    public Binding startBinding(Queue startQueue, CustomExchange delayExchange) {
+        return BindingBuilder.bind(startQueue).to(delayExchange).with(START_ROUTING_KEY).noargs();
+    }
+
     // [경매 종료 전용]
     // 메시지 저장할 Queue 생성 (지속성 true)
     @Bean
-    public Queue queue() {
+    public Queue endQueue() {
         return new Queue(END_QUEUE_NAME);
     }
 
     // Exchange 와 Queue 를 ROUTING_KEY 로 연결
     @Bean
-    public Binding binding(Queue queue, CustomExchange delayExchange) {
+    public Binding endBinding(Queue endQueue, CustomExchange delayExchange) {
         // to.(delayExchange) : 메시지가 통과할 교환기 지정 -> 이 메시지는 지연큐 통해 들어옴을 명시
         // .with(ROUTING_KEY) : 어떤 라우팅 키로 메시지 구분할지 결정
         // .noargs() : .with()로 지정한 라우팅 키 외에 추가가 없어 기본 연결로 끝낸다는 뜻
-        return BindingBuilder.bind(queue).to(delayExchange).with(END_ROUTING_KEY).noargs();
+        return BindingBuilder.bind(endQueue).to(delayExchange).with(END_ROUTING_KEY).noargs();
     }
 }

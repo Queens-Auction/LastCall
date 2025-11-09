@@ -50,10 +50,10 @@ public class AuctionConfig {
     }
 
     // [경매 시작 전용]
-    // 메시지 저장할 Queue 생성 (지속성 true)
+    // 메시지 저장할 Queue 생성
     @Bean
     public Queue startQueue() {
-        return new Queue(START_QUEUE_NAME);
+        return new Queue(START_QUEUE_NAME, true); // durable = true 명시
     }
 
     // Exchange 와 Queue 를 ROUTING_KEY 로 연결
@@ -66,7 +66,7 @@ public class AuctionConfig {
     // 메시지 저장할 Queue 생성 (지속성 true)
     @Bean
     public Queue endQueue() {
-        return new Queue(END_QUEUE_NAME);
+        return new Queue(END_QUEUE_NAME, true); // durable = true 명시
     }
 
     // Exchange 와 Queue 를 ROUTING_KEY 로 연결

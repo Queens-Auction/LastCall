@@ -25,7 +25,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -197,8 +199,60 @@ public class PointCommandService implements PointCommandServiceApi {
         // 경매에 참여한 전체 입찰자 목록 조회
         List<Bid> allBids = bidQueryServiceApi.findAllByAuctionId(auction.getId());
 
-        // 낙찰 실패자만 처리
+        // 중복 입찰자는 최고 입찰가만 반영 (추가)
+        Map<Long, Bid> latestBidsByUser = new HashMap<>();
+
         for (Bid bid : allBids) {
+            Long bidderId = bid.getUser().getId();
+            Bid currentHighestBid = latestBidsByUser.get(bidderId);
+
+            if (currentHighestBid == null || bid.getBidAmount() > currentHighestBid.getBidAmount()) {
+                latestBidsByUser.put(bidderId, bid);
+            }
+        }
+
+        // 낙찰 실패자만 처리
+        for (Map.Entry<Long, Bid> entry : latestBidsByUser.entrySet()) {
+            Long loserId = entry.getKey();
+            Bid finalBid = entry.getValue();
+
+            // 낙찰자면 스킵
+            if (loserId.equals(winnerUserId)) {
+                continue;
+            }
+
+            Long bidAmount = finalBid.getBidAmount();
+
+            // 포인트 계좌 조회
+            Point point = pointRepository.findByUserId(loserId).orElseThrow(
+                    () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
+            );
+
+            // 이동 가능 여부 조회
+            if (!point.canMoveDepositToAvailable(bidAmount)) {
+                throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);
+            }
+
+            // 포인트 이동 (예치 -> 가용)
+            point.moveDepositToAvailable(bidAmount);
+            pointRepository.save(point);
+
+            // 유저 참조 가져오기
+            User user = userServiceApi.getReferenceById(loserId);
+
+            // 포인트 로그에 기록
+            pointLogRepository.save(PointLog.of(
+                    point,      // 추가
+                    user,
+                    auction,
+                    bidAmount,
+                    PointLogType.DEPOSIT_TO_AVAILABLE
+            ));
+        }
+
+        // 기존 코드
+        // 추후 협의 후 삭제 예정
+        /*for (Bid bid : allBids) {
             Long loserId = bid.getUser().getId();
             if (loserId.equals(winnerUserId))
                 continue;
@@ -244,6 +298,6 @@ public class PointCommandService implements PointCommandServiceApi {
                     bidAmount,
                     PointLogType.DEPOSIT_TO_AVAILABLE
             ));
-        }
+        }*/
     }
 }

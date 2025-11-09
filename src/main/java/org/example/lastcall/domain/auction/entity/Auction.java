@@ -125,6 +125,15 @@ public class Auction extends BaseEntity {
         }
     }
 
+    /*@Transient
+    public AuctionStatus getDynamicStatus() {
+        if (this.status == AuctionStatus.DELETED) {
+            return this.status;
+        }
+        this.status = determineStatus();
+        return this.status;
+    }*/
+
     // DB 상태 직접 갱신 시 사용
     // -> MQ 에서 상태 전환 시 명시적 호출
     public void updateStatus(AuctionStatus status) {
@@ -160,15 +169,6 @@ public class Auction extends BaseEntity {
         }
     }
 
-    /*@Transient
-    public AuctionStatus getDynamicStatus() {
-        if (this.status == AuctionStatus.DELETED) {
-            return this.status;
-        }
-        this.status = determineStatus();
-        return this.status;
-    }*/
-
     // 내 경매 수정
     public void update(AuctionUpdateRequest request) {
         this.startingBid = request.getStartingBid();
@@ -201,5 +201,15 @@ public class Auction extends BaseEntity {
         this.winnerId = winnerId;
         this.currentBid = winningBid;
         this.status = AuctionStatus.CLOSED; // 낙찰 성공
+    }
+
+    // 현재 최고 입찰가 갱신
+    public void updateCurrentBid(Long currentBid) {
+        this.currentBid = currentBid;
+    }
+
+    // 참여자 수 1 증가 (중복 입찰자 제외 - 비드서비스)
+    public void incrementParticipantCount() {
+        this.participantCount++;
     }
 }

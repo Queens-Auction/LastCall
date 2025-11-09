@@ -52,13 +52,13 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         // 5. Auction 엔티티 생성/저장 -> 경매 상태는 내부 로직에서 자동 계산됨
         Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);
-        // [RabbitMq 관련]
 
+        // [RabbitMq 관련]
         /** 6. 경매 종료까지 남은 시간 계산
          * - Duration.between(현재시간, 종료시간)
          * - toMillis() : 밀리초 단위로 변환하여 delay 설정에 사용
          */
-        Long delay = Duration.between(
+        Long endDelay = Duration.between(
                 auction.getCreatedAt(),   // createAt 써야함. (예약된 경매도 있으므로)
                 auction.getEndTime()
         ).toMillis();
@@ -81,7 +81,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
          * - RabbitMQ 가 지연시간(delayMillis) 이후 케시지를 큐로 push
          * - AuctionEventListener 가 이를 수신하여 closeAuction() 자동 실행
          */
-        auctionEventPublisher.sendAuctionEndEvent(event, delay);
+        auctionEventPublisher.sendAuctionEndEvent(event, endDelay);
 
         return AuctionResponse.fromCreate(auction);
     }
@@ -146,5 +146,24 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             auction.closeAsFailed();
         }
         auctionRepository.save(auction);
+    }
+
+    // 경매 시작 후 상태 변경 (SCHEDULED -> ONGOING)
+    public void startAuction(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        // 상태 검증
+        if (auction.getStatus() != AuctionStatus.SCHEDULED) {
+            System.out.printf("경매 시작 불가 : auctionId: %d%n", auctionId);
+            return;
+        }
+
+        // 상태 변경
+        auction.updateStatus(AuctionStatus.ONGOING);
+        auctionRepository.save(auction);
+        
+        // 잘 되는 지 테스트 -> 추후 log.info 로 변경하거나 삭제 예정
+        System.out.printf("경매 시작 상태로 변경 완료: auctionId = %d, startTime = %s%n", auctionId, auction.getStartTime());
     }
 }

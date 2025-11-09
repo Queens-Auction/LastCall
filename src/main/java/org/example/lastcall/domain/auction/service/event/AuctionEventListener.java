@@ -13,6 +13,19 @@ import org.springframework.stereotype.Service;
 public class AuctionEventListener {
     private final AuctionCommandService auctionCommandService;
 
+    // 경매 시작 이벤트 //
+    @RabbitListener(queues = AuctionConfig.START_QUEUE_NAME)
+    public void handleAucttionStart(AuctionEvent event) {
+        try {
+            System.out.println("경매 시작 이벤트 수싱: " + event);
+            auctionCommandService.startAuction(event.getAuctionId());
+        } catch (Exception e) {
+            System.out.println("메시지 처리 실패 - auctionId: " + event.getAuctionId());
+            e.printStackTrace();
+        }
+    }
+
+    // 경매 종료 이벤트 //
     // 큐에 쌓인 경매 종료 이벤트를 자동으로 수신하여 처리
     @RabbitListener(queues = AuctionConfig.END_QUEUE_NAME)
     /*public void handleAuctionEnd(AuctionEvent event) {

@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.auction.service.command;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
@@ -28,6 +29,7 @@ import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j // 추가
 public class AuctionCommandService implements AuctionCommandServiceApi {
 
     private final AuctionRepository auctionRepository;
@@ -192,9 +194,10 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             pointCommandServiceApi.depositToAvailablePoint(winnerId, auction.getId(), bidAmount);
 
             // 잘되는지 테스트용
-            System.out.printf("경매 종료 - 낙찰자 id: %d, 낙찰가: %d원%n", winnerId, bidAmount);
+            log.info("경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);
         } else {
             auction.closeAsFailed();
+            log.info("경매 종료 - 입찰 없음(유찰 처리): auctionId={}", auctionId);
         }
         auctionRepository.save(auction);
     }
@@ -206,7 +209,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
 
         // 상태 검증
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
-            System.out.printf("경매 시작 불가 : auctionId: %d%n", auctionId);
+            log.warn("경매 시작 불가: auctionId={}", auctionId);
             return;
         }
 
@@ -214,7 +217,6 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         auction.updateStatus(AuctionStatus.ONGOING);
         auctionRepository.save(auction);
 
-        // 잘 되는 지 테스트 -> 추후 log.info 로 변경하거나 삭제 예정
-        System.out.printf("경매 시작 상태로 변경 완료: auctionId = %d, startTime = %s%n", auctionId, auction.getStartTime());
+        log.info("경매 시작 상태로 변경 완료: auctionId={}, startTime={}", auctionId, auction.getStartTime());
     }
 }

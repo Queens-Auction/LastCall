@@ -68,7 +68,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
          * - Consumer (AuctionEventListener)가 꺼내서 closeAuction() 호출
          * - 낙찰자/낙찰가/유찰자는 종료 시점에 계산되므로 지금은 null
          */
-        AuctionEvent event = new AuctionEvent(
+        AuctionEvent endEvent = new AuctionEvent(
                 auction.getId(),
                 null,      // 낙찰자 x -> 종료 시 계산
                 null,              // 낙찰가 x -> 종료 시 계산
@@ -81,7 +81,24 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
          * - RabbitMQ 가 지연시간(delayMillis) 이후 케시지를 큐로 push
          * - AuctionEventListener 가 이를 수신하여 closeAuction() 자동 실행
          */
-        auctionEventPublisher.sendAuctionEndEvent(event, endDelay);
+        auctionEventPublisher.sendAuctionEndEvent(endEvent, endDelay);
+
+        // 9. 경매 시작까지 남은 시간 계산
+        Long startDelay = Duration.between(
+                auction.getCreatedAt(),
+                auction.getStartTime()
+        ).toMillis();
+
+        // 10. 시작 이벤트 생성
+        AuctionEvent startEvent = new AuctionEvent(
+                auction.getId(),
+                null,
+                null,
+                null
+        );
+
+        // 11. 시작 이벤트 발행
+        auctionEventPublisher.sendAuctionStartEvent(startEvent, startDelay);
 
         return AuctionResponse.fromCreate(auction);
     }
@@ -162,7 +179,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         // 상태 변경
         auction.updateStatus(AuctionStatus.ONGOING);
         auctionRepository.save(auction);
-        
+
         // 잘 되는 지 테스트 -> 추후 log.info 로 변경하거나 삭제 예정
         System.out.printf("경매 시작 상태로 변경 완료: auctionId = %d, startTime = %s%n", auctionId, auction.getStartTime());
     }

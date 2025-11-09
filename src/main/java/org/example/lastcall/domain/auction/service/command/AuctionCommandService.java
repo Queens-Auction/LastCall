@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -104,6 +105,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
     }
 
     // 내 경매 수정 //
+    // 수정 시 이벤트 재발행
     public AuctionResponse updateAuction(Long userId, Long auctionId, AuctionUpdateRequest request) {
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
@@ -114,7 +116,39 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
+        // 수정 관련 이벤트 반영 //
+        // 1. 수정 반영
         auction.update(request);
+        auctionRepository.save(auction);
+
+        // 2. 수정 시간 기준으로 delay 계산
+        Long startDelay = Math.max(0,
+                Duration.between(
+                        LocalDateTime.now(),
+                        auction.getStartTime()
+                ).toMillis());
+        Long endDelay = Math.max(0,
+                Duration.between(
+                        LocalDateTime.now(),
+                        auction.getEndTime()
+                ).toMillis());
+
+        // 3. 이벤트 객체 생성
+        AuctionEvent startEvent = new AuctionEvent(
+                auction.getId(),
+                null,
+                null,
+                null);
+        AuctionEvent endEvent = new AuctionEvent(
+                auction.getId(),
+                null,
+                null,
+                null);
+
+        // 4. MQ에 재발행
+        auctionEventPublisher.sendAuctionStartEvent(startEvent, startDelay);
+        auctionEventPublisher.sendAuctionEndEvent(endEvent, endDelay);
+
         return AuctionResponse.fromUpdate(auction);
     }
 

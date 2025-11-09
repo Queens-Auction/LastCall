@@ -10,8 +10,6 @@ import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
-import org.example.lastcall.domain.auction.service.event.AuctionEvent;
-import org.example.lastcall.domain.auction.service.event.AuctionEventPublisher;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.service.query.BidQueryServiceApi;
 import org.example.lastcall.domain.point.service.command.PointCommandService;
@@ -19,12 +17,8 @@ import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.service.query.ProductQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.UserServiceApi;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -34,16 +28,15 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
 
     private final AuctionRepository auctionRepository;
     private final UserServiceApi userServiceApi;
-    private final ProductQueryServiceApi productQueryService;
+    private final ProductQueryServiceApi productQueryServiceApi;
     private final BidQueryServiceApi bidQueryServiceApi;
     private final PointCommandService pointCommandServiceApi;
-    private final RabbitTemplate rabbitTemplate;
-    private final AuctionEventPublisher auctionEventPublisher;
+    private final AuctionEventScheduler auctionEventScheduler;
 
     // 경매 등록 //
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
         // 1. 상품 존재 여부 확인
-        productQueryService.validateProductOwner(productId, userId);
+        productQueryServiceApi.validateProductOwner(productId, userId);
         // 2. 중복 경매 등록 방지
         if (auctionRepository.existsActiveAuction(productId)) {
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
@@ -51,57 +44,16 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         // 3. User 조회
         User user = userServiceApi.findById(userId);
         // 4. 상품 조회
-        Product product = productQueryService.findById(productId);
+        Product product = productQueryServiceApi.findById(productId);
         // 5. Auction 엔티티 생성/저장 -> 경매 상태는 내부 로직에서 자동 계산됨
         Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);
 
-        // [RabbitMq 관련]
-        /** 6. 경매 종료까지 남은 시간 계산
-         * - Duration.between(현재시간, 종료시간)
-         * - toMillis() : 밀리초 단위로 변환하여 delay 설정에 사용
-         */
-        Long endDelay = Duration.between(
-                auction.getCreatedAt(),   // createAt 써야함. (예약된 경매도 있으므로)
-                auction.getEndTime()
-        ).toMillis();
+        // 이벤트 스케줄링 분리
+        // 경매 시작/종료 이벤트 예약 발행
+        auctionEventScheduler.scheduleAuctionEvents(auction);
 
-        /** 7. 메시지큐로 경매 종료 이벤트 메시지 생성
-         * - 이 이벤트 객체는 메시지큐에 전송되어 종료시점이 되면,
-         * - Consumer (AuctionEventListener)가 꺼내서 closeAuction() 호출
-         * - 낙찰자/낙찰가/유찰자는 종료 시점에 계산되므로 지금은 null
-         */
-        AuctionEvent endEvent = new AuctionEvent(
-                auction.getId(),
-                null,      // 낙찰자 x -> 종료 시 계산
-                null,              // 낙찰가 x -> 종료 시 계산
-                null               // 유찰자 목록 x -> 종료 시 계산
-        );
-
-        /**8. 메시지큐에 경매 종료 이벤트 발행
-         * - AuctionEventPublisher 내부에서 RabbitTemplate.convertAndSend() 사용
-         * - x-delayed-message Exchange 를 통해 delay 만큼 대기 후 큐로 전달
-         * - RabbitMQ 가 지연시간(delayMillis) 이후 케시지를 큐로 push
-         * - AuctionEventListener 가 이를 수신하여 closeAuction() 자동 실행
-         */
-        auctionEventPublisher.sendAuctionEndEvent(endEvent, endDelay);
-
-        // 9. 경매 시작까지 남은 시간 계산
-        Long startDelay = Duration.between(
-                auction.getCreatedAt(),
-                auction.getStartTime()
-        ).toMillis();
-
-        // 10. 시작 이벤트 생성
-        AuctionEvent startEvent = new AuctionEvent(
-                auction.getId(),
-                null,
-                null,
-                null
-        );
-
-        // 11. 시작 이벤트 발행
-        auctionEventPublisher.sendAuctionStartEvent(startEvent, startDelay);
+        log.info("경매 등록 완료 및 이벤트 예약 - auctionId={}, startTime={}, endTime={}", auction.getId(), auction.getStartTime(), auction.getEndTime());
 
         return AuctionResponse.fromCreate(auction);
     }
@@ -111,45 +63,22 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
     public AuctionResponse updateAuction(Long userId, Long auctionId, AuctionUpdateRequest request) {
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-
+        // 수정 권한 검증
         if (!auction.getUser().getId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
+        // 진행중/종료된 경매는 수정 불가
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
         // 수정 관련 이벤트 반영 //
-        // 1. 수정 반영
         auction.update(request);
         auctionRepository.save(auction);
 
-        // 2. 수정 시간 기준으로 delay 계산
-        Long startDelay = Math.max(0,
-                Duration.between(
-                        LocalDateTime.now(),
-                        auction.getStartTime()
-                ).toMillis());
-        Long endDelay = Math.max(0,
-                Duration.between(
-                        LocalDateTime.now(),
-                        auction.getEndTime()
-                ).toMillis());
+        log.info("경매 수정됨 - auctionId={},startTime={}, endTime={}", auction.getId(), auction.getStartTime(), auction.getEndTime());
 
-        // 3. 이벤트 객체 생성
-        AuctionEvent startEvent = new AuctionEvent(
-                auction.getId(),
-                null,
-                null,
-                null);
-        AuctionEvent endEvent = new AuctionEvent(
-                auction.getId(),
-                null,
-                null,
-                null);
-
-        // 4. MQ에 재발행
-        auctionEventPublisher.sendAuctionStartEvent(startEvent, startDelay);
-        auctionEventPublisher.sendAuctionEndEvent(endEvent, endDelay);
+        // 새 시간 기준으로 이벤트 재등록
+        auctionEventScheduler.rescheduleAuctionEvents(auction);
 
         return AuctionResponse.fromUpdate(auction);
     }
@@ -168,7 +97,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         auction.markAsDeleted();
     }
 
-    // 경매 상태 변경 (closed)
+    // 경매 종료 처리 (closed)
     public void closeAuction(Long auctionId) {
         // 1. 경매 엔티티 조회
         Auction auction = auctionRepository.findById(auctionId).orElseThrow(
@@ -179,7 +108,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             throw new BusinessException(AuctionErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        // 4. 최고 입찰자 조회
+        // 3. 최고 입찰자 조회
         Bid topBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElse(null);
 
         if (topBid != null) {
@@ -193,7 +122,6 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             // 포인트 처리 (예치 -> 가용)
             pointCommandServiceApi.depositToAvailablePoint(winnerId, auction.getId(), bidAmount);
 
-            // 잘되는지 테스트용
             log.info("경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);
         } else {
             auction.closeAsFailed();

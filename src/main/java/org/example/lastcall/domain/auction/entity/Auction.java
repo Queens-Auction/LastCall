@@ -92,7 +92,11 @@ public class Auction extends BaseEntity {
         this.startTime = startTime;
         this.endTime = endTime;
         // null 이면 determineStatus 로 자동 계산, status 명시되면 그대로 사용(테스트, 스케줄러용 예외 케이스)
-        this.status = (status != null) ? status : determineStatus();
+        // this.status = (status != null) ? status : determineStatus();
+        // MQ 도입 후 : MQ가 상태 제어하므로 초기상태는 항상 등록 시점 기준
+        this.status = (LocalDateTime.now().isBefore(startTime))
+                ? AuctionStatus.SCHEDULED
+                : AuctionStatus.ONGOING;
     }
 
     // 정적 팩토리 메서드 (of)
@@ -121,16 +125,49 @@ public class Auction extends BaseEntity {
         }
     }
 
+    // DB 상태 직접 갱신 시 사용
+    // -> MQ 에서 상태 전환 시 명시적 호출
+    public void updateStatus(AuctionStatus status) {
+        this.status = status;
+    }
+
     // 동적 상태 조회용(표시용)
     // -> 조회 시점 상태 계산 메서드
+    // MQ 전송 지연/예외 시에도 프론트에서 상태 맞게 표시 가능
     @Transient
+    public AuctionStatus getDynamicStatus() {
+        if (this.status == AuctionStatus.DELETED) {
+            return this.status;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 아직 시작 전
+        if (now.isBefore(startTime)) {
+            return AuctionStatus.SCHEDULED;
+        }
+
+        // 진행 중
+        if (now.isBefore(endTime)) {
+            return AuctionStatus.ONGOING;
+        }
+
+        // 종료 시점 이후 → 낙찰자 존재 여부로 분기
+        if (winnerId != null && currentBid != null && currentBid > 0) {
+            return AuctionStatus.CLOSED; // 낙찰 성공
+        } else {
+            return AuctionStatus.CLOSED_FAILED; // 유찰 (입찰자 없음)
+        }
+    }
+
+    /*@Transient
     public AuctionStatus getDynamicStatus() {
         if (this.status == AuctionStatus.DELETED) {
             return this.status;
         }
         this.status = determineStatus();
         return this.status;
-    }
+    }*/
 
     // 내 경매 수정
     public void update(AuctionUpdateRequest request) {
@@ -150,6 +187,7 @@ public class Auction extends BaseEntity {
     // 경매 종료 여부 확인
     public boolean canClose() {
         return this.status != AuctionStatus.CLOSED
+                && this.status != AuctionStatus.CLOSED_FAILED
                 && this.status != AuctionStatus.DELETED;
     }
 

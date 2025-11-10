@@ -68,6 +68,7 @@ public class PointLog extends BaseEntity {
     private Long settlementPointAfter = 0L;
 
 
+    // 일반 포인트 로그 (충전, 환급 등)
     public static PointLog create(Point point, User user, PointLogType type, String description, Long change) {
         PointLog log = new PointLog();
         log.point = point;
@@ -75,10 +76,17 @@ public class PointLog extends BaseEntity {
         log.type = type;
         log.description = description;
         log.pointChange = change;
+
+        // after 값 자동 반영
+        log.availablePointAfter = point.getAvailablePoint();
+        log.depositPointAfter = point.getDepositPoint();
+        log.settlementPointAfter = point.getSettlementPoint();
+
         return log;
     }
 
-    public static PointLog create(Point point, User user, PointLogType type, String description, Long change, Auction auction) {
+    // 입찰/정산 관련 로그
+    public static PointLog create(Point point, User user, PointLogType type, String description, Long change, Auction auction, Bid bid) {
         PointLog log = new PointLog();
         log.point = point;
         log.user = user;
@@ -86,6 +94,31 @@ public class PointLog extends BaseEntity {
         log.description = description;
         log.pointChange = change;
         log.auction = auction;
+        log.bid = bid;
+
+        // after 값 자동 반영
+        log.availablePointAfter = point.getAvailablePoint();
+        log.depositPointAfter = point.getDepositPoint();
+        log.settlementPointAfter = point.getSettlementPoint();
+
+        return log;
+    }
+
+    // 경매 관련 로그
+    public static PointLog create(Point point, User user, PointLogType type, String description, Long chahge, Auction auction) {
+        PointLog log = new PointLog();
+        log.point = point;
+        log.user = user;
+        log.type = type;
+        log.description = description;
+        log.pointChange = chahge;
+        log.auction = auction;
+
+        // after 값 자동 반영
+        log.availablePointAfter = point.getAvailablePoint();
+        log.depositPointAfter = point.getDepositPoint();
+        log.settlementPointAfter = point.getSettlementPoint();
+
         return log;
     }
 

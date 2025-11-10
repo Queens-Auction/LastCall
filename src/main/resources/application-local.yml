@@ -14,6 +14,18 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  data:
+    redis:
+      host: localhost   # 🔥 Redis Docker 컨테이너 로컬 실행 중
+      port: 6379
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600s        # 1시간
+      cache-null-values: false   # null 결과 캐싱 방지
+
   mail:
     username: ${EMAIL}
     password: ${PASSWORD}

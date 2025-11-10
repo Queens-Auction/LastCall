@@ -82,6 +82,17 @@ public class Point extends BaseEntity {
     public void increaseDepositPoint(Long amount) {
         this.depositPoint += amount;
     }
+
+    // 유찰 시 : 예치 -> 가용 포인트 이동 (반환)
+    public void moveDepositToAvailable(Long amount) {
+        this.depositPoint -= amount;
+        this.availablePoint += amount;
+    }
+
+    // 유찰 시 이동 가능 여부 확인
+    public boolean canMoveDepositToAvailable(Long amount) {
+        return this.depositPoint >= amount;
+    }
 }
 
 /*

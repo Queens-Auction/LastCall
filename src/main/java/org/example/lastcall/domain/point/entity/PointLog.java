@@ -104,6 +104,7 @@ public class PointLog extends BaseEntity {
         return log;
     }
 
+    // 경매 관련 로그
     public static PointLog create(Point point, User user, PointLogType type, String description, Long chahge, Auction auction) {
         PointLog log = new PointLog();
         log.point = point;

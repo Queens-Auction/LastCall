@@ -254,55 +254,5 @@ public class PointCommandService implements PointCommandServiceApi {
                     PointLogType.DEPOSIT_TO_AVAILABLE
             ));
         }
-
-        // 기존 코드
-        // 추후 협의 후 삭제 예정
-        /*for (Bid bid : allBids) {
-            Long loserId = bid.getUser().getId();
-            if (loserId.equals(winnerUserId))
-                continue;
-
-            Long bidAmount = bid.getBidAmount();
-
-            Point point = pointRepository.findByUserId(loserId).orElseThrow(
-                    () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
-            );
-
-            // 예치 포인트보다 입찰 금액이 더 큰지 검사
-            //if (point.getDepositPoint() < bidAmount) {
-            //    throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
-            //}
-
-            // !! 현재 여기서 이 코드가 현재 금액을 통채로 덮어쓰기 하는 구조가 되어버림
-            // ex) 예치 10000 / 입찰 12000 / 가용 50000 경우
-            // -> 입찰금액 10000-12000 = -2000 음수로 찍혀버리고
-            // 다음 연산(가용 포인트 복귀)에서 가용포인트 음수로 포인트 부족 예외 발생
-            // 즉, 여러번 입찰 시 누적 업데이트는 정상 작동
-            // 종료시에도 여러번 빼버리는 형태.. (종료시에는 최종 입찰가 1번만 빠져야함)
-            //point.updateDepositPoint(point.getDepositPoint() - bidAmount);
-            //point.updateAvailablePoint(point.getAvailablePoint() + bidAmount);
-            //pointRepository.save(point);
-
-            if (!point.canMoveDepositToAvailable(bidAmount)) {
-                throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);
-            }
-
-            // 예치 -> 가용 이동
-            point.moveDepositToAvailable(bidAmount);
-            pointRepository.save(point);
-
-            // 유저 객체 -> 추가
-            // 유찰 대상자 불러오기
-            User user = userServiceApi.findById(loserId);
-
-            // 포인트 로그에 기록
-            pointLogRepository.save(PointLog.of(
-                    point,      // 추가
-                    user,
-                    auction,
-                    bidAmount,
-                    PointLogType.DEPOSIT_TO_AVAILABLE
-            ));
-        }*/
     }
 }

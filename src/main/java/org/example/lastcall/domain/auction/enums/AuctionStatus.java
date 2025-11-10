@@ -14,8 +14,11 @@ public enum AuctionStatus {
     @Schema(description = "경매가 진행 중인 상태")
     ONGOING,
 
-    @Schema(description = "경매가 종료된 상태")
+    @Schema(description = "경매가 종료(낙찰)된 상태")
     CLOSED,
+
+    @Schema(description = "경매가 종료(유찰)된 상태")
+    CLOSED_FAILED,
 
     @Schema(description = "경매가 삭제된 상태")
     DELETED

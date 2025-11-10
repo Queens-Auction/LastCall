@@ -1,5 +1,6 @@
 package org.example.lastcall.domain.user.service.query;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
@@ -15,6 +16,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class UserQueryService implements UserServiceApi {
     private final UserRepository userRepository;
+    private final EntityManager entityManager; // 추가
+
+    // 추가
+    // -> Query 보단 Command에 더 적합
+    // 현재 처럼 사용해도 가능은 함
+    // CQRS 구조 따르려면 CommandServiceApi 새로 추가하여 이거 옮겨야함
+    @Override
+    public User getReferenceById(Long userId) {
+        return entityManager.getReference(User.class, userId);
+    }
 
     @Override
     public User findById(Long id) {

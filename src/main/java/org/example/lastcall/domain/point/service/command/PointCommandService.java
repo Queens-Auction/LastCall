@@ -88,6 +88,10 @@ public class PointCommandService implements PointCommandServiceApi {
 		// 이전 입찰 조회 (해당 유저가 이미 입찰했는지)
 		Optional<Bid> existingBid = bidQueryServiceApi.findLastBidExceptBidId(auctionId, userId, bidId);
 
+		Bid currentBid = Optional.ofNullable(bidQueryServiceApi.findById(bidId)).orElseThrow(
+				() -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
+		);
+
 		if (existingBid.isPresent()) {
 			Bid previousBid = existingBid.get();
 			Long previousBidAmount = previousBid.getBidAmount();
@@ -114,7 +118,8 @@ public class PointCommandService implements PointCommandServiceApi {
 					PointLogType.ADDITIONAL_DEPOSIT,
 					"입찰 금액 증가로 인한 추가 예치 처리",
 					difference,
-					auctionFinder.findById(auctionId)
+					auctionFinder.findById(auctionId),
+						currentBid
 				);
 
 				// 포인트 로그에 저장
@@ -136,7 +141,8 @@ public class PointCommandService implements PointCommandServiceApi {
 				PointLogType.DEPOSIT,
 				"입찰금 예치 처리",
 				bidAmount,
-				auctionFinder.findById(auctionId)
+				auctionFinder.findById(auctionId),
+					currentBid
 			);
 			pointLogRepository.save(log);
 		}

@@ -1,16 +1,20 @@
 package org.example.lastcall.domain.product.service.command;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 
 import java.io.IOException;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class S3Service {
@@ -20,39 +24,39 @@ public class S3Service {
 
     public String uploadToS3(MultipartFile file, String directory) {
         try {
-            String fileName = directory + "/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            System.out.println("Uploading to S3 -> key: " + fileName + ", size: " + file.getSize());
+            String key = directory + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+            System.out.println("Uploading to S3 -> key: " + key + ", size: " + file.getSize());
 
             s3Client.putObject(builder -> builder
                             .bucket(bucketName)
-                            .key(fileName)
+                            .key(key)
                             .contentType(file.getContentType())
                             .build(),
-                    software.amazon.awssdk.core.sync.RequestBody.fromBytes(file.getBytes()));
+                    RequestBody.fromBytes(file.getBytes()));
 
-            String url = s3Client.utilities()
-                    .getUrl(builder -> builder.bucket(bucketName).key(fileName))
-                    .toExternalForm();
-            return url;
+            return key;
         } catch (IOException e) {
             throw new BusinessException(ProductErrorCode.RUNTIME_EXCEPTION_FOR_IMAGE_UPLOAD);
         }
     }
 
-    public void deleteFile(String imageUrl) {
-        String key = extractKeyFromUrl(imageUrl);
-        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(key)
-                .build();
-        s3Client.deleteObject(deleteObjectRequest);
+    public void deleteFile(String imageKey) {
+        try {
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(imageKey)
+                    .build();
+
+            log.info("[INFO] Deleted file from S3: {}", imageKey);
+            s3Client.deleteObject(deleteObjectRequest);
+        } catch (Exception e) {
+            log.warn("[WARN] Failed to delete file from S3: {}", imageKey, e);
+        }
     }
 
-    private String extractKeyFromUrl(String imageUrl) {
-        int index = imageUrl.indexOf(".com/");
-        if (index != -1) {
-            return imageUrl.substring(index + 5);//".com/"이후 문자열
-        }
-        throw new BusinessException(ProductErrorCode.INVALID_IMAGE_URL);
+    public String generateImageUrl(String imageKey) {
+        return s3Client.utilities()
+                .getUrl(builder -> builder.bucket(bucketName).key(imageKey))
+                .toExternalForm();
     }
 }

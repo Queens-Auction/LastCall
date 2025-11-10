@@ -28,7 +28,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long>, Auction
                    SELECT new org.example.lastcall.domain.auction.dto.response.MySellingResponse(
                         a.id,
                             (
-                                SELECT i.imageUrl
+                                SELECT i.imageKey
                                 FROM ProductImage i
                                 WHERE i.product.id = a.product.id
                                   AND i.imageType = 'THUMBNAIL'

@@ -31,21 +31,21 @@ public class ProductImage extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ImageType imageType;
 
-    @Column(name = "image_url", nullable = false, length = 500)
-    private String imageUrl;
+    @Column(name = "image_key", nullable = false, length = 500)
+    private String imageKey;
 
     @Column(name = "file_hash", nullable = false, length = 128)
     private String fileHash;
 
-    private ProductImage(Product product, ImageType imageType, String imageUrl, String fileHash) {
+    private ProductImage(Product product, ImageType imageType, String imageKey, String fileHash) {
         this.product = product;
         this.imageType = imageType;
-        this.imageUrl = imageUrl;
+        this.imageKey = imageKey;
         this.fileHash = fileHash;
     }
 
-    public static ProductImage of(Product product, ImageType imageType, String imageUrl, String fileHash) {
-        return new ProductImage(product, imageType, imageUrl, fileHash);
+    public static ProductImage of(Product product, ImageType imageType, String imageKey, String fileHash) {
+        return new ProductImage(product, imageType, imageKey, fileHash);
     }
 
     public void updateImageType(ImageType imageType) {

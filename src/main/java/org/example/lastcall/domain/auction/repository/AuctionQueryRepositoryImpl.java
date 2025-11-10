@@ -61,7 +61,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     // 썸네일 서브쿼리
     private Expression<String> thumbnailSubquery() {
         return JPAExpressions
-                .select(i.imageUrl)
+                .select(i.imageKey)
                 .from(i)
                 .where(i.product.id.eq(a.product.id)
                         .and(i.imageType.eq(ImageType.THUMBNAIL))
@@ -222,7 +222,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
         List<MyParticipatedResponse> results = jpaQueryFactory
                 .select(Projections.fields(MyParticipatedResponse.class,
                         a.id,
-                        i.imageUrl.as("imageUrl"),
+                        i.imageKey.as("imageKey"),
                         p.name,
                         p.description,
                         b.bidAmount.max().as("currentBid"),
@@ -237,7 +237,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                         .and(i.deleted.isFalse()))
                 .leftJoin(b).on(b.auction.id.eq(a.id))    // 입찰 정보 조인
                 .where(a.id.in(auctionIds), a.deleted.isFalse())
-                .groupBy(a.id, i.imageUrl, p.name, p.description,
+                .groupBy(a.id, i.imageKey, p.name, p.description,
                         a.status, a.startTime, a.endTime) // 최신순 정렬
                 .orderBy(a.createdAt.desc())
                 .fetch();

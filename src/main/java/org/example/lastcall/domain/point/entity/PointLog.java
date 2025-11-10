@@ -72,6 +72,12 @@ public class PointLog extends BaseEntity {
         log.type = type;
         log.description = description;
         log.pointChange = change;
+
+        // after 값 자동 반영
+        log.availablePointAfter = point.getAvailablePoint();
+        log.depositPointAfter = point.getDepositPoint();
+        log.settlementPointAfter = point.getSettlementPoint();
+
         return log;
     }
 
@@ -83,6 +89,12 @@ public class PointLog extends BaseEntity {
         log.description = description;
         log.pointChange = change;
         log.auction = auction;
+
+        // after 값 자동 반영
+        log.availablePointAfter = point.getAvailablePoint();
+        log.depositPointAfter = point.getDepositPoint();
+        log.settlementPointAfter = point.getSettlementPoint();
+
         return log;
     }
 

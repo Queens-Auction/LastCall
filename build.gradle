@@ -66,6 +66,9 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // ✅ H2 in-memory DB for tests
+    testImplementation 'com.h2database:h2'
+
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
     // developmentOnly 'org.springframework.boot:spring-boot-devtools' // Swagger 문서(자동 반영) - 협의 후 넣기
@@ -75,7 +78,7 @@ dependencies {
     annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
-    
+
     // Actuator // 애플리케이션의 상태 (Health, Metrics, 환경정보, Thread Dump 등)를 관찰하고 관리할 수 있도록 도와주는 모듈
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     // Actuator가 Prometheus와 연동되도록 해주는 의존성
@@ -89,6 +92,12 @@ dependencies {
 
     // RabbitMQ
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
+    // redisson
+    implementation 'org.redisson:redisson-spring-boot-starter:3.21.1'
+
+    // aop
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 }
 
 tasks.named('test') {

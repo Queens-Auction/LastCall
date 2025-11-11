@@ -1,15 +1,26 @@
 package org.example.lastcall.domain.point.entity;
 
-import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.point.enums.PointLogType;
 import org.example.lastcall.domain.user.entity.User;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 // of 메서드 변경 가능 시 주석 제거 - 재귀 문제 완전 해결 //
 // @Builder
@@ -18,117 +29,102 @@ import org.example.lastcall.domain.user.entity.User;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
-        name = "point_logs",
-        indexes = {
-                @Index(name = "idx_point_log_user_created", columnList = "user_id, created_at DESC"),
-                // FK 인덱스 : DB 호환성 위해 명시적 추가
-                // user_id 는 복합 인덱스 사용 중이고, bid_id 는 사용 빈도 낮음
-                @Index(name = "idx_point_log_auction", columnList = "auction_id"),
-                @Index(name = "idx_point_log_point", columnList = "point_id")
-        })
+	name = "point_logs",
+	indexes = {
+		@Index(name = "idx_point_log_user_created", columnList = "user_id, created_at DESC"),
+		// FK 인덱스 : DB 호환성 위해 명시적 추가
+		// user_id 는 복합 인덱스 사용 중이고, bid_id 는 사용 빈도 낮음
+		@Index(name = "idx_point_log_auction", columnList = "auction_id"),
+		@Index(name = "idx_point_log_point", columnList = "point_id")
+	})
 public class PointLog extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "point_id", nullable = false)
-    private Point point;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "point_id", nullable = false)
+	private Point point;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bid_id", nullable = true)   // Bid가 항상 존재하지 않는 로그도 있을 수 있기 때문에 nullable 허용
-    private Bid bid;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "bid_id", insertable = false, updatable = false)   // Bid가 항상 존재하지 않는 로그도 있을 수 있기 때문에 nullable 허용
+	private Bid bid;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+	// TODO 추가한 코드
+	@Column(name = "bid_id")
+	private Long bidId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "auction_id")
-    private Auction auction;
+	// TODO 수정한 영역 / 조회시 사용한다.
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
+	private User user;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private PointLogType type;
+	// TODO 등록 수정시 사용한다.
+	@Column(name = "user_id")
+	private Long userId;
 
-    @Column(name = "description", nullable = false, length = 80)
-    private String description;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "auction_id", insertable = false, updatable = false) // TODO insertable, updatale 추가
+	private Auction auction;
 
-    @Column(name = "point_change", nullable = false)
-    private Long pointChange = 0L;
+	// TODO 추가한 코드
+	@Column(name = "auction_id")
+	private Long auctionId;
 
-    @Column(name = "available_point_after", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
-    private Long availablePointAfter = 0L;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "type", nullable = false)
+	private PointLogType type;
 
-    @Column(name = "deposit_point_after", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
-    private Long depositPointAfter = 0L;
+	@Column(name = "description", nullable = false, length = 80)
+	private String description;
 
-    @Column(name = "settlement_point_after", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
-    private Long settlementPointAfter = 0L;
+	@Column(name = "point_change", nullable = false)
+	private Long pointChange = 0L;
 
+	@Column(name = "available_point_after", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
+	private Long availablePointAfter = 0L;
 
-    public static PointLog create(Point point, User user, PointLogType type, String description, Long change) {
-        PointLog log = new PointLog();
-        log.point = point;
-        log.user = user;
-        log.type = type;
-        log.description = description;
-        log.pointChange = change;
-        return log;
-    }
+	@Column(name = "deposit_point_after", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
+	private Long depositPointAfter = 0L;
 
-    public static PointLog create(Point point, User user, PointLogType type, String description, Long change, Auction auction) {
-        PointLog log = new PointLog();
-        log.point = point;
-        log.user = user;
-        log.type = type;
-        log.description = description;
-        log.pointChange = change;
-        log.auction = auction;
-        return log;
-    }
+	@Column(name = "settlement_point_after", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
+	private Long settlementPointAfter = 0L;
 
-    /**
-     * 임시 버전 (Builder 재귀 방지)
-     * - StackOverflowError 방지용
-     * - userId, auctionId 등은 실제 사용하지 않음
-     * - 나중에 도메인 변경 시 아래 완전 해결 버전으로 교체 예정
-     */
-    @Builder
-    public static PointLog of(Point point, User user, Auction auction, Long amount, PointLogType type) {
-        // 임시 조치 [시작]
-        // 재귀를 일으키는 builder() 호출 제거
-        // 직접 객체를 만들어 필드 세팅
-        PointLog log = new PointLog();
+	private PointLog(Point point, Long userId, PointLogType type, String description, Long change,
+		Long auctionId, Long bidId) {
+		this.point = point;
+		this.userId = userId;
+		this.type = type;
+		this.description = description;
+		this.pointChange = change;
+		this.auctionId = auctionId;
+		this.bidId = bidId;
+	}
 
-        // Lombok @Builder는 유지하되, 여기서는 수동으로 값 설정
-        log.point = point;
-        log.user = user;
-        log.auction = auction;
-        log.type = (type != null) ? type : PointLogType.DEPOSIT_TO_AVAILABLE; // 에러 해결
-        log.pointChange = amount;
+	public static PointLog create(Point point, Long userId, PointLogType type, String description, Long change) {
+		PointLog log = new PointLog();
+		log.point = point;
+		log.userId = userId;
+		log.type = type;
+		log.description = description;
+		log.pointChange = change;
+		return log;
+	}
 
-        // description 등은 필요시 추가 세팅 가능
-        log.description = log.type.getDescription();
+	public static PointLog create(Point point, Long userId, PointLogType type, String description, Long change,
+		Long auctionId) {
+		PointLog log = create(point, userId, type, description, change);
+		log.auctionId = auctionId;
+		return log;
+	}
 
-        // 추가
-        log.availablePointAfter = point.getAvailablePoint();
-        log.depositPointAfter = point.getDepositPoint();
+	public static PointLog create(Point point, Long userId, PointLogType type, String description, Long change,
+		Long auctionId, Long bidId) {
+		return new PointLog(point, userId, type, description, change, auctionId, bidId);
+	}
 
-        return log;
-        // 임시 조치 [끝]
-
-        // 기존 코드
-        /*return PointLog.builder()
-                .userId(userId)
-                .auctionId(auctionId)
-                .amount(amount)
-                .type(type)
-                .build();*/
-    }
-
-    // 재귀 문제 완전 해결 방법 - 도메인 수정 가능 시 주석 해제
+	// 재귀 문제 완전 해결 방법 - 도메인 수정 가능 시 주석 해제
     /*public static PointLog of(Long userId, Long auctionId, Long amount, PointLogType type, String description) {
         // builder() 내부에서 다시 of() 호출하지 않도록 수정
         return new PointLog(

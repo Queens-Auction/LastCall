@@ -1,14 +1,25 @@
 package org.example.lastcall.domain.point.entity;
 
-import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.point.enums.PointLogType;
 import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.user.entity.User;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
@@ -54,45 +65,45 @@ public class Point extends BaseEntity {
 
     public void updateAvailablePoint(Long incomePoint) {
 
-        this.availablePoint += incomePoint;
-    }
+		this.availablePoint = this.availablePoint + incomePoint;
+	}
 
-    public void updateDepositPoint(Long amount) {
-        this.availablePoint -= amount;
-        this.depositPoint += amount;
-    }
+	public void updateDepositPoint(Long amount) {
+		this.availablePoint = availablePoint - amount;
+		this.depositPoint = depositPoint + amount;
+	}
 
-    public void depositToSettlement(Long amount) {
+	public void depositToSettlement(Long amount) {
 
-        if (this.depositPoint < amount) {
-            throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);
-        }
+		if (this.depositPoint < amount) {
+			throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);
+		}
 
-        this.depositPoint -= amount;
-        this.settlementPoint += amount;
-    }
+		this.depositPoint -= amount;
+		this.settlementPoint += amount;
+	}
 
-    public void decreaseAvailablePoint(Long amount) {
-        if (this.availablePoint < amount) {
-            throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
-        }
-        this.availablePoint -= amount;
-    }
+	public void decreaseAvailablePoint(Long amount) {
+		if (this.availablePoint < amount) {
+			throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
+		}
+		this.availablePoint -= amount;
+	}
 
-    public void increaseDepositPoint(Long amount) {
-        this.depositPoint += amount;
-    }
+	public void increaseDepositPoint(Long amount) {
+		this.depositPoint += amount;
+	}
 
-    // 유찰 시 : 예치 -> 가용 포인트 이동 (반환)
-    public void moveDepositToAvailable(Long amount) {
-        this.depositPoint -= amount;
-        this.availablePoint += amount;
-    }
+	// 유찰 시 : 예치 -> 가용 포인트 이동 (반환)
+	public void moveDepositToAvailable(Long amount) {
+		this.depositPoint -= amount;
+		this.availablePoint += amount;
+	}
 
-    // 유찰 시 이동 가능 여부 확인
-    public boolean canMoveDepositToAvailable(Long amount) {
-        return this.depositPoint >= amount;
-    }
+	// 유찰 시 이동 가능 여부 확인
+	public boolean canMoveDepositToAvailable(Long amount) {
+		return this.depositPoint >= amount;
+	}
 }
 
 /*

@@ -44,10 +44,9 @@ class PointCommandServiceTest extends AbstractIntegrationTest {
 	@Autowired
 	private TestPointService testPointService;
 
-	// --------------------------------------------------------------------------
 	@DisplayName("동일 사용자의 포인트 충전 요청이 동시에 들어와도 중복 반영되지 않는다")
 	@Test
-	void createPoint_동시_포인트_충전_요청이_들어와도_중복_반영되지_않음() throws InterruptedException {
+	void createPoint_동시에_포인트_충전_요청이_들어와도_중복_반영되지_않음() throws InterruptedException {
 		String email = "test101@gmail.com";
 		String nickname = "닉네임1";
 
@@ -66,12 +65,6 @@ class PointCommandServiceTest extends AbstractIntegrationTest {
 					System.out.println(ignored);
 				} finally {
 					latch.countDown();            // 스레드가 끝날 때마다 latch 감소 (5 → 0)
-					long count = latch.getCount();
-					System.out.println(
-						count + "" + count + "" + count + "" + count + "" + count + "" + count + "" + count + "" + count
-							+ "" + count + "" + count + "" + count
-							+ "========================================================= " + latch.getCount()
-							+ "===========================================");
 				}
 			});
 		}
@@ -84,10 +77,9 @@ class PointCommandServiceTest extends AbstractIntegrationTest {
 			PointFixture.pointCreateRequest().getIncomePoint() * threadCount);
 	}
 
-	// --------------------------------------------------------------------------
 	@DisplayName("동시에 여러 입찰 요청이 들어와도 예치 포인트는 중복 차감되지 않는다")
 	@Test
-	void testConcurrentUpdateDepositPoint() throws InterruptedException {
+	void updateDepositPoint_동시에_여러_입찰이_들어와도_예치_포인트는_중복_차감되지_않음() throws InterruptedException {
 		String email = "test102@gmail.com";
 		String nickname = "닉네임2";
 		var userPoint = 100000L;
@@ -124,11 +116,9 @@ class PointCommandServiceTest extends AbstractIntegrationTest {
 		assertThat(result.getDepositPoint()).isEqualTo(auction.getStartingBid() + auction.getBidStep());
 	}
 
-	// --------------------------------------------------------------------------
-	// 옥션, 포인트, 비드, 유저 사전에 만들어두고 최종 테스트
 	@DisplayName("동시에 여러 스레드가 정산 시도를 해도 한 번만 처리된다")
 	@Test
-	void testConcurrentDepositToSettlement() throws InterruptedException {
+	void depositToSettlement_동시에_정산_시도를_해도_한_번만_처리됨() throws InterruptedException {
 		String email = "test203@gmail.com";
 		String nickname = "닉네임3";
 
@@ -166,10 +156,9 @@ class PointCommandServiceTest extends AbstractIntegrationTest {
 		assertThat(result.getAvailablePoint()).isEqualTo(userPoint - depositPoint);
 	}
 
-	// --------------------------------------------------------------------------
 	@DisplayName("동시에 여러 스레드가 환불 요청을 해도 중복 환불되지 않는다")
 	@Test
-	void testConcurrentDepositToAvailablePoint() throws InterruptedException {
+	void depositToAvailablePoint_동시에_환불_요청을_해도_한_번만_처리됨() throws InterruptedException {
 		String email = "test104@gmail.com";
 		String nickname = "닉네임4";
 		var userPoint = 100000L;
@@ -183,8 +172,6 @@ class PointCommandServiceTest extends AbstractIntegrationTest {
 
 		User loser = testUserService.saveTestUser(loserEmail, loserNickname);
 		User winner = testUserService.saveTestUser(winnerEmail, winnerNickname);
-
-		// AuthUser authUser = new AuthUser(userId, "user@test.com", "ROLE_USER");
 
 		Auction auction = testAuctionService.create(seller, bidStep);
 
@@ -217,7 +204,6 @@ class PointCommandServiceTest extends AbstractIntegrationTest {
 
 		latch.await();
 
-		// then
 		Point loserResult = pointRepository.findByUserId(loser.getId()).orElseThrow();
 		Point winnerResult = pointRepository.findByUserId(winner.getId()).orElseThrow();
 

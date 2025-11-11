@@ -70,7 +70,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         List<ProductImage> imagesToSave = uploadAndGenerateImages(product, requests, images, productId);
         // DB 저장
         return productImageRepository.saveAll(imagesToSave).stream()
-                .map(ProductImageResponse::from)
+                .map(image -> ProductImageResponse.from(image, s3Service))
                 .toList();
     }
 
@@ -117,7 +117,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
         productValidator.validateThumbnailConsistencyForAppend(allImages);
 
         return productImageRepository.saveAll(newImages).stream()
-                .map(ProductImageResponse::from)
+                .map(image -> ProductImageResponse.from(image, s3Service))
                 .toList();
     }
 
@@ -152,7 +152,7 @@ public class ProductCommandService implements ProductCommandServiceApi {
             throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
         }
 
-        return ProductImageResponse.from(productImages);
+        return ProductImageResponse.from(productImages, s3Service);
     }
 
     //상품 삭제
@@ -167,13 +167,10 @@ public class ProductCommandService implements ProductCommandServiceApi {
 
         //상품에 연결된 이미지 전체 조회
         List<ProductImage> images = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
+
         //s3에서 실제 이미지 삭제
         for (ProductImage image : images) {
-            try {
-                s3Service.deleteFile(image.getImageUrl());
-            } catch (Exception e) {
-                log.warn("[WARN] Failed to delete image from S3: {}", image.getImageUrl(), e);
-            }
+            s3Service.deleteFile(image.getImageKey());
         }
         product.softDelete();
         //상품에 연결된 이미지까지 soft delete
@@ -191,14 +188,16 @@ public class ProductCommandService implements ProductCommandServiceApi {
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidator.checkOwnership(product, authUser);
 
-        ProductImage productImage = productImageRepository.findById(imageId).orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
+        ProductImage productImage = productImageRepository.findById(imageId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
         if (!productImage.getProduct().getId().equals(productId)) {
             throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);
         }
+
         boolean isThumbnail = productImage.getImageType() == ImageType.THUMBNAIL;
 
         //1.S3에서 실제 파일 삭제
-        s3Service.deleteFile(productImage.getImageUrl());
+        s3Service.deleteFile(productImage.getImageKey());
         //2.DB에서 소프트딜리트
         productImage.softDelete();
 

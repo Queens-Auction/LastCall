@@ -35,7 +35,7 @@ public class AuctionEventListener {
         processEvent(event, message, channel,
                 // 메서드 참조 사용
                 auctionCommandService::startAuction,
-                "경매 시작");
+                "[RabbitMQ] 경매 시작");
     }
 
     /**
@@ -48,7 +48,7 @@ public class AuctionEventListener {
     public void handleAuctionEnd(AuctionEvent event, Message message, Channel channel) {
         processEvent(event, message, channel,
                 auctionCommandService::closeAuction,
-                "경매 종료");
+                "[RabbitMQ] 경매 종료");
     }
 
     /**
@@ -65,7 +65,7 @@ public class AuctionEventListener {
                               Consumer<Long> auctionAuction,
                               String eventType) {
         try {
-            log.info("{} 이벤트 수신: {}", eventType, event);
+            log.info("[RabbitMQ] {} 이벤트 수신: {}", eventType, event);
 
             // 1. 이벤트의 auctionId로 경매 조회
             Auction auction = auctionRepository.findById(event.getAuctionId()).orElseThrow(
@@ -73,7 +73,7 @@ public class AuctionEventListener {
 
             // 2. 버전 불일치 시 메시지 삭제(무시) - 중복 방지
             if (!Objects.equals(auction.getVersion(), event.getVersion())) {
-                log.warn("무시된 이벤트 - 경매 버전 불일치 (이벤트 버전={}, 현재 버전={})",
+                log.warn("[RabbitMQ] 무시된 이벤트 - 경매 버전 불일치 (이벤트 버전={}, 현재 버전={})",
                         event.getVersion(),
                         auction.getVersion());
                 ackMessage(channel, message);
@@ -84,14 +84,14 @@ public class AuctionEventListener {
 
             // 4. 성공 처리 시 ACK
             ackMessage(channel, message);
-            log.info("{} 이벤트 처리 완료 - auctionId={}", eventType, event.getAuctionId());
+            log.info("[RabbitMQ] {} 이벤트 처리 완료 - auctionId={}", eventType, event.getAuctionId());
 
         } catch (BusinessException e) {
-            log.warn("{} 비즈니스 예외 발생 - auctionId={}, message={}", eventType, event.getAuctionId(), e.getMessage());
+            log.warn("[RabbitMQ] {} 비즈니스 예외 발생 - auctionId={}, message={}", eventType, event.getAuctionId(), e.getMessage());
             ackMessage(channel, message);
 
         } catch (Exception e) {
-            log.error("{} 처리 중 시스템 예외 발생 - auctionId={}", eventType, event.getAuctionId(), e);
+            log.error("[RabbitMQ] {} 처리 중 시스템 예외 발생 - auctionId={}", eventType, event.getAuctionId(), e);
             nackMessage(channel, message, true);
         }
     }
@@ -107,7 +107,7 @@ public class AuctionEventListener {
             // basicAck(tag, false, false) : 처리 성공 + 재시도 원치 않음
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (IOException ioEx) {
-            log.error("RabbitMQ ACK 처리 중 IOException 발생", ioEx);
+            log.error("[RabbitMQ] RabbitMQ ACK 처리 중 IOException 발생", ioEx);
         }
     }
 
@@ -116,7 +116,7 @@ public class AuctionEventListener {
         try {
             channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, requeue);
         } catch (IOException ioEx) {
-            log.error("RabbitMQ NACK 처리 중 IOException 발생", ioEx);
+            log.error("[RabbitMQ] RabbitMQ NACK 처리 중 IOException 발생", ioEx);
         }
     }
 }

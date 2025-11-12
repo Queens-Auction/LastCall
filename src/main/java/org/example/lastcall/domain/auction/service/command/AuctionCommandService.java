@@ -3,6 +3,7 @@ package org.example.lastcall.domain.auction.service.command;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.common.lock.DistributedLock;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
 import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
 import org.example.lastcall.domain.auction.dto.response.AuctionResponse;
@@ -100,13 +101,17 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
     }
 
     // 경매 종료 처리 (closed)
+    @DistributedLock(key = "'auction:' + #auctionId")
     public void closeAuction(Long auctionId) {
+        log.debug("[RedissonLock] 락 획득 후 작업 실행: 경매 종료 처리 시작 - auctionId={}", auctionId);
+
         // 1. 경매 엔티티 조회
         Auction auction = auctionRepository.findById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         // 2. 종료 여부 검증
         if (!auction.canClose()) {
+            log.warn("[RedissonLock] 이미 종료된 경매 - auctionId={}",  auctionId);
             throw new BusinessException(AuctionErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
@@ -117,6 +122,8 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             // 입찰 존재 시, 낙찰 처리
             Long winnerId = topBid.getUser().getId();
             Long bidAmount = topBid.getBidAmount();
+            log.debug("[RedissonLock] 낙찰 처리 진행 - auctionId={}, winnerId={}, bidAmount={}"
+                    , auctionId, winnerId, bidAmount);
 
             // 낙찰 처리
             auction.assignWinner(winnerId, bidAmount);
@@ -128,12 +135,13 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             // 2. 유찰자들 : 예치 -> 가용
             pointCommandServiceApi.depositToAvailablePoint(winnerId, auction.getId(), bidAmount);
 
-            log.info("경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);
+            log.info("[RedissonLock] 경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);
         } else {
             auction.closeAsFailed();
-            log.info("경매 종료 - 입찰 없음(유찰 처리): auctionId={}", auctionId);
+            log.info("[RedissonLock] 경매 종료 - 입찰 없음(유찰 처리): auctionId={}", auctionId);
         }
         auctionRepository.save(auction);
+        log.info("[RedissonLock] 락 점유한 작업 종료 - auctionId={}", auctionId);
     }
 
     // 경매 시작 후 상태 변경 (SCHEDULED -> ONGOING)

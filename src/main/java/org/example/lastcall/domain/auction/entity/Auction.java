@@ -2,7 +2,6 @@ package org.example.lastcall.domain.auction.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
@@ -11,7 +10,6 @@ import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
 import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.user.entity.User;
-import org.hibernate.annotations.DialectOverride;
 
 import java.time.LocalDateTime;
 
@@ -76,14 +74,6 @@ public class Auction extends BaseEntity {
     // 경매 수정 시, 기존 이벤트가 같이 실행 되는 것 해결 위해 추가
     private Long version = 0L;
 
-    // 빌더
-    /* 엔티티의 @Builder는 생성자 단위로 붙이는 게 안전함
-         - 클래스 상단에 붙이면 자동생성되는 id 까지 포함되므로 @GeneratedValue 위반 발생
-         - @GeneratedValue : JPA 가 id를 자동 생성 (개발자 수동 세팅 금지)
-         - 개발자가 JPA 관리 영역 침범하므로 정책 위반이 됨
-    */
-    // 현재 of 메서드에서 간접적으로 사용중
-    @Builder
     private Auction(User user,
                     Product product,
                     Long startingBid,
@@ -106,14 +96,14 @@ public class Auction extends BaseEntity {
 
     // 정적 팩토리 메서드 (of)
     public static Auction of(User user, Product product, AuctionCreateRequest request) {
-        return Auction.builder()
-                .user(user)
-                .product(product)
-                .startingBid(request.getStartingBid())
-                .bidStep(request.getBidStep())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .build();
+        return new Auction(
+                user,
+                product,
+                request.getStartingBid(),
+                request.getBidStep(),
+                request.getStartTime(),
+                request.getEndTime()
+        );
     }
 
     // 경매 상태 계산 (엔티티 내부에서 처리)
@@ -129,15 +119,6 @@ public class Auction extends BaseEntity {
             return AuctionStatus.ONGOING;
         }
     }
-
-    /*@Transient
-    public AuctionStatus getDynamicStatus() {
-        if (this.status == AuctionStatus.DELETED) {
-            return this.status;
-        }
-        this.status = determineStatus();
-        return this.status;
-    }*/
 
     // DB 상태 직접 갱신 시 사용
     // -> MQ 에서 상태 전환 시 명시적 호출

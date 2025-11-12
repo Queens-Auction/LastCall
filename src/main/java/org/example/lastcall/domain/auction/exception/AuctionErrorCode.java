@@ -19,14 +19,4 @@ public enum AuctionErrorCode implements ErrorCode {
 
     private final HttpStatus status;
     private final String message;
-
-    @Override
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
-    }
 }

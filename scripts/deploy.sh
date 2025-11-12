@@ -28,11 +28,24 @@ echo "[INFO] COMMENT=${COMMENT}"
 
 # ===== EC2에서 실행할 커맨드(배열로 안전하게 정의) =====
 CMDS=(
+  # ECR 로그인 & 앱 배포
   "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REG_URI}"
   "docker pull ${FULL_URI}"
   "docker stop ${CONTAINER_NAME} || true"
   "docker rm   ${CONTAINER_NAME} || true"
   "docker run -d --name ${CONTAINER_NAME} --restart=always -p ${APP_PORT}:${APP_PORT} -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILE} ${FULL_URI}"
+
+  # RabbitMQ
+  "docker pull rabbitmq:3-management"
+  "docker stop rabbitmq || true"
+  "docker rm rabbitmq || true"
+  "docker run -d --name rabbitmq --restart=always -p 5672:5672 -p 15672:15672 rabbitmq:3-management"
+
+  # Redis
+  "docker pull redis:7"
+  "docker stop redis || true"
+  "docker rm redis || true"
+  "docker run -d --name redis --restart=always -p 6379:6379 redis:7"
 )
 
 # Bash 배열 → JSON 배열 변환 (jq 필수)

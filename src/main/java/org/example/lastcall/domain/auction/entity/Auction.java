@@ -11,6 +11,7 @@ import org.example.lastcall.domain.auction.dto.request.AuctionUpdateRequest;
 import org.example.lastcall.domain.auction.enums.AuctionStatus;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.user.entity.User;
+import org.hibernate.annotations.DialectOverride;
 
 import java.time.LocalDateTime;
 
@@ -70,6 +71,10 @@ public class Auction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    // 이벤트 중복 방지용 버전 관리
+    // 경매 수정 시, 기존 이벤트가 같이 실행 되는 것 해결 위해 추가
+    private Long version = 0L;
 
     // 빌더
     /* 엔티티의 @Builder는 생성자 단위로 붙이는 게 안전함
@@ -211,5 +216,10 @@ public class Auction extends BaseEntity {
     // 참여자 수 1 증가 (중복 입찰자 제외 - 비드서비스)
     public void incrementParticipantCount() {
         this.participantCount++;
+    }
+
+    // 경매 수정 시마다 version 1 증가 -> 이벤트 중복 발생 방지
+    public void increaseVersion() {
+        this.version++;
     }
 }

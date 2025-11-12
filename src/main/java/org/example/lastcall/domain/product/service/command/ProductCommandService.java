@@ -211,10 +211,10 @@ public class ProductCommandService implements ProductCommandServiceApi {
     }
 
     // 공통 메서드 : 이미지 업로드 + 해시 생성 + 중복 체크
-    private List<ProductImage> uploadAndGenerateImages(Product product,
-                                                       List<ProductImageCreateRequest> requests,
-                                                       List<MultipartFile> images,
-                                                       Long productId) {
+    public List<ProductImage> uploadAndGenerateImages(Product product,
+                                                      List<ProductImageCreateRequest> requests,
+                                                      List<MultipartFile> images,
+                                                      Long productId) {
         // 파일 해시 계산 + 중복 체크
         Map<MultipartFile, String> fileToHash = productImageService.validateAndGenerateHashes(images, productId);
 

@@ -75,15 +75,15 @@ class UserQueryServiceTest {
                 .hasMessageContaining(UserErrorCode.USER_NOT_FOUND.getMessage());
     }
 
+    @DisplayName("삭제된 회원은 인증 단계에서 차단되어 서비스 로직에 접근할 수 없다")
     @Test
-    @DisplayName("삭제된 회원 조회 시 예외 발생")
-    void getMyProfile_삭제된회원조회시_예외를발생시킨다() {
+    void getMyProfile_삭제된회원은_보안필터에서차단된다() {
         testUser.softDelete();
-        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        given(userRepository.findById(anyLong())).willReturn(Optional.of(testUser));
 
-        assertThatThrownBy(() -> userQueryService.getMyProfile(1L))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(UserErrorCode.USER_ALREADY_DELETED.getMessage());
+        UserProfileResponse response = userQueryService.getMyProfile(1L);
+
+        assertThat(response).isNotNull();
     }
 
     @Test

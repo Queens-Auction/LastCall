@@ -33,10 +33,6 @@ public class UserQueryService implements UserServiceApi {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-        if (user.isDeleted()) {
-            throw new BusinessException(UserErrorCode.USER_ALREADY_DELETED);
-        }
-
         return UserProfileResponse.from(user);
     }
 }

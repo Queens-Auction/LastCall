@@ -8,7 +8,7 @@ import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
-import org.example.lastcall.domain.product.service.validator.ProductValidator;
+import org.example.lastcall.domain.product.service.validator.ProductValidatorService;
 import org.example.lastcall.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,12 +33,11 @@ public class ProductValidatorTest {
     private ProductImageRepository productImageRepository;
 
     @InjectMocks
-    private ProductValidator productValidator;
+    private ProductValidatorService productValidatorService;
 
     @Test
     @DisplayName("상품 소유자 불일치 시 예외 발생")
-    void checkOwnership_unauthorized() {
-        //given
+    void checkOwnership_상품소유자가일치하지않으면_예외를발생시킨다() {
         User user = mock(User.class);
         when(user.getId()).thenReturn(1L);
 
@@ -47,28 +46,27 @@ public class ProductValidatorTest {
 
         AuthUser authUser = new AuthUser(2L, "otherUser", "USER");
 
-        //when&then
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productValidator.checkOwnership(product, authUser));
+                () -> productValidatorService.checkOwnership(product, authUser));
 
         assertEquals(ProductErrorCode.ACCESS_DENIED, exception.getErrorCode());
     }
 
     @Test
     @DisplayName("이미지 개수가 10개 초과 시 예외 발생")
-    void validateImageCount_tooManyImages() {
+    void validateImageCount_이미지개수가10개를초과하면_예외를발생시킨다() {
         List<String> images = new ArrayList<>();
         for (int i = 0; i < 11; i++) images.add("img" + i);
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productValidator.validateImageCount(images));
+                () -> productValidatorService.validateImageCount(images));
 
         assertEquals(ProductErrorCode.TOO_MANY_IMAGES, exception.getErrorCode());
     }
 
     @Test
     @DisplayName("썸네일 중복 시 예외 발생 -create")
-    void validateThumbnailConsistencyForCreate_duplicateThumbnail() {
+    void validateThumbnailConsistencyForCreate_썸네일이중복되면_예외를발생시킨다() {
         List<ProductImageCreateRequest> requests = List.of(
                 new ProductImageCreateRequest(true),
                 new ProductImageCreateRequest(true)
@@ -76,19 +74,19 @@ public class ProductValidatorTest {
         when(productImageRepository.existsByProductIdAndImageTypeAndDeletedFalse(anyLong(), any()))
                 .thenReturn(true);
         assertThrows(BusinessException.class,
-                () -> productValidator.validateThumbnailConsistencyForCreate(1L, requests));
+                () -> productValidatorService.validateThumbnailConsistencyForCreate(1L, requests));
     }
 
     @Test
-    @DisplayName("썸네일 중복 시 예외 발 - append")
-    void validateThumbnailConsistencyForAppend_duplicateThmbnail() {
+    @DisplayName("썸네일 중복 시 예외 발생 - append")
+    void validateThumbnailConsistencyForAppend_이미지추가시썸네일이중복되면_예외를발생시킨다() {
         List<ProductImage> images = List.of(
                 ProductImage.of(mock(Product.class), ImageType.THUMBNAIL, "1.jpg", "hash"),
                 ProductImage.of(mock(Product.class), ImageType.THUMBNAIL, "2.jpg", "hash2")
         );
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productValidator.validateThumbnailConsistencyForAppend(images));
+                () -> productValidatorService.validateThumbnailConsistencyForAppend(images));
 
         assertEquals(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED, exception.getErrorCode());
     }

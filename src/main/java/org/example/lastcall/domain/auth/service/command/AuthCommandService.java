@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.common.security.jwt.JwtUtil;
 import org.example.lastcall.common.util.DateTimeUtil;
 import org.example.lastcall.common.util.GeneratorUtil;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
@@ -12,12 +13,11 @@ import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.email.entity.EmailVerification;
 import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;
-import org.example.lastcall.domain.auth.email.repository.EmailVerificationRepository;
 import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
+import org.example.lastcall.domain.auth.email.repository.EmailVerificationRepository;
 import org.example.lastcall.domain.auth.entity.RefreshToken;
-import org.example.lastcall.domain.auth.exception.AuthErrorCode;
-import org.example.lastcall.common.security.jwt.JwtUtil;
 import org.example.lastcall.domain.auth.enums.RefreshTokenStatus;
+import org.example.lastcall.domain.auth.exception.AuthErrorCode;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
 import org.example.lastcall.domain.auth.service.validator.AuthValidatorService;
 import org.example.lastcall.domain.user.entity.User;
@@ -47,33 +47,27 @@ public class AuthCommandService {
 
     @Transactional
     public void signup(final SignupRequest request) {
-        // 이메일 인증 요청 존재 여부
         EmailVerification emailVerification = emailVerificationRepository
                 .findByPublicId(request.getVerificationPublicId())
                 .orElseThrow(() -> new BusinessException(EmailErrorCode.NOT_REQUESTED));
 
-        // 검증 상태 확인
-        authValidatorService.validateEmailVerifiedStatus(emailVerification.getStatus()); // VERIFIED 아니면 예외
+        authValidatorService.validateEmailVerifiedStatus(emailVerification.getStatus());
 
-        // 인증 기록 소비 처리
         emailVerification.updateStatus(EmailVerificationStatus.CONSUMED);
-      
+
         if (userRepository.existsByNickname(request.getNickname())) {
-            throw new BusinessException(UserErrorCode.DUPLICATE_NICKNAME); // 409
+            throw new BusinessException(UserErrorCode.DUPLICATE_NICKNAME);
         }
 
-        // 기존 사용자 여부 확인
         userRepository.findByEmail(emailVerification.getEmail())
                 .ifPresent(existingUser -> {
-
                     if (existingUser.isDeleted()) {
                         throw new BusinessException(UserErrorCode.DELETED_ACCOUNT);
                     }
-
                     throw new BusinessException(UserErrorCode.DUPLICATE_EMAIL);
                 });
 
-        User user = User.createForSignUp(
+        User user = User.of(
                 GeneratorUtil.generatePublicId(),
                 request.getUsername(),
                 request.getNickname(),
@@ -96,16 +90,13 @@ public class AuthCommandService {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
 
-        // 1) 이메일 조회
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_CREDENTIALS));
 
-        // 2) 탈퇴 계정 차단
         if (user.isDeleted()) {
             throw new BusinessException(AuthErrorCode.ACCOUNT_DELETED);
         }
 
-        // 3) 비밀번호 검증
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BusinessException(AuthErrorCode.INVALID_CREDENTIALS);
         }
@@ -123,7 +114,6 @@ public class AuthCommandService {
                 refreshTokenExpiredAt
         );
 
-        // 기존 ACTIVE 토큰들을 REVOKED로 변경
         List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndStatus(user.getId(), RefreshTokenStatus.ACTIVE);
         activeTokens.forEach(RefreshToken::revoke);
 
@@ -132,27 +122,16 @@ public class AuthCommandService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
-    /**
-     * 리프레시 토큰 재발급
-     * - 전달된 RT가 ACTIVE이고 만료/철회되지 않았는지 검사
-     * - 소유자(User) 조회
-     * - 새 AT/RT 생성
-     * - 기존 ACTIVE RT 전부 REVOKE
-     * - 새 RT 저장 후 (AT, RT) 반환
-     */
     @Transactional
     public LoginResponse reissueAccessToken(final String requestedRefreshToken) {
-        // 1) 전달받은 RT 유효성 검증 및 엔티티 조회
         RefreshToken validRefreshToken = validateRefreshToken(requestedRefreshToken);
 
-        // 2) 소유자 조회 (탈퇴 계정 차단 포함)
         User user = userRepository.findById(validRefreshToken.getUserId())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
         if (user.isDeleted()) {
             throw new BusinessException(AuthErrorCode.ACCOUNT_DELETED);
         }
 
-        // 3) 새 토큰 생성
         String newAccessToken = jwtUtil.createAccessToken(user);
         String newRefreshToken = jwtUtil.createRefreshToken(user);
 
@@ -166,27 +145,24 @@ public class AuthCommandService {
                 refreshTokenExpiredAt
         );
 
-        // 4) 기존 ACTIVE RT 전부 REVOKE → 최신 RT만 유효하게 유지
         refreshTokenRepository.revokeAllActiveByUserId(
                 user.getId(),
                 RefreshTokenStatus.ACTIVE,
                 RefreshTokenStatus.REVOKED
         );
 
-        // 5) 새 RT 저장
         refreshTokenRepository.save(newRtEntity);
 
-        // 6) (AT, RT) 반환
         return new LoginResponse(newAccessToken, newRefreshToken);
     }
 
-    // DB에 저장된 Refresh Token을 조회하고, 유효성 검증
     private RefreshToken validateRefreshToken(String requestedRefreshToken) {
         RefreshToken refreshToken = refreshTokenRepository
                 .findByTokenAndStatus(requestedRefreshToken, RefreshTokenStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
 
         final LocalDateTime now = LocalDateTime.now();
+
         if (refreshToken.getExpiredAt().isBefore(now)) {
             throw new BusinessException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
         }
@@ -200,7 +176,6 @@ public class AuthCommandService {
 
     @Transactional
     public void logout(final String requestedRefreshToken) {
-        // 해당 사용자의 모든 활성 refresh token 무효화 (REVOKED)
         if (requestedRefreshToken == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
@@ -221,7 +196,6 @@ public class AuthCommandService {
 
     @Transactional
     public void withdraw(Long userId, WithdrawRequest request) {
-        // 1) 사용자 조회(삭제 안 된 사용자만) + 비밀번호 검증
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
@@ -231,14 +205,12 @@ public class AuthCommandService {
             throw new BusinessException(AuthErrorCode.INVALID_PASSWORD);
         }
 
-        // 2) soft delete
         int updated = userRepository.softDeleteById(userId);
         if (updated == 0) {
             throw new BusinessException(USER_ALREADY_DELETED);
         }
         user.softDelete();
 
-        // 3) 해당 사용자의 모든 활성 RT 무효화
         refreshTokenRepository.revokeAllActiveByUserId(user.getId(), RefreshTokenStatus.ACTIVE, RefreshTokenStatus.REVOKED);
     }
 }

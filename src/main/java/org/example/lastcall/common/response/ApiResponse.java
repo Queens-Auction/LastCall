@@ -23,10 +23,7 @@ public class ApiResponse<T> {
     @Schema(description = "응답 생성 시각 (UTC)", example = "2025-10-24T12:34:56Z")
     private final Instant timestamp;
 
-    public ApiResponse(boolean success,
-                       String message,
-                       T data
-    ) {
+    public ApiResponse(boolean success, String message, T data) {
         this.success = success;
         this.message = message;
         this.data = data;

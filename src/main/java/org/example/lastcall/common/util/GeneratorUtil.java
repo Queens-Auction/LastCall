@@ -6,8 +6,7 @@ import java.util.UUID;
 
 @UtilityClass
 public class GeneratorUtil {
-    public UUID generatePublicId()
-    {
+    public UUID generatePublicId() {
         return UUID.randomUUID();
     }
 }

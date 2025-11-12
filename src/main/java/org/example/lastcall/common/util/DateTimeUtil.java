@@ -13,11 +13,4 @@ public class DateTimeUtil {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
     }
-
-    public Date convertToDate(LocalDateTime localDateTime) {
-        return Date.from(localDateTime
-                .atZone(ZoneId.systemDefault())
-                .toInstant());
-    }
-
 }

@@ -11,16 +11,19 @@ import org.example.lastcall.domain.user.service.query.UserQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class UserQueryServiceTest {
     @Mock
     private UserRepository userRepository;
@@ -35,8 +38,7 @@ class UserQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        testUser = User.createForSignUp(
+        testUser = User.of(
                 UUID.randomUUID(),
                 "tester",
                 "nick",
@@ -52,14 +54,11 @@ class UserQueryServiceTest {
 
     @Test
     @DisplayName("내 정보 조회 성공")
-    void getMyProfile_success() {
-        // given
+    void getMyProfile_내정보를정상적으로조회한다() {
         given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
 
-        // when
         UserProfileResponse response = userQueryService.getMyProfile(1L);
 
-        // then
         assertThat(response.nickname()).isEqualTo("nick");
         assertThat(response.email()).isEqualTo("test@email.com");
         assertThat(response.phoneNumber()).isEqualTo("010-1234-5678");
@@ -68,11 +67,9 @@ class UserQueryServiceTest {
 
     @Test
     @DisplayName("존재하지 않는 회원 조회 시 예외 발생")
-    void getMyProfile_userNotFound() {
-        // given
+    void getMyProfile_존재하지않는사용자가내정보조회요청시_예외를발생시킨다() {
         given(userRepository.findById(999L)).willReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> userQueryService.getMyProfile(999L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(UserErrorCode.USER_NOT_FOUND.getMessage());
@@ -80,12 +77,10 @@ class UserQueryServiceTest {
 
     @Test
     @DisplayName("삭제된 회원 조회 시 예외 발생")
-    void getMyProfile_deletedUser() {
-        // given
+    void getMyProfile_삭제된회원조회시_예외를발생시킨다() {
         testUser.softDelete();
         given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
 
-        // when & then
         assertThatThrownBy(() -> userQueryService.getMyProfile(1L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(UserErrorCode.USER_ALREADY_DELETED.getMessage());
@@ -93,24 +88,19 @@ class UserQueryServiceTest {
 
     @Test
     @DisplayName("findById 성공")
-    void findById_success() {
-        // given
+    void findById_ID로조회요청시_정상적으로엔티티를반환한다() {
         given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
 
-        // when
         User found = userQueryService.findById(1L);
 
-        // then
         assertThat(found).isEqualTo(testUser);
     }
 
     @Test
     @DisplayName("findById 실패 - 유저 없음")
-    void findById_notFound() {
-        // given
+    void findById_유저가존재하지않으면_예외를발생시킨다() {
         given(userRepository.findById(2L)).willReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> userQueryService.findById(2L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(UserErrorCode.USER_NOT_FOUND.getMessage());
@@ -118,12 +108,10 @@ class UserQueryServiceTest {
 
     @Test
     @DisplayName("getReferenceById - EntityManager 프록시 반환")
-    void getReferenceById_success() {
-        // given
+    void getReferenceById_호출시_엔티티대신프록시객체를반환한다() {
         given(entityManager.getReference(User.class, 1L)).willReturn(testUser);
         User ref = userQueryService.getReferenceById(1L);
 
-        // when & then
         assertThat(ref).isEqualTo(testUser);
         then(entityManager).should(times(1)).getReference(User.class, 1L);
     }

@@ -20,6 +20,7 @@ public record MailProperties(
         @Valid Transport transport,
         @Valid Smtp smtp) {
     public record Transport(@NotBlank String protocol) {}
+
     public record Smtp(
             boolean auth,
             @Valid @NotNull Starttls starttls,
@@ -27,5 +28,6 @@ public record MailProperties(
             @NotNull Duration timeout,
             @NotNull Duration writetimeout
     ) {}
+
     public record Starttls(boolean enable) {}
 }

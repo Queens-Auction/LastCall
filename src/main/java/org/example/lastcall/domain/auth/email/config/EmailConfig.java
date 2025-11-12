@@ -1,6 +1,5 @@
 package org.example.lastcall.domain.auth.email.config;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +28,6 @@ public class EmailConfig {
         props.put("mail.smtp.auth", String.valueOf(mailProperties.smtp().auth()));
         props.put("mail.smtp.starttls.enable", String.valueOf(mailProperties.smtp().starttls().enable()));
 
-        // Duration을 밀리초로 변환하여 JavaMail Properties에 적용
         props.put("mail.smtp.connectiontimeout", String.valueOf(mailProperties.smtp().connectiontimeout().toMillis()));
         props.put("mail.smtp.timeout", String.valueOf(mailProperties.smtp().timeout().toMillis()));
         props.put("mail.smtp.writetimeout", String.valueOf(mailProperties.smtp().writetimeout().toMillis()));

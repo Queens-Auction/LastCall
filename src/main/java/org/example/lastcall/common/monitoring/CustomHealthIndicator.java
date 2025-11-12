@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class CustomHealthIndicator implements HealthIndicator {
-
     private final UserRepository userRepository;
 
     @Override
@@ -18,12 +17,13 @@ public class CustomHealthIndicator implements HealthIndicator {
         if (dbUp) {
             return Health.up().withDetail("database", "OK").build();
         }
+
         return Health.down().withDetail("database", "DOWN").build();
     }
 
     private boolean checkDatabaseConnection() {
         long count = userRepository.count();
-        return true; // 실제 DB 연결 확인 로직으로 대체
-    }
 
+        return true;
+    }
 }

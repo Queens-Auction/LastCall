@@ -15,16 +15,15 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class ProductValidator {
+public class ProductValidatorService {
     private final ProductImageRepository productImageRepository;
 
     public void checkOwnership(Product product, AuthUser authUser) {
         if (!product.getUser().getId().equals(authUser.userId())) {
-            throw new BusinessException(ProductErrorCode.ACCESS_DENIED); // 접근 거부
+            throw new BusinessException(ProductErrorCode.ACCESS_DENIED);
         }
     }
 
-    //이미지 갯수 제한 매서드
     public <T> void validateImageCount(List<T> images) {
         if (images.size() > 10) {
             throw new BusinessException(ProductErrorCode.TOO_MANY_IMAGES);
@@ -34,9 +33,11 @@ public class ProductValidator {
     public void validateThumbnailConsistencyForCreate(Long productId, List<ProductImageCreateRequest> requests) {
         boolean hasExistingThumbnail = productImageRepository
                 .existsByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
+
         long newThumbnailCount = requests.stream()
                 .filter(req -> req.getIsThumbnail() == true)
                 .count();
+
         long totalThumbnails = (hasExistingThumbnail ? 1 : 0) + newThumbnailCount;
         if (totalThumbnails > 1) {
             throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);

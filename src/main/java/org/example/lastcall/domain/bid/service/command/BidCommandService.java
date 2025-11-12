@@ -26,9 +26,7 @@ public class BidCommandService {
     private final PointCommandServiceApi pointCommandServiceApi;
     private final PointQueryServiceApi pointQueryServiceApi;
 
-    // 입찰 등록
     public BidResponse createBid(Long auctionId, AuthUser authUser) {
-        // 입찰이 가능한 경매인지 확인하고, 경매를 받아옴
         Auction auction = auctionQueryServiceApi.getBiddableAuction(auctionId);
 
         if (auction.getUser().getId().equals(authUser.userId())) {
@@ -37,30 +35,23 @@ public class BidCommandService {
 
         User user = userServiceApi.findById(authUser.userId());
 
-        // 추가 -> 해당 유저가 이미 경매에 입찰했는지 확인
         boolean alreadyParticipated = bidRepository.existsByAuctionIdAndUserId(
                 auction.getId(),
                 user.getId()
         );
 
-        // orElse: Optional 객체가 비어있을 경우, 해당 값(시작 값)을 반환함
         Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
-
         Long bidAmount = currentMaxBid + auction.getBidStep();
 
-        // 경매에 참여할만큼 포인트가 충분한 지 검증함
         pointQueryServiceApi.validateSufficientPoints(user.getId(), bidAmount);
 
-        Bid bid = new Bid(bidAmount, auction, user);
-
+        Bid bid = Bid.of(bidAmount, auction, user);
         Bid savedBid = bidRepository.save(bid);
 
-        // 추가 -> 중복 입찰 아닌 경우에만 참여자 수 증가
         if (!alreadyParticipated) {
             auction.incrementParticipantCount();
         }
 
-        // 현재 입찰가 갱신
         auction.updateCurrentBid(bidAmount);
 
         pointCommandServiceApi.updateDepositPoint(

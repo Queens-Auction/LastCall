@@ -49,7 +49,7 @@ public class ProductImageServiceTest {
 
     @BeforeEach
     void setUp() {
-        User user = User.createForSignUp(
+        User user = User.of(
                 UUID.randomUUID(),
                 "testUser",
                 "tester",
@@ -74,7 +74,7 @@ public class ProductImageServiceTest {
 
     @Test
     @DisplayName("이미지 업로드 후 ProductImage 생성 - 썸네일")
-    void uploadAndCreateProductImage_thumbnail() {
+    void uploadAndCreateProductImage_이미지업로드후_썸네일생성한다() {
         ProductImageCreateRequest request = new ProductImageCreateRequest(true);
 
         when(s3Service.uploadToS3(file, "products/1")).thenReturn("s3-key.jpg");
@@ -88,7 +88,7 @@ public class ProductImageServiceTest {
 
     @Test
     @DisplayName("이미지 업로드 후 ProductImage 생성 - 상세")
-    void uploadAndCreateProductImage_detail() {
+    void uploadAndCreateProductImage_이미지업로드후_상세이미지를생성한다() {
         ProductImageCreateRequest request = new ProductImageCreateRequest(false);
 
         when(s3Service.uploadToS3(file, "products/1")).thenReturn("s3-key-detail.jpg");
@@ -102,7 +102,7 @@ public class ProductImageServiceTest {
 
     @Test
     @DisplayName("중복 없는 파일 해시 생성 성공")
-    void validateAndGenerateHashes_success() {
+    void validateAndGenerateHashes_중복없는파일이면_해시를성공적으로생성한다() {
         List<MultipartFile> files = List.of(file);
         when(productImageRepository.findAllByProductIdAndDeletedFalse(1L)).thenReturn(Collections.emptyList());
 
@@ -114,7 +114,7 @@ public class ProductImageServiceTest {
 
     @Test
     @DisplayName("요청 내부 중복 파일 시 예외 발생")
-    void validateAndGenerateHashes_duplicateInRequest() {
+    void validateAndGenerateHashes_요청내부에중복파일이있으면_예외를발생시킨다() {
         List<MultipartFile> files = List.of(file, file);
         when(productImageRepository.findAllByProductIdAndDeletedFalse(1L)).thenReturn(Collections.emptyList());
 
@@ -126,7 +126,7 @@ public class ProductImageServiceTest {
 
     @Test
     @DisplayName("DB 중복 파일 시 예외 발생")
-    void validateAndGenerateHashes_duplicateInDB() {
+    void validateAndGenerateHashes_DB에중복파일이있으면_예외를발생시킨다() {
         ProductImage existingImage = ProductImage.of(product, ImageType.DETAIL, "key.jpg", FileHashUtils.generateFileHash(file));
         when(productImageRepository.findAllByProductIdAndDeletedFalse(1L)).thenReturn(List.of(existingImage));
 

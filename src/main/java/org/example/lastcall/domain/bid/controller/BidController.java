@@ -26,29 +26,27 @@ public class BidController {
     private final BidQueryService bidQueryService;
     private final BidCommandService bidCommandService;
 
-    // 입찰 등록
     @Operation(
             summary = "입찰 등록",
             description = "로그인한 사용자가 해당 경매에 입찰을 등록합니다. " +
                     "경매 진행 중일 경우에만 가능하며, 이전 최고가보다 높은 금액으로 자동 계산됩니다."
     )
     @PostMapping
-    public ResponseEntity<ApiResponse<BidResponse>> createBid(@PathVariable Long auctionId, @AuthenticationPrincipal AuthUser authUser) {
+    public ResponseEntity<ApiResponse<BidResponse>> createBid(@PathVariable Long auctionId,
+                                                              @AuthenticationPrincipal AuthUser authUser) {
         BidResponse bid = bidCommandService.createBid(auctionId, authUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("입찰이 완료되었습니다.", bid));
     }
 
-    // 경매별 전체 입찰 내역 조회 (최신순)
     @Operation(
             summary = "경매별 입찰 내역 조회 (최신순)",
             description = "특정 경매에 대한 전체 입찰 내역을 최신순으로 조회합니다. " +
                     "페이징이 적용되며, 기본 5개씩 반환됩니다."
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<BidGetAllResponse>>> getAllBids(
-            @PathVariable Long auctionId,
-            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<BidGetAllResponse>>> getAllBids(@PathVariable Long auctionId,
+                                                                                   @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<BidGetAllResponse> bids = bidQueryService.getAllBids(auctionId, pageable);
 
         return ResponseEntity.ok(ApiResponse.success("해당 경매의 입찰 내역을 조회합니다.", bids));

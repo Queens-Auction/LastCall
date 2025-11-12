@@ -16,4 +16,5 @@ public class AuctionEvent implements Serializable {
     private Long winnerId;                 // 낙찰자 ID
     private Long winningBid;               // 낙찰 금액
     private List<Long> failedBidderIds;    // 유찰자 목록
+    private Long version;                  // 이벤트 생성 당시 경매 버전 -> 추가
 }

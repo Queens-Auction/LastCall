@@ -73,6 +73,8 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         }
         // 수정 관련 이벤트 반영 //
         auction.update(request);
+        // 버전 증가 (수정시마다 +1 증가되어, 이전 이벤트 무시되게 해줌)
+        auction.increaseVersion();
         auctionRepository.save(auction);
 
         log.info("경매 수정됨 - auctionId={},startTime={}, endTime={}", auction.getId(), auction.getStartTime(), auction.getEndTime());

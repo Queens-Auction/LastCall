@@ -28,6 +28,9 @@ echo "[INFO] COMMENT=${COMMENT}"
 
 # ===== EC2에서 실행할 커맨드(배열로 안전하게 정의) =====
 CMDS=(
+  # jq 설치 (yum/apt 대응)
+  "which jq || (sudo yum install -y jq || sudo apt-get update && sudo apt-get install -y jq)"
+
   # ECR 로그인 & 앱 배포
   "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REG_URI}"
   "docker pull ${FULL_URI}"

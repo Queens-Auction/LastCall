@@ -119,7 +119,11 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             // 낙찰 처리
             auction.assignWinner(winnerId, bidAmount);
 
-            // 포인트 처리 (예치 -> 가용)
+            // 포인트 처리
+            // 1. 낙찰자 : 예치 -> 정산
+            pointCommandServiceApi.depositToSettlement(winnerId, auction.getId(), bidAmount);
+
+            // 2. 유찰자들 : 예치 -> 가용
             pointCommandServiceApi.depositToAvailablePoint(winnerId, auction.getId(), bidAmount);
 
             log.info("경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);

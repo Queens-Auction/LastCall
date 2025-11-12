@@ -71,8 +71,9 @@ public class EmailVerificationService {
 
     @Transactional
     public VerifyEmailVerificationCodeDto.Response verifyEmailVerificationCode(final VerifyEmailVerificationCodeDto.Request request) {
-        EmailVerification emailVerification = emailVerificationRepository.findFirstByEmailOrderByCreatedAtDesc(request.email())
-                .orElseThrow(() -> new RuntimeException("잘못된 요청입니다."));
+        EmailVerification emailVerification = emailVerificationRepository
+                .findFirstByEmailOrderByCreatedAtDesc(request.email())
+                .orElseThrow(() -> new BusinessException(EmailErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
 
         LocalDateTime createdAt = emailVerification.getCreatedAt();
         UUID verificationPublicId = emailVerification.getPublicId();

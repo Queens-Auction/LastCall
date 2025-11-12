@@ -21,6 +21,8 @@ import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -35,27 +37,53 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
     private final AuctionEventScheduler auctionEventScheduler;
 
     // 경매 등록 //
+    @DistributedLock(key = "'product:' + #productId")
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
-        // 1. 상품 존재 여부 확인
+        log.debug("[RedissonLock] 락 획득 후 작업 실행: 경매 등록 처리 시작 - productId={}", productId);
+
+        // 1. 상품 존재 여부 확인 (상품 소유자 검증) -> 이미 상품쪽에서 검증 완료
         productQueryServiceApi.validateProductOwner(productId, userId);
+        log.debug("[RedissonLock] 상품 소유자 검증 완료 - productId={}, userId={}", productId, userId);
+
         // 2. 중복 경매 등록 방지
         if (auctionRepository.existsActiveAuction(productId)) {
+            log.warn("[RedissonLock] 이미 활성화된 경매 존재 - productId={}", productId);
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
+
+        // 입력값 유효성 검사 추가 (시간 관계)
+        // endTime
+        if (!request.getEndTime().isAfter(LocalDateTime.now())) {
+            throw new BusinessException(AuctionErrorCode.INVALID_END_TIME);
+        }
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new BusinessException(AuctionErrorCode.INVALID_END_TIME_ORDER);
+        }
+        if (request.getStartTime().equals(request.getEndTime())) {
+            throw new BusinessException(AuctionErrorCode.INVALID_SAME_TIME);
+        }
+
         // 3. User 조회
         User user = userServiceApi.findById(userId);
+        log.debug("[RedissonLock] 판매자 조회 완료 - userId={}", userId);
+
         // 4. 상품 조회
         Product product = productQueryServiceApi.findById(productId);
+        log.debug("[RedissonLock] 상품 조회 완료 - productId={}", productId);
+
         // 5. Auction 엔티티 생성/저장 -> 경매 상태는 내부 로직에서 자동 계산됨
         Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);
+        log.info("[RedissonLock] 경매 생성 완료 - auctionId={}, productId={}, startPrice={}, endTime={}",
+                auction.getId(), productId, auction.getStartingBid(), auction.getEndTime());
 
         // 이벤트 스케줄링 분리
         // 경매 시작/종료 이벤트 예약 발행
         auctionEventScheduler.scheduleAuctionEvents(auction);
+        log.info("경매 등록 완료 및 이벤트 예약 - auctionId={}, startTime={}, endTime={}",
+                auction.getId(), auction.getStartTime(), auction.getEndTime());
 
-        log.info("경매 등록 완료 및 이벤트 예약 - auctionId={}, startTime={}, endTime={}", auction.getId(), auction.getStartTime(), auction.getEndTime());
-
+        log.info("[RedissonLock] 락 점유한 작업 종료 - productId={}", productId);
         return AuctionResponse.fromCreate(auction);
     }
 

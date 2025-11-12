@@ -12,10 +12,9 @@ import org.example.lastcall.domain.user.service.UserServiceApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -23,7 +22,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
-@ExtendWith(MockitoExtension.class)
 class PointQueryServiceTest {
     @Mock
     private PointRepository pointRepository;
@@ -40,6 +38,7 @@ class PointQueryServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        MockitoAnnotations.openMocks(this);
         authUser = mock(AuthUser.class);
         given(authUser.userId()).willReturn(1L);
 

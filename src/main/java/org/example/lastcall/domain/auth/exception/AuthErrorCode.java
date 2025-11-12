@@ -18,7 +18,9 @@ public enum AuthErrorCode implements ErrorCode {
 
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
     EXPIRED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 리프레시 토큰입니다."),
-    REVOKED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "폐기된 리프레시 토큰입니다.");
+    REVOKED_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "폐기된 리프레시 토큰입니다."),
+
+    UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "로그인후 진행해주세요");
 
     private final HttpStatus status;
     private final String message;

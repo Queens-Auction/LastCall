@@ -41,12 +41,18 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthCommandServiceTest {
-    @Mock private UserRepository userRepository;
-    @Mock private EmailVerificationRepository emailVerificationRepository;
-    @Mock private RefreshTokenRepository refreshTokenRepository;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private JwtUtil jwtUtil;
-    @Mock private AuthValidatorService authValidatorService;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private EmailVerificationRepository emailVerificationRepository;
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
+    @Mock
+    private JwtUtil jwtUtil;
+    @Mock
+    private AuthValidatorService authValidatorService;
 
     @InjectMocks
     private AuthCommandService authCommandService;
@@ -54,7 +60,7 @@ public class AuthCommandServiceTest {
 
     @BeforeEach
     void setUp() {
-        mockUser = User.createForSignUp(
+        mockUser = User.of(
                 UUID.randomUUID(),
                 "username",
                 "nickname",
@@ -70,8 +76,7 @@ public class AuthCommandServiceTest {
 
     @Test
     @DisplayName("회원가입 성공 시 이메일 인증, 중복 검증, 저장 수행")
-    void signup_success() {
-        // given
+    void signup_유효한_정보로_회원가입에_성공한다() {
         SignupRequest request = new SignupRequest();
         ReflectionTestUtils.setField(request, "verificationPublicId", UUID.randomUUID());
         ReflectionTestUtils.setField(request, "username", "짱구");
@@ -91,17 +96,15 @@ public class AuthCommandServiceTest {
         when(userRepository.existsByNickname(anyString())).thenReturn(false);
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
-        // when
         authCommandService.signup(request);
 
-        // then
         verify(userRepository, times(1)).save(any(User.class));
         verify(emailVerificationRepository, times(1)).findByPublicId(any(UUID.class));
     }
 
     @Test
     @DisplayName("로그인 성공 시 토큰 생성 및 RefreshToken 저장")
-    void login_success() {
+    void login_성공_토큰생성_리프레시토큰_저장한다() {
         LoginRequest request = new LoginRequest("test@example.com", "password");
 
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(mockUser));
@@ -119,7 +122,7 @@ public class AuthCommandServiceTest {
 
     @Test
     @DisplayName("로그인 실패 - 이메일 존재하지 않음")
-    void login_fail_user_not_found() {
+    void login_실패_이메일_존재하지_않는다() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         LoginRequest request = new LoginRequest("user@test.com", "1234");
         assertThrows(BusinessException.class, () -> authCommandService.login(request));
@@ -127,7 +130,7 @@ public class AuthCommandServiceTest {
 
     @Test
     @DisplayName("로그아웃 성공 시 활성 토큰들 REVOKE 처리")
-    void logout_success() {
+    void logout_성공_시_활성_토큰_폐기한다() {
         RefreshToken activeToken = RefreshToken.create(1L, "token", RefreshTokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
 
         when(authValidatorService.validateRefreshToken(anyString())).thenReturn(activeToken);
@@ -140,7 +143,7 @@ public class AuthCommandServiceTest {
 
     @Test
     @DisplayName("회원 탈퇴 성공 시 Soft Delete 및 토큰 REVOKE 수행")
-    void withdraw_success() {
+    void withdraw_성공_시_소프트삭제_및_토큰_폐기한다() {
         WithdrawRequest request = new WithdrawRequest("password");
 
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(mockUser));
@@ -157,7 +160,7 @@ public class AuthCommandServiceTest {
 
     @Test
     @DisplayName("리프레시 토큰 재발급 성공 시 새 AT/RT 생성 및 기존 RT REVOKE")
-    void reissueAccessToken_success() {
+    void reissueAccessToken_성공_새토큰_발급_및_기존리프레시토큰_폐기한다() {
         RefreshToken validToken = RefreshToken.create(1L, "old-rt", RefreshTokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
 
         when(refreshTokenRepository.findByTokenAndStatus(anyString(), any()))

@@ -28,7 +28,7 @@ public class ProductReadAllResponse {
     @Schema(description = "상품 수정일", example = "2025-10-24T14:00:00")
     private final LocalDateTime modifiedAt;
 
-    public ProductReadAllResponse(Long id, String name, String thumbnailUrl, LocalDateTime createdAt, LocalDateTime modifiedAt) {
+    private ProductReadAllResponse(Long id, String name, String thumbnailUrl, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
         this.name = name;
         this.thumbnailUrl = thumbnailUrl;
@@ -46,6 +46,7 @@ public class ProductReadAllResponse {
                         product.getModifiedAt()
                 ))
                 .toList();
+
         return PageResponse.of(products, mapped);
     }
 }

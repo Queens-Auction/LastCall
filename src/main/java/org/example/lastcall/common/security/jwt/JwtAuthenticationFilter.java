@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.util.DateTimeUtil;
 import org.example.lastcall.domain.auth.enums.AuthUser;
-import org.example.lastcall.domain.auth.utils.CookieUtil; // ACCESS_COOKIE 상수 사용 시
+import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.example.lastcall.domain.user.repository.UserRepository;
@@ -37,15 +37,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req,
                                     HttpServletResponse res,
                                     FilterChain chain) throws ServletException, IOException {
-        // 이미 인증되어 있으면 패스
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(req, res);
+
             return;
         }
 
         String token = resolveToken(req);
         if (token == null || token.isBlank()) {
             chain.doFilter(req, res);
+
             return;
         }
 
@@ -60,39 +61,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.warn("JWT 클레임 누락(uid or role)");
                 SecurityContextHolder.clearContext();
                 unauthorized(res);
+
                 return;
             }
 
             Long userId = uidNum.longValue();
             Role role = Role.valueOf(roleName);
-
-            // DB에서 사용자 조회
             User user = userRepository.findById(userId).orElse(null);
+
             if (user == null || user.isDeleted()) {
                 log.warn("사용자 없음: userId={}", userId);
                 SecurityContextHolder.clearContext();
                 unauthorized(res);
-                return;
-            }
-            if (user.isDeleted()) {
-                log.warn("삭제된 사용자 접근 차단: userId={}", userId);
-                unauthorized(res);
+
                 return;
             }
 
-            // 비밀번호 변경 이후 발급된 토큰만 허용
-            // 토큰 발급 시각(iat) < passwordChangedAt 이면 거부
+            if (user.isDeleted()) {
+                log.warn("삭제된 사용자 접근 차단: userId={}", userId);
+                unauthorized(res);
+
+                return;
+            }
+
             if (user.getPasswordChangedAt() != null) {
                 LocalDateTime tokenIat = DateTimeUtil.convertToLocalDateTime(claims.getIssuedAt());
                 if (tokenIat != null && tokenIat.isBefore(user.getPasswordChangedAt())) {
                     log.warn("비밀번호 변경 이후 이전 토큰 거부: userId={}", userId);
                     SecurityContextHolder.clearContext();
                     chain.doFilter(req, res);
+
                     return;
                 }
             }
 
-            // 인증 세팅
             AuthUser authUser = new AuthUser(userId, publicId, roleName);
 
             var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
@@ -112,22 +114,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(req, res);
     }
 
-    // Authorization 헤더(Bearer) 우선, 없으면 access_token 쿠키
     private String resolveToken(HttpServletRequest req) {
         String h = req.getHeader("Authorization");
         if (h != null && h.startsWith("Bearer ")) {
             return h.substring(7);
         }
+
         Cookie[] cookies = req.getCookies();
         if (cookies != null) {
             for (Cookie c : cookies) {
-                // CookieUtil.ACCESS_COOKIE == "access_token"
                 if (CookieUtil.ACCESS_COOKIE.equals(c.getName())) {
                     String v = c.getValue();
                     return (v == null || v.isBlank()) ? null : v;
                 }
             }
         }
+
         return null;
     }
 

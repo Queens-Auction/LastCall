@@ -10,12 +10,10 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "auth")
 public record AuthProperties(
         @NotBlank String baseUrl,
-        @Valid @NotNull Security security
-) {
+        @Valid @NotNull Security security) {
 
     public record Security(@Valid @NotNull Cookie cookie) {
         public record Cookie(boolean secure) {
         }
     }
 }
-

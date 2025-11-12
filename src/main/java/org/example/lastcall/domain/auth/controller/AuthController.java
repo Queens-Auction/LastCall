@@ -39,6 +39,7 @@ public class AuthController {
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> signup(@Valid @RequestBody SignupRequest request) {
         authCommandService.signup(request);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("회원가입이 완료되었습니다."));
     }
@@ -94,7 +95,6 @@ public class AuthController {
         }
         authCommandService.withdraw(authUser.userId(), withdrawRequest);
 
-        // 쿠키 삭제
         ResponseCookie deleteAccess = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefresh = cookieUtil.deleteCookieOfRefreshToken();
 
@@ -104,12 +104,10 @@ public class AuthController {
                 .body(ApiResponse.success("정상적으로 회원 탈퇴 요청이 완료되었습니다."));
     }
 
-    /**
-     * 리프레시 토큰을 이용해 AccessToken/RefreshToken 재발급
-     */
     @PostMapping("/tokens")
     public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
         LoginResponse response = authCommandService.reissueAccessToken(request.refreshToken());
+
         return ResponseEntity.ok(response);
     }
 }

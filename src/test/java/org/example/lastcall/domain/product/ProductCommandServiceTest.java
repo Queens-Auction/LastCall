@@ -19,7 +19,7 @@ import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.product.service.command.ProductCommandService;
 import org.example.lastcall.domain.product.service.command.ProductImageService;
 import org.example.lastcall.domain.product.service.command.S3Service;
-import org.example.lastcall.domain.product.service.validator.ProductValidator;
+import org.example.lastcall.domain.product.service.validator.ProductValidatorService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 import org.example.lastcall.domain.user.service.UserServiceApi;
@@ -47,7 +47,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductCommandServiceTest {
-
     @Mock
     private ProductRepository productRepository;
 
@@ -58,7 +57,7 @@ class ProductCommandServiceTest {
     private ProductImageRepository productImageRepository;
 
     @Mock
-    private ProductValidator productValidator;
+    private ProductValidatorService productValidatorService;
 
     @Mock
     private ProductImageService productImageService;
@@ -72,14 +71,12 @@ class ProductCommandServiceTest {
     @InjectMocks
     private ProductCommandService productCommandService;
 
-    private Long productId;
     private Product product;
     private Product product2;
 
     @BeforeEach
     void setUp() {
-        productId = 1L;
-        User user = User.createForSignUp(
+        User user = User.of(
                 UUID.randomUUID(),
                 "testUser",
                 "tester",
@@ -110,40 +107,32 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("상품 등록 성공 - createProduct()")
-    void createProduct_success() {
-        //given
+    @DisplayName("상품 등록 성공")
+    void createProduct_상품등록_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductCreateRequest request = new ProductCreateRequest(
                 product.getName(),
                 product.getCategory(),
                 product.getDescription());
 
-        //userServiceApi.findById()가 호출되면 product의 user 반환
         when(userServiceApi.findById(authUser.userId())).thenReturn(product.getUser());
-
-        //productRepository.save()가 호출되면 product 반 (id는 이미 세팅되어 있음)
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
-        //when
         ProductResponse response = productCommandService.createProduct(authUser, request);
 
-        //then
         assertNotNull(response);
         assertEquals(product.getId(), response.getId());
         assertEquals(product.getName(), response.getName());
         assertEquals(product.getCategory(), response.getCategory());
         assertEquals(product.getDescription(), response.getDescription());
 
-        //verify 호출 여부
         verify(userServiceApi, times(1)).findById(authUser.userId());
         verify(productRepository, times(1)).save(any(Product.class));
     }
 
     @Test
-    @DisplayName("상품 이미지 등록 성공 - createProductImages()")
-    void creatProductImages_success() throws Exception {
-        //given
+    @DisplayName("상품 이미지 등록 성공")
+    void createProductImages_상품이미지등록_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         List<ProductImageCreateRequest> requests = List.of(
                 new ProductImageCreateRequest(true),
@@ -155,10 +144,9 @@ class ProductCommandServiceTest {
                 new MockMultipartFile("file1", "file2.jpg", "image/jpeg", "dummy content".getBytes())
         );
 
-        //validator void 메서드는 아무 동장 없이 패스
-        doNothing().when(productValidator).checkOwnership(product, authUser);
-        doNothing().when(productValidator).validateImageCount(requests);
-        doNothing().when(productValidator).validateThumbnailConsistencyForCreate(product.getId(), requests);
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).validateImageCount(requests);
+        doNothing().when(productValidatorService).validateThumbnailConsistencyForCreate(product.getId(), requests);
 
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
@@ -174,11 +162,6 @@ class ProductCommandServiceTest {
 
         when(productImageRepository.saveAll(anyList())).thenReturn(savedImages);
 
-        //s3Service는 ProductImageResponse.from에서 사용될 수 있으므로 간단히 Mocking
-        //여기서는 실제 호출하지 않고 그냥 정상 ProductImageResponse 반환 가정
-        //필요시 spy 사용 가능
-
-        //when
         List<ProductImageResponse> responses = productCommandService.createProductImages(
                 product.getId(),
                 requests,
@@ -186,7 +169,6 @@ class ProductCommandServiceTest {
                 authUser
         );
 
-        //then
         assertNotNull(responses);
         assertEquals(savedImages.size(), responses.size());
         for (int i = 0; i < responses.size(); i++) {
@@ -194,16 +176,16 @@ class ProductCommandServiceTest {
             assertEquals(savedImages.get(i).getImageType(), responses.get(i).getImageType());
         }
 
-        verify(productValidator, times(1)).checkOwnership(product, authUser);
-        verify(productValidator, times(1)).validateImageCount(requests);
-        verify(productValidator, times(1)).validateThumbnailConsistencyForCreate(product.getId(), requests);
+        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
+        verify(productValidatorService, times(1)).validateImageCount(requests);
+        verify(productValidatorService, times(1)).validateThumbnailConsistencyForCreate(product.getId(), requests);
         verify(productRepository, times(1)).findById(product.getId());
         verify(productImageRepository, times(1)).saveAll(anyList());
     }
 
     @Test
-    @DisplayName("상품이 없으면 예외 발생 - createProductImages()")
-    void createProductImage_productNotFound() {
+    @DisplayName("상품이 없으면 예외 발생")
+    void createProductImages_상품없으면_예외발생한다() {
         Long productId = 1L;
         AuthUser authUser = new AuthUser(1L, "user", "USER");
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
@@ -217,8 +199,8 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("삭제된 상품이면 예외 발생 - createProductImages()")
-    void createProductImages_productDeleted() {
+    @DisplayName("삭제된 상품이면 예외 발생")
+    void createProductImages_삭제된상품이면_예외발생한다() {
         Long productId = 1L;
         AuthUser authUser = new AuthUser(1L, "user", "USER");
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
@@ -234,8 +216,8 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("Validator 예외 발생 - createProductImages()")
-    void createProductImages_validatorException() {
+    @DisplayName("이미지 개수 초과 시 BusinessException 발생")
+    void createProductImages_이미지개수초과시_BusinessException_발생한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
@@ -243,9 +225,8 @@ class ProductCommandServiceTest {
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
 
-        //validator 에서 예외 발생
         doThrow(new BusinessException(ProductErrorCode.TOO_MANY_IMAGES))
-                .when(productValidator).validateImageCount(requests);
+                .when(productValidatorService).validateImageCount(requests);
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.createProductImages(productId, requests, images, authUser));
@@ -254,9 +235,8 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("상품 정보 수정 성공 - updateProduct()")
-    void updateProduct_success() {
-        //given
+    @DisplayName("상품 정보 수정 성공")
+    void updateProduct_상품정보수정_성공한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
@@ -268,12 +248,10 @@ class ProductCommandServiceTest {
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidator).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
-        //when
         ProductResponse response = productCommandService.updateProduct(productId, request, authUser);
 
-        //then
         assertNotNull(response);
         assertEquals(request.getName(), response.getName());
         assertEquals(request.getCategory(), response.getCategory());
@@ -281,12 +259,12 @@ class ProductCommandServiceTest {
 
         verify(productRepository, times(1)).findById(productId);
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
-        verify(productValidator, times(1)).checkOwnership(product, authUser);
+        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
     }
 
     @Test
-    @DisplayName("상품 수정 시 경매 상태 검증 실패 - updateProduct()")
-    void updateProduct_auctionStatusExceeption() {
+    @DisplayName("경매 진행 중인 상품 수정 시 예외 발생")
+    void updateProduct_경매진행중이면_예외발생한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductUpdateRequest request = new ProductUpdateRequest("new name", Category.HOME_DECOR, "new description");
@@ -302,24 +280,22 @@ class ProductCommandServiceTest {
         assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
 
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
-        verify(productValidator, never()).checkOwnership(any(), any());
+        verify(productValidatorService, never()).checkOwnership(any(), any());
     }
 
     @Test
-    @DisplayName("상품 수정 시 소유권 검증 실패 - updateProduct()")
-    void updateProduct_ownershipException() {
+    @DisplayName("상품 수정 시 소유권 검증 실패")
+    void updateProduct_소유권검증실패시_예외발생한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductUpdateRequest request = new ProductUpdateRequest("new name", Category.HOME_DECOR, "new describe");
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
 
-        //auction 검증 통과
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
 
-        //validator에서 예외 발생
         doThrow(new BusinessException(ProductErrorCode.ACCESS_DENIED))
-                .when(productValidator).checkOwnership(product, authUser);
+                .when(productValidatorService).checkOwnership(product, authUser);
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.updateProduct(productId, request, authUser));
@@ -327,13 +303,12 @@ class ProductCommandServiceTest {
         assertEquals(ProductErrorCode.ACCESS_DENIED, exception.getErrorCode());
 
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
-        verify(productValidator, times(1)).checkOwnership(product, authUser);
+        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
     }
 
     @Test
-    @DisplayName("상품 이미지 추가 성공 - appendProductImages()")
-    void appendProductImages_success() throws Exception {
-        //given
+    @DisplayName("상품 이미지 추가 성공")
+    void appendProductImages_상품이미지추가_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         List<ProductImageCreateRequest> requests = List.of(
@@ -348,7 +323,6 @@ class ProductCommandServiceTest {
 
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
-        // 기존 이미지 (이미 등록된 이미지)
         List<ProductImage> existingImages = List.of(
                 ProductImage.of(product, ImageType.DETAIL, "existing-1.jpg", "hash1"),
                 ProductImage.of(product, ImageType.DETAIL, "existing-2.jpg", "hash2")
@@ -356,47 +330,41 @@ class ProductCommandServiceTest {
 
         when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
 
-        //새로 추가할 이미지들
         List<ProductImage> newImages = List.of(
                 ProductImage.of(product, ImageType.THUMBNAIL, "new-1.jpg", "hash3"),
                 ProductImage.of(product, ImageType.DETAIL, "new-2.jpg", "hash4")
         );
 
-        //uploadAndGenerateImages()는 private일 확률이 높으므로 실제 테스트에선 spy 또는 doReturn()으로 Mocking
         ProductCommandService spyService = Mockito.spy(productCommandService);
         doReturn(newImages).when(spyService).uploadAndGenerateImages(any(Product.class), anyList(), anyList(), anyLong());
 
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
-        doNothing().when(productValidator).checkOwnership(product, authUser);
-        doNothing().when(productValidator).validateImageCount(anyList());
-        doNothing().when(productValidator).validateThumbnailConsistencyForAppend(anyList());
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).validateImageCount(anyList());
+        doNothing().when(productValidatorService).validateThumbnailConsistencyForAppend(anyList());
 
         when(productImageRepository.saveAll(newImages)).thenReturn(newImages);
 
-        //when
         List<ProductImageResponse> responses = spyService.appendProductImages(product.getId(), requests, images, authUser);
 
-        //then
         assertNotNull(responses);
         assertEquals(newImages.size(), responses.size());
         for (ProductImageResponse response : responses) {
-            //필요하다면 response의 썸네일 여부나 타입 등만 비교
             assertNotNull(response.getImageType());
         }
 
-        //verify
         verify(productRepository, times(1)).findById(product.getId());
         verify(productImageRepository, times(1)).findAllByProductIdAndDeletedFalse(product.getId());
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(product.getId());
-        verify(productValidator, times(1)).checkOwnership(product, authUser);
-        verify(productValidator, times(1)).validateImageCount(anyList());
-        verify(productValidator, times(1)).validateThumbnailConsistencyForAppend(anyList());
+        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
+        verify(productValidatorService, times(1)).validateImageCount(anyList());
+        verify(productValidatorService, times(1)).validateThumbnailConsistencyForAppend(anyList());
         verify(productImageRepository, times(1)).saveAll(newImages);
     }
 
     @Test
-    @DisplayName("이미지 추가 시 경매 상태 검증 실패 - appendProductImages()")
-    void appendProductImages_auctionStatusException() throws Exception {
+    @DisplayName("경매 진행 중인 이미지 추가 시 예외 발생")
+    void appendProductImages_경매진행중이면_예외발생한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         List<ProductImageCreateRequest> requests = List.of(
@@ -417,12 +385,12 @@ class ProductCommandServiceTest {
         assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
 
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(product.getId());
-        verify(productValidator, never()).checkOwnership(any(), any());
+        verify(productValidatorService, never()).checkOwnership(any(), any());
     }
 
     @Test
-    @DisplayName("이미지 추가 시 썸네일 일관성 예 - appendProductImages()")
-    void appendProductImages_thumbnailConsistencyException() throws Exception {
+    @DisplayName("이미지 추가 시 썸네일 일관성 예외)")
+    void appendProductImages_썸네일일관성위반시_예외발생한다() throws Exception {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         List<ProductImageCreateRequest> requests = List.of(
@@ -435,7 +403,7 @@ class ProductCommandServiceTest {
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
-        doNothing().when(productValidator).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
         List<ProductImage> newImages = List.of(ProductImage.of(product, ImageType.DETAIL, "new.jpg", "hash"));
         List<ProductImage> existingImages = List.of(ProductImage.of(product, ImageType.DETAIL, "exist", "hash2"));
@@ -444,9 +412,8 @@ class ProductCommandServiceTest {
         doReturn(newImages).when(spyService).uploadAndGenerateImages(product, requests, images, product.getId());
         when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
 
-        //validator에서 썸네일 일관성 예외 발생
         doThrow(new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED))
-                .when(productValidator).validateThumbnailConsistencyForAppend(anyList());
+                .when(productValidatorService).validateThumbnailConsistencyForAppend(anyList());
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> spyService.appendProductImages(product.getId(), requests, images, authUser));
@@ -455,9 +422,8 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("썸네일 이미지 변경 성공 - updateThumbnailImage()")
-    void updateThumbnailImage_success() {
-        //given
+    @DisplayName("썸네일 이미지 변경 성공")
+    void updateThumbnailImage_썸네일이미지변경_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         Long productId = product.getId();
         Long newThumbnailId = 10L;
@@ -469,10 +435,9 @@ class ProductCommandServiceTest {
         allImages.add(currentThumbnail);
         allImages.add(newThumbnail);
 
-        //Mock repository & validator
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidator).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
         when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
                 .thenReturn(Optional.of(currentThumbnail));
@@ -483,26 +448,20 @@ class ProductCommandServiceTest {
         when(productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL))
                 .thenReturn(1L);
 
-        //Mock S3Service response if needed
         when(s3Service.generateImageUrl(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        //when
         List<ProductImageResponse> responses = productCommandService.updateThumbnailImage(productId, newThumbnailId, authUser);
 
-        //then
         assertNotNull(responses);
         assertEquals(allImages.size(), responses.size());
 
-        //기존 썸네일은 DETAIL로 변경
         assertEquals(ImageType.DETAIL, currentThumbnail.getImageType());
 
-        //새로운 썸네일은 THUMBNAIL로 변경
         assertEquals(ImageType.THUMBNAIL, newThumbnail.getImageType());
 
-        //verify 호출
         verify(productRepository, times(1)).findById(productId);
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
-        verify(productValidator, times(1)).checkOwnership(product, authUser);
+        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(productImageRepository, times(1))
                 .findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
         verify(productImageRepository, times(1)).findById(newThumbnailId);
@@ -511,15 +470,15 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("썸네일 변경 시 새로운 이미지 없음 예외 발생 - updateThumbnailImage()")
-    void updateThumbnailImage_newThumbnailNotFoundException() {
+    @DisplayName("썸네일 변경 시 새로운 이미지 없음 예외 발생")
+    void updateThumbnailImage_새로운이미지없으면_예외발생한다() {
         Long productId = product.getId();
         Long newThumbnailId = 100L;
         AuthUser authUSer = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidator).checkOwnership(product, authUSer);
+        doNothing().when(productValidatorService).checkOwnership(product, authUSer);
         when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
                 .thenReturn(Optional.empty());
         when(productImageRepository.findById(newThumbnailId))
@@ -532,15 +491,15 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("썸네일 변경 시 중복 썸네일 존재 예외 발생 - updateThumbnailImage()")
-    void updateThumbnailImage_multipleThumbnailException() {
+    @DisplayName("썸네일 변경 시 중복 썸네일 존재 예외 발생")
+    void updateThumbnailImage_중복썸네일존재시_예외발생한다() {
         Long productId = product.getId();
         Long newThumbnailId = 100L;
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidator).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
         ProductImage oldThumbnail = ProductImage.of(product, ImageType.THUMBNAIL, "old-thumb.jpg", "hash");
         ProductImage newThumbnail = ProductImage.of(product, ImageType.DETAIL, "newThumb.jpg", "hash2");
@@ -560,9 +519,8 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("상품 삭제 성공 - deleteProduct()")
-    void deleteProduct_success() {
-        //given
+    @DisplayName("상품 삭제 성공")
+    void deleteProduct_상품삭제_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         Long productId = product.getId();
 
@@ -572,35 +530,28 @@ class ProductCommandServiceTest {
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidator).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
         when(productImageRepository.findAllByProductIdAndDeletedFalse(productId)).thenReturn(images);
         doNothing().when(s3Service).deleteFile(anyString());
         doNothing().when(productImageRepository).softDeleteByProductId(productId);
 
-        //when
         productCommandService.deleteProduct(productId, authUser);
 
-        //then
         assertTrue(product.isDeleted());
 
-        //s3 삭제 호출 확인
         verify(s3Service, times(images.size())).deleteFile(anyString());
         verify(s3Service).deleteFile("thumb.jpg");
         verify(s3Service).deleteFile("detail.jpg");
 
-        //soft delete 호출 확인
         verify(productImageRepository, times(1)).softDeleteByProductId(productId);
-
-        //validator, auction service 호출 확인
-        verify(productValidator, times(1)).checkOwnership(product, authUser);
+        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
     }
 
     @Test
-    @DisplayName("이미지 단건 삭제 성공 - deleteProductImage()")
-    void deleteProductImage_success() {
-        //given
+    @DisplayName("이미지 단건 삭제 성공")
+    void deleteProductImage_이미지단건삭제_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         Long productId = product.getId();
         Long imageId = 10L;
@@ -612,45 +563,37 @@ class ProductCommandServiceTest {
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidator).checkOwnership(product, authUser);
+        doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
         when(productImageRepository.findById(imageId)).thenReturn(Optional.of(thumbnailImage));
         when(productImageRepository.findByProductIdAndDeletedFalseOrderByIdAsc(productId))
                 .thenReturn(remainingImages);
         doNothing().when(s3Service).deleteFile(thumbnailImage.getImageKey());
 
-        //when
         productCommandService.deleteProductImage(productId, imageId, authUser);
 
-        //then
-        //1.이미지 soft delete 확인
         assertTrue(thumbnailImage.isDeleted());
 
-        //2.s3 삭제 호출 확인
         verify(s3Service, times(1)).deleteFile(thumbnailImage.getImageKey());
 
-        //3.썸네일 재할당 확인
         assertEquals(ImageType.THUMBNAIL, remainingImages.get(0).getImageType());
 
-        //4.validator & auction service 호출 확인
-        verify(productValidator, times(1)).checkOwnership(product, authUser);
+        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
     }
 
     @Test
-    @DisplayName("이미지가 상품에 속하지 않음 - image not belong to product")
-    void deleteProductImage_imageNotBelongToProduct() {
+    @DisplayName("이미지가 상품에 속하지 않음")
+    void deleteProductImage_이미지가상품에속하지않으면_예외발생한다() {
         Long productId = product.getId();
         Long imageId = 2L;
         AuthUser authUSer = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
-        //다른 상품(product2)에 속한 이미지 생성
         ProductImage wrongImage = ProductImage.of(product2, ImageType.THUMBNAIL, "worngImage.jpg", "hash");
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         when(productImageRepository.findById(imageId)).thenReturn(Optional.of(wrongImage));
 
-        //when&then
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.deleteProductImage(productId, imageId, authUSer));
 

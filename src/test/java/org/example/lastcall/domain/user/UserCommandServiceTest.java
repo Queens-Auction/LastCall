@@ -14,17 +14,21 @@ import org.example.lastcall.domain.user.service.command.UserCommandService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
-        import static org.mockito.BDDMockito.*;
-        import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.ACTIVE;
+import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.REVOKED;
+import static org.mockito.BDDMockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class UserCommandServiceTest {
     @Mock
     private UserRepository userRepository;
@@ -42,8 +46,7 @@ class UserCommandServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        testUser = User.createForSignUp(
+        testUser = User.of(
                 UUID.randomUUID(),
                 "tester",
                 "nick",
@@ -57,21 +60,17 @@ class UserCommandServiceTest {
         );
     }
 
-    // updateMyProfile() 테스트
     @Test
     @DisplayName("내 정보 수정 성공")
-    void updateMyProfile_success() {
-        // given
+    void updateMyProfile_내정보를정상적으로수정한다() {
         Long userId = 1L;
         UserUpdateRequest req = new UserUpdateRequest("newNick", "010-7777-8888", null);
 
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
         given(userRepository.existsByNickname("newNick")).willReturn(false);
 
-        // when
         UserProfileResponse res = userCommandService.updateMyProfile(userId, req);
 
-        // then
         assertThat(res.nickname()).isEqualTo("newNick");
         assertThat(testUser.getPhoneNumber()).isEqualTo("010-7777-8888");
         then(userRepository).should(times(1)).findById(userId);
@@ -79,11 +78,9 @@ class UserCommandServiceTest {
 
     @Test
     @DisplayName("존재하지 않는 사용자 수정 시 예외 발생")
-    void updateMyProfile_userNotFound() {
-        // given
+    void updateMyProfile_존재하지않는사용자수정요청시_예외가발생한다() {
         given(userRepository.findById(1L)).willReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() ->
                 userCommandService.updateMyProfile(1L, mock(UserUpdateRequest.class)))
                 .isInstanceOf(BusinessException.class)
@@ -92,12 +89,10 @@ class UserCommandServiceTest {
 
     @Test
     @DisplayName("삭제된 사용자 수정 시 예외 발생")
-    void updateMyProfile_deletedUser() {
-        // given
+    void updateMyProfile_삭제된사용자가수정요청시_예외를발생시킨다() {
         testUser.softDelete();
         given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
 
-        // when & then
         assertThatThrownBy(() ->
                 userCommandService.updateMyProfile(1L, mock(UserUpdateRequest.class)))
                 .isInstanceOf(BusinessException.class)
@@ -106,25 +101,21 @@ class UserCommandServiceTest {
 
     @Test
     @DisplayName("닉네임 중복 시 예외 발생")
-    void updateMyProfile_duplicateNickname() {
-        // given
+    void updateMyProfile_닉네임이중복되면_예외를발생시킨다() {
         Long userId = 1L;
         UserUpdateRequest req = new UserUpdateRequest("dupNick", null, null);
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
         given(userRepository.existsByNickname("dupNick")).willReturn(true);
 
-        // when & then
         assertThatThrownBy(() ->
                 userCommandService.updateMyProfile(userId, req))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(UserErrorCode.DUPLICATE_NICKNAME.getMessage());
     }
 
-    // changeMyPassword() 테스트
     @Test
     @DisplayName("비밀번호 변경 성공")
-    void changeMyPassword_success() {
-        // given
+    void changeMyPassword_비밀번호를정상적으로변경한다() {
         Long userId = 1L;
         PasswordChangeRequest req = new PasswordChangeRequest("oldPw", "newPw");
 
@@ -133,10 +124,8 @@ class UserCommandServiceTest {
         given(passwordEncoder.matches("newPw", testUser.getPassword())).willReturn(false);
         given(passwordEncoder.encode("newPw")).willReturn("encodedNewPw");
 
-        // when
         userCommandService.changeMyPassword(userId, req);
 
-        // then
         assertThat(testUser.getPassword()).isEqualTo("encodedNewPw");
         then(refreshTokenRepository).should(times(1))
                 .revokeAllActiveByUserId(testUser.getId(), ACTIVE, REVOKED);
@@ -144,8 +133,7 @@ class UserCommandServiceTest {
 
     @Test
     @DisplayName("비밀번호가 기존과 동일할 경우 예외 발생")
-    void changeMyPassword_samePassword() {
-        // given
+    void changeMyPassword_기존비밀번호와동일할때_예외가발생한다() {
         Long userId = 1L;
         PasswordChangeRequest req = new PasswordChangeRequest("oldPw", "newPw");
 
@@ -153,7 +141,6 @@ class UserCommandServiceTest {
         given(passwordEncoder.matches("oldPw", testUser.getPassword())).willReturn(true);
         given(passwordEncoder.matches("newPw", testUser.getPassword())).willReturn(true); // 같은 비밀번호
 
-        // when & then
         assertThatThrownBy(() ->
                 userCommandService.changeMyPassword(userId, req))
                 .isInstanceOf(BusinessException.class)
@@ -162,15 +149,13 @@ class UserCommandServiceTest {
 
     @Test
     @DisplayName("기존 비밀번호가 일치하지 않으면 예외 발생")
-    void changeMyPassword_invalidOldPassword() {
-        // given
+    void changeMyPassword_기존비밀번호불일치시_예외가발생한다() {
         Long userId = 1L;
         PasswordChangeRequest req = new PasswordChangeRequest("wrongOld", "newPw");
 
         given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
         given(passwordEncoder.matches("wrongOld", testUser.getPassword())).willReturn(false);
 
-        // when & then
         assertThatThrownBy(() ->
                 userCommandService.changeMyPassword(userId, req))
                 .isInstanceOf(BusinessException.class)
@@ -179,12 +164,10 @@ class UserCommandServiceTest {
 
     @Test
     @DisplayName("삭제된 사용자가 비밀번호 변경 시 예외 발생")
-    void changeMyPassword_deletedUser() {
-        // given
+    void changeMyPassword_삭제된사용자비밀번호변경시_예외가발생한다() {
         testUser.softDelete();
         given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
 
-        // when & then
         assertThatThrownBy(() ->
                 userCommandService.changeMyPassword(1L, mock(PasswordChangeRequest.class)))
                 .isInstanceOf(BusinessException.class)
@@ -193,11 +176,9 @@ class UserCommandServiceTest {
 
     @Test
     @DisplayName("존재하지 않는 사용자 비밀번호 변경 시 예외 발생")
-    void changeMyPassword_userNotFound() {
-        // given
+    void changeMyPassword_존재하지않는사용자비밀번호변경시_예외가발생한다() {
         given(userRepository.findById(1L)).willReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() ->
                 userCommandService.changeMyPassword(1L, mock(PasswordChangeRequest.class)))
                 .isInstanceOf(BusinessException.class)

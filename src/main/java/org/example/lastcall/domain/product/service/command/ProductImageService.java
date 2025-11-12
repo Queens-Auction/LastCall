@@ -21,7 +21,6 @@ public class ProductImageService {
     private final S3Service s3Service;
     private final ProductImageRepository productImageRepository;
 
-    // 이미지 업로드 & ProductImage 생성
     public ProductImage uploadAndCreateProductImage(Product product,
                                                     ProductImageCreateRequest request,
                                                     MultipartFile file,
@@ -29,10 +28,10 @@ public class ProductImageService {
                                                     Long productId) {
         String imageKey = s3Service.uploadToS3(file, "products/" + productId);
         ImageType imageType = Boolean.TRUE.equals(request.getIsThumbnail()) ? ImageType.THUMBNAIL : ImageType.DETAIL;
+
         return ProductImage.of(product, imageType, imageKey, fileHash);
     }
 
-    //중복체크
     public Map<MultipartFile, String> validateAndGenerateHashes(List<MultipartFile> files, Long productId) {
         Set<String> existingHashes = productImageRepository.findAllByProductIdAndDeletedFalse(productId)
                 .stream()
@@ -45,17 +44,16 @@ public class ProductImageService {
         for (MultipartFile file : files) {
             String hash = FileHashUtils.generateFileHash(file);
 
-            // 요청 내부 중복
             if (!newHashes.add(hash)) {
                 throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_REQUEST);
             }
-            // DB와 중복
             if (existingHashes.contains(hash)) {
                 throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
             }
 
             fileToHash.put(file, hash);
         }
+
         return fileToHash;
     }
 }

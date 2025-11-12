@@ -13,9 +13,6 @@ import org.example.lastcall.domain.product.enums.ImageType;
 @Table(
         name = "product_image",
         indexes = {
-                // 인텔리제이에서 조회 속도 테스트 시 데이터가 적어 효과가 미비함
-                // -> nGrinder로 부하테스트에서 성능 확인 예정
-                // -> 부하 테스트에서도 효과가 미비하면 삭제 예정
                 @Index(name = "idx_product_image_product_deleted", columnList = "product_id, deleted")
         })
 public class ProductImage extends BaseEntity {

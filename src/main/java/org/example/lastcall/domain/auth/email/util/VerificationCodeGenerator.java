@@ -17,6 +17,7 @@ public class VerificationCodeGenerator {
             for (int i = 0; i < VERIFICATION_CODE_LENGTH; i++) {
                 code.append(secureRandom.nextInt(10));
             }
+
             return code.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage());

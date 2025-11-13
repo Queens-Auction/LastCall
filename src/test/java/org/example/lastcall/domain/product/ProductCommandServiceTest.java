@@ -345,7 +345,7 @@ class ProductCommandServiceTest {
 
         when(productImageRepository.saveAll(newImages)).thenReturn(newImages);
 
-        List<ProductImageResponse> responses = spyService.appendProductImages(product.getId(), requests, images, authUser);
+        List<ProductImageResponse> responses = spyService.appendProductImages(product.getId(), images, authUser);
 
         assertNotNull(responses);
         assertEquals(newImages.size(), responses.size());
@@ -380,7 +380,7 @@ class ProductCommandServiceTest {
                 .when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.appendProductImages(product.getId(), requests, images, authUser));
+                () -> productCommandService.appendProductImages(product.getId(), images, authUser));
 
         assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
 
@@ -416,7 +416,7 @@ class ProductCommandServiceTest {
                 .when(productValidatorService).validateThumbnailConsistencyForAppend(anyList());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> spyService.appendProductImages(product.getId(), requests, images, authUser));
+                () -> spyService.appendProductImages(product.getId(), images, authUser));
 
         assertEquals(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED, exception.getErrorCode());
     }

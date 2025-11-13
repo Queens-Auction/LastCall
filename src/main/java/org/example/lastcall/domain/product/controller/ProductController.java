@@ -93,10 +93,9 @@ public class ProductController {
     )
     @PostMapping("/{productId}/images/append")
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> appendProductImages(@PathVariable Long productId,
-                                                                                       @RequestPart("images") List<ProductImageCreateRequest> requests,
                                                                                        @RequestPart("image") List<MultipartFile> image,
                                                                                        @AuthenticationPrincipal AuthUser authUser) {
-        List<ProductImageResponse> response = productService.appendProductImages(productId, requests, image, authUser);
+        List<ProductImageResponse> response = productService.appendProductImages(productId, image, authUser);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("상품 이미지를 추가등록했습니다.", response));

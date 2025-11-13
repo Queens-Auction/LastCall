@@ -16,7 +16,7 @@ public enum ProductErrorCode implements ErrorCode {
     THUMBNAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "대표 이미지가 존재하지 않습니다."),
     IMAGE_NOT_BELONGS_TO_PRODUCT(HttpStatus.BAD_REQUEST, "해당 상품에 속한 이미지가 아닙니다."),
 
-    PRODUCT_DELETED(HttpStatus.FORBIDDEN, "삭제된 상품입니다."),
+    PRODUCT_DELETED(HttpStatus.NOT_FOUND, "삭제된 상품입니다."),
     UNAUTHORIZED_PRODUCT_OWNER(HttpStatus.FORBIDDEN, "상품의 소유자가 아닙니다."),
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품이 존재하지 않습니다."),
 

@@ -88,7 +88,6 @@ public class ProductCommandService {
     }
 
     public List<ProductImageResponse> appendProductImages(Long productId,
-                                                          List<ProductImageCreateRequest> requests,
                                                           List<MultipartFile> images,
                                                           AuthUser authUser) {
         Product product = productRepository.findById(productId)
@@ -103,7 +102,7 @@ public class ProductCommandService {
 
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
-        List<ProductImage> newImages = uploadAndGenerateImages(product, requests, images, productId);
+        List<ProductImage> newImages = uploadAndGenerateDetailImages(product, images, productId);
 
         List<ProductImage> allImages = new ArrayList<>(existingImages);
         allImages.addAll(newImages);
@@ -210,6 +209,21 @@ public class ProductCommandService {
                         images.get(i),
                         fileToHash.get(images.get(i)),
                         productId))
+                .toList();
+    }
+
+    public List<ProductImage> uploadAndGenerateDetailImages(Product product,
+                                                            List<MultipartFile> images,
+                                                            Long productId) {
+        Map<MultipartFile, String> fileToHash = productImageService.validateAndGenerateHashes(images, productId);
+
+        return images.stream()
+                .map(image -> productImageService.uploadAndCreateProductImage(
+                        product,
+                        image,
+                        fileToHash.get(image),
+                        productId,
+                        ImageType.DETAIL))
                 .toList();
     }
 }

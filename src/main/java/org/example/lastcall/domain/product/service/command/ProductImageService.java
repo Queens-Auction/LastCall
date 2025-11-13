@@ -32,6 +32,16 @@ public class ProductImageService {
         return ProductImage.of(product, imageType, imageKey, fileHash);
     }
 
+    public ProductImage uploadAndCreateProductImage(Product product,
+                                                    MultipartFile file,
+                                                    String fileHash,
+                                                    Long productId,
+                                                    ImageType imageType) {
+        String imageKey = s3Service.uploadToS3(file, "products/" + productId);
+
+        return ProductImage.of(product, imageType, imageKey, fileHash);
+    }
+
     public Map<MultipartFile, String> validateAndGenerateHashes(List<MultipartFile> files, Long productId) {
         Set<String> existingHashes = productImageRepository.findAllByProductIdAndDeletedFalse(productId)
                 .stream()

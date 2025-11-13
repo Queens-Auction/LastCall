@@ -43,12 +43,20 @@ public class AuctionEventScheduler {
                 );
 
         // [시작 이벤트 예약 발행]
-        auctionEventPublisher.sendAuctionStartEvent(startEvent, startDelay);
-        log.info("경매 시작 이벤트 예약 완료 - auctionId={}, delay={}ms", auction.getId(), startDelay);
+        try {
+            auctionEventPublisher.sendAuctionStartEvent(startEvent, startDelay);
+            log.info("경매 시작 이벤트 예약 완료 - auctionId={}, delay={}ms", auction.getId(), startDelay);
+        } catch (Exception e) {
+            log.error("sendAuctionStartEvent exception ::: auctionId={}, message={}", auction.getId(), e.getMessage(), e);
+        }
 
         // [종료 이벤트 예약 발행]
-        auctionEventPublisher.sendAuctionEndEvent(endEvent, endDelay);
-        log.info("경매 종료 이벤트 예약 완료 - auctionId={}, delay={}ms", auction.getId(), endDelay);
+        try {
+            auctionEventPublisher.sendAuctionEndEvent(endEvent, endDelay);
+            log.info("경매 종료 이벤트 예약 완료 - auctionId={}, delay={}ms", auction.getId(), endDelay);
+        } catch (Exception e) {
+            log.error("sendAuctionEndEvent exception ::: auctionId={}, message={}", auction.getId(), e.getMessage(), e);
+        }
     }
 
     // 수정 시 재발행 (기존 예약을 새로 덮어쓰기)

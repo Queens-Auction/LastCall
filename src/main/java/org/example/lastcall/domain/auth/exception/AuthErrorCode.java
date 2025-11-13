@@ -23,7 +23,6 @@ public enum AuthErrorCode implements ErrorCode {
     MISSING_PASSWORD(HttpStatus.BAD_REQUEST, "회원 탈퇴를 위해 비밀번호를 입력해야 합니다."),
     UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "로그인후 진행해주세요");
 
-
     private final HttpStatus status;
     private final String message;
 }

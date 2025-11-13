@@ -99,8 +99,14 @@ dependencies {
 
     // aop
     implementation 'org.springframework.boot:spring-boot-starter-aop'
+
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    reports {
+        junitXml.required = true
+        html.required = true
+    }
 }

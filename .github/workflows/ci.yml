@@ -81,3 +81,9 @@ jobs:
           RABBITMQ_USERNAME: guest
           RABBITMQ_PASSWORD: guest
         run: ./gradlew clean build --no-daemon
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: build/reports/tests/test/

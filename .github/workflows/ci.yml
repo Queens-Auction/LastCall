@@ -26,6 +26,17 @@ jobs:
         ports:
           - 1025:1025   # SMTP
           - 8025:8025   # Web UI (디버깅용, 테스트에는 불필요)
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+      rabbit-mq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+        env:
+          RABBITMQ_DEFAULT_USER: guest
+          RABBITMQ_DEFAULT_PASS: guest
 
     steps:
       - name: Checkout

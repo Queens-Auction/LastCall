@@ -36,9 +36,8 @@ public class BidCommandService {
                 auctionId, authUser.userId());
 
         // 입찰이 가능한 경매인지 확인하고, 경매를 받아옴
+        log.debug("[RedissonLock] 입찰 가능한 경매 조회 시작 - auctionId={}", auctionId);
         Auction auction = auctionQueryServiceApi.getBiddableAuction(auctionId);
-        log.debug("입찰 가능한 경매 조회 완료 - auctionId={}, status={}",
-                auctionId, auction.getStatus());
 
         if (auction.getUser().getId().equals(authUser.userId())) {
             log.warn("판매자가 본인 경매에 입찰 시도 - auctionId={}, userId={}",
@@ -47,7 +46,7 @@ public class BidCommandService {
         }
 
         User user = userServiceApi.findById(authUser.userId());
-        log.debug("입찰자 조회 완료 - userId={}, nickname={}",
+        log.debug("[RedissonLock] 입찰자 조회 완료 - userId={}, nickname={}",
                 user.getId(), user.getNickname());
 
         // 추가 -> 해당 유저가 이미 경매에 입찰했는지 확인
@@ -62,7 +61,7 @@ public class BidCommandService {
         Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
 
         Long bidAmount = currentMaxBid + auction.getBidStep();
-        log.debug("입찰가 계산 완료 - auctionId={}, currentMaxBid={}, newBid={}",
+        log.debug("[RedissonLock] 현재가 기반 입찰가 계산 완료 - auctionId={}, currentMaxBid={}, newBid={}",
                 auctionId, currentMaxBid, bidAmount);
 
         // 입찰 금액 검증 (이상 경쟁 방어)

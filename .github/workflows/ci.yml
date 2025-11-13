@@ -34,6 +34,10 @@ jobs:
         image: rabbitmq:3-management
         ports:
           - 5672:5672
+        env:
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
+          RABBITMQ_PLUGINS: rabbitmq_management rabbitmq_delayed_message_exchange
         options: >-
           --health-cmd="rabbitmq-diagnostics -q ping"
           --health-interval=10s

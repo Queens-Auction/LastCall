@@ -128,7 +128,8 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         if (auction.getStatus() == AuctionStatus.SCHEDULED
-                || auction.getStatus() == AuctionStatus.CLOSED) {
+                || auction.getStatus() == AuctionStatus.CLOSED
+                || auction.getStatus() == AuctionStatus.CLOSED_FAILED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
         }
         return auction;

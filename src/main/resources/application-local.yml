@@ -41,12 +41,15 @@ spring:
       timeout: 5s           # 읽기 타임아웃 (5초)
       writetimeout: 5s      # 쓰기 타임아웃 (5초)
 
-#RabbitMQ
-rabbitmq:
-  host: localhost
-  port: 5672
-  username: guest
-  password: guest
+  #RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: manual # ACK 수동 설정
 
   jpa:
     hibernate:

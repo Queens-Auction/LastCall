@@ -47,6 +47,9 @@ public class AuthCommandService {
 
     @Transactional
     public void signup(final SignupRequest request) {
+        if (request.getVerificationPublicId() == null) {
+            throw new BusinessException(EmailErrorCode.INVALID_VERIFICATION_ID);
+        }
         EmailVerification emailVerification = emailVerificationRepository
                 .findByPublicId(request.getVerificationPublicId())
                 .orElseThrow(() -> new BusinessException(EmailErrorCode.NOT_REQUESTED));
@@ -84,11 +87,12 @@ public class AuthCommandService {
 
     @Transactional
     public LoginResponse login(final LoginRequest request) {
-        String email = request.email().trim();
-
-        if (request == null) {
-            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
+        if (request.email() == null || request.email().trim().isEmpty() ||
+                request.password() == null || request.password().trim().isEmpty()) {
+            throw new BusinessException(AuthErrorCode.INVALID_EMPTY_EMAIL_OR_PASSWORD);
         }
+
+        String email = request.email().trim();
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_CREDENTIALS));
@@ -177,7 +181,7 @@ public class AuthCommandService {
     @Transactional
     public void logout(final String requestedRefreshToken) {
         if (requestedRefreshToken == null) {
-            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
+            throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
         }
 
         RefreshToken refreshToken = authValidatorService.validateRefreshToken(requestedRefreshToken);

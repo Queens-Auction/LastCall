@@ -30,14 +30,10 @@ jobs:
         image: redis:latest
         ports:
           - 6379:6379
-      rabbit-mq:
+      rabbitmq:
         image: rabbitmq:3-management
         ports:
           - 5672:5672
-        env:
-          RABBITMQ_DEFAULT_USER: guest
-          RABBITMQ_DEFAULT_PASS: guest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,4 +72,12 @@ jobs:
           # JWT
           JWT_SECRET: ${{  secrets.JWT_SECRET }}
           JWT_EXPIRATION: 86400000
+          # redis
+          REDIS_HOST: redis
+          REDIS_PORT: 6379
+          # rabbitmq
+          RABBITMQ_HOST: rabbitmq
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
         run: ./gradlew clean build --no-daemon

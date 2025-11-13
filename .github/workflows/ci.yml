@@ -73,10 +73,10 @@ jobs:
           JWT_SECRET: ${{  secrets.JWT_SECRET }}
           JWT_EXPIRATION: 86400000
           # redis
-          REDIS_HOST: redis
+          REDIS_HOST: localhost
           REDIS_PORT: 6379
           # rabbitmq
-          RABBITMQ_HOST: rabbitmq
+          RABBITMQ_HOST: localhost
           RABBITMQ_PORT: 5672
           RABBITMQ_USERNAME: guest
           RABBITMQ_PASSWORD: guest
@@ -86,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: problems-report
-          path: build/reports/problems/problems-report.html
+          path: build/reports/tests/test/index.html

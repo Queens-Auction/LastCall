@@ -1,10 +1,9 @@
 package org.example.lastcall.domain.bid.exception;
 
-import org.example.lastcall.common.exception.ErrorCode;
-import org.springframework.http.HttpStatus;
-
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.example.lastcall.common.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
@@ -19,10 +18,5 @@ public enum BidErrorCode implements ErrorCode {
 	@Override
 	public HttpStatus getStatus() {
 		return status;
-	}
-
-	@Override
-	public String getMessage() {
-		return message;
 	}
 }

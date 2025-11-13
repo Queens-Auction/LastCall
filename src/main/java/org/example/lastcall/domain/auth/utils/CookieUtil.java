@@ -9,17 +9,15 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class CookieUtil {
-    private final AuthProperties authProperties;
-
     public static final String ACCESS_COOKIE = "access_token";
     public static final String REFRESH_COOKIE = "refresh_token";
-
     private static final String REFRESH_TOKEN_REISSUE_PATH = "/api/v1/auth";
     private static final String ACCESS_TOKEN_USABLE_PATH = "/api/v1";
+    private final AuthProperties authProperties;
 
     public ResponseCookie createAccessTokenCookie(String token) {
         return ResponseCookie.from(ACCESS_COOKIE, token)
-                .httpOnly(true) // -> Https인 도메인만 쿠키를 전달하겠습니다.
+                .httpOnly(true)
                 .secure(authProperties.security().cookie().secure())
                 .sameSite(Cookie.SameSite.LAX.attributeValue())
                 .path(ACCESS_TOKEN_USABLE_PATH)
@@ -49,7 +47,7 @@ public class CookieUtil {
                 .secure(authProperties.security().cookie().secure())
                 .sameSite(sameSite.attributeValue())
                 .path(path)
-                .maxAge(0)  // 즉시 만료
+                .maxAge(0)
                 .build();
     }
 }

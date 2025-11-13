@@ -62,7 +62,6 @@ public record UserProfileResponse(
             String postcode,
 
             @Schema(description = "상세 주소", example = "101동 202호")
-            String detailAddress
-    ) {
+            String detailAddress) {
     }
 }

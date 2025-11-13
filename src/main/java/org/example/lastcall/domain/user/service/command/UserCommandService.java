@@ -27,14 +27,13 @@ public class UserCommandService {
 
     public UserProfileResponse updateMyProfile(Long userId, UserUpdateRequest req) {
         if (req == null || req.isEmpty()) {
-            throw new BusinessException(UserErrorCode.NO_FIELDS_TO_UPDATE); // 없으면 추가 추천
+            throw new BusinessException(UserErrorCode.NO_FIELDS_TO_UPDATE);
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
 
-        // nickname 변경 시 중복 방지
         if (req.nickname() != null && !req.nickname().equals(user.getNickname())) {
             if (userRepository.existsByNickname(req.nickname())) {
                 throw new BusinessException(UserErrorCode.DUPLICATE_NICKNAME);
@@ -59,13 +58,11 @@ public class UserCommandService {
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
 
-        // 기존 비밀번호 검증
         user.validatePassword(passwordEncoder, req.oldPassword());
         if (passwordEncoder.matches(req.newPassword(), user.getPassword())) {
             throw new BusinessException(UserErrorCode.SAME_AS_OLD_PASSWORD);
         }
 
-        // 새 비밀번호 인코딩/저장
         user.changePassword(passwordEncoder.encode(req.newPassword()));
         user.markPasswordChangedNow();
 

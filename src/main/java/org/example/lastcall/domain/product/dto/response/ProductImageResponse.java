@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
+import org.example.lastcall.domain.product.service.command.S3Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,25 +39,21 @@ public class ProductImageResponse {
         this.modifiedAt = modifiedAt;
     }
 
-    public static ProductImageResponse from(ProductImage productImage) {
+    public static ProductImageResponse from(ProductImage productImage, S3Service s3Service) {
+        String imageUrl = s3Service.generateImageUrl(productImage.getImageKey());
+
         return new ProductImageResponse(
                 productImage.getId(),
                 productImage.getProduct().getId(),
                 productImage.getImageType(),
-                productImage.getImageUrl(),
+                imageUrl,
                 productImage.getCreatedAt(),
                 productImage.getModifiedAt());
     }
 
-    public static List<ProductImageResponse> from(List<ProductImage> productImages) {
+    public static List<ProductImageResponse> from(List<ProductImage> productImages, S3Service s3Service) {
         return productImages.stream()
-                .map(productImage -> new ProductImageResponse(
-                        productImage.getId(),
-                        productImage.getProduct().getId(),
-                        productImage.getImageType(),
-                        productImage.getImageUrl(),
-                        productImage.getCreatedAt(),
-                        productImage.getModifiedAt()
-                )).toList();
+                .map(image -> from(image, s3Service))
+                .toList();
     }
 }

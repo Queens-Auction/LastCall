@@ -6,6 +6,7 @@ import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.product.entity.Product;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -21,19 +22,31 @@ public class ProductReadAllResponse {
     @Schema(description = "대표 이미지(썸네일) URL", example = "https://cdn.lastcall.com/images/product_101_main.jpg")
     private final String thumbnailUrl;
 
-    public ProductReadAllResponse(Long id, String name, String thumbnailUrl) {
+    @Schema(description = "상품 등록일", example = "2025-10-24T12:34:56")
+    private final LocalDateTime createdAt;
+
+    @Schema(description = "상품 수정일", example = "2025-10-24T14:00:00")
+    private final LocalDateTime modifiedAt;
+
+    private ProductReadAllResponse(Long id, String name, String thumbnailUrl, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
         this.name = name;
         this.thumbnailUrl = thumbnailUrl;
+        this.createdAt = createdAt;
+        this.modifiedAt = modifiedAt;
     }
 
     public static PageResponse<ProductReadAllResponse> from(Page<Product> products, Map<Long, String> thumbnailUrls) {
         List<ProductReadAllResponse> mapped = products.stream()
-                .map(product -> new ProductReadAllResponse(product.getId(),
+                .map(product -> new ProductReadAllResponse(
+                        product.getId(),
                         product.getName(),
-                        thumbnailUrls.get(product.getId())
+                        thumbnailUrls.get(product.getId()),
+                        product.getCreatedAt(),
+                        product.getModifiedAt()
                 ))
                 .toList();
+
         return PageResponse.of(products, mapped);
     }
 }

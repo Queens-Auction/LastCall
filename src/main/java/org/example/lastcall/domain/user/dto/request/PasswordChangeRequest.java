@@ -11,7 +11,5 @@ public record PasswordChangeRequest(
 
         @Schema(description = "새 비밀번호", example = "NewPassword456!")
         @NotBlank
-        String newPassword
-) {
+        String newPassword) {
 }
-

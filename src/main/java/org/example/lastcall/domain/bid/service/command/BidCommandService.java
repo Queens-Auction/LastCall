@@ -37,6 +37,7 @@ public class BidCommandService {
 
         // 입찰이 가능한 경매인지 확인하고, 경매를 받아옴
         log.debug("[RedissonLock] 입찰 가능한 경매 조회 시작 - auctionId={}", auctionId);
+
         Auction auction = auctionQueryServiceApi.getBiddableAuction(auctionId);
 
         if (auction.getUser().getId().equals(authUser.userId())) {
@@ -49,7 +50,6 @@ public class BidCommandService {
         log.debug("[RedissonLock] 입찰자 조회 완료 - userId={}, nickname={}",
                 user.getId(), user.getNickname());
 
-        // 추가 -> 해당 유저가 이미 경매에 입찰했는지 확인
         boolean alreadyParticipated = bidRepository.existsByAuctionIdAndUserId(
                 auction.getId(),
                 user.getId()
@@ -57,9 +57,7 @@ public class BidCommandService {
         log.debug("기존 입찰자 여부 확인 - auctionId={}, userId={}, alreadyParticipated={}",
                 auctionId, user.getId(), alreadyParticipated);
 
-        // orElse: Optional 객체가 비어있을 경우, 해당 값(시작 값)을 반환함
         Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
-
         Long bidAmount = currentMaxBid + auction.getBidStep();
         log.debug("[RedissonLock] 현재가 기반 입찰가 계산 완료 - auctionId={}, currentMaxBid={}, newBid={}",
                 auctionId, currentMaxBid, bidAmount);
@@ -71,25 +69,21 @@ public class BidCommandService {
             throw new BusinessException(BidErrorCode.BID_AMOUNT_TOO_LOW);
         }
 
-        // 경매에 참여할만큼 포인트가 충분한 지 검증함
         pointQueryServiceApi.validateSufficientPoints(user.getId(), bidAmount);
         log.debug("포인트 충분 검증 완료 - userId={}, bidAmount={}", user.getId(), bidAmount);
 
-        Bid bid = new Bid(bidAmount, auction, user);
-
+        Bid bid = Bid.of(bidAmount, auction, user);
         Bid savedBid = bidRepository.save(bid);
         //Bid savedBid = bidRepository.save(new Bid(bidAmount, auction, user));
         log.info("[Bid] 입찰 생성 완료 - bidId={}, auctionId={}, userId={}, bidAmount={}",
                 savedBid.getId(), auctionId, user.getId(), bidAmount);
 
-        // 추가 -> 중복 입찰 아닌 경우에만 참여자 수 증가
         if (!alreadyParticipated) {
             auction.incrementParticipantCount();
             log.debug("[Bid] 신규 입찰자 참여 카운트 증가 - auctionId={}, participants={}",
                     auctionId, auction.getParticipantCount());
         }
 
-        // 현재 입찰가 갱신
         auction.updateCurrentBid(bidAmount);
         log.debug("[Bid] 경매 현재 입찰가 갱신 - auctionId={}, currentBid={}",
                 auctionId, bidAmount);

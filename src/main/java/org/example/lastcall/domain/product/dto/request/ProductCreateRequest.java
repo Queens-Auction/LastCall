@@ -4,11 +4,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.example.lastcall.domain.product.enums.Category;
 
 @Schema(description = "상품 등록 요청 DTO")
 @Getter
+@AllArgsConstructor
 public class ProductCreateRequest {
     @Schema(description = "상품명", example = "에어팟 프로 2세대")
     @NotBlank(message = "상품명은 필수 입력값입니다.")

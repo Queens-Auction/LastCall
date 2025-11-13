@@ -9,12 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
-    //상품 소유자 검증
-    @Query("SELECT p " +
-            "FROM Product p " +
-            "JOIN FETCH p.user " +
-            "WHERE p.id = :productId")
+    @Query("SELECT p FROM Product p JOIN FETCH p.user WHERE p.id = :productId")
     Optional<Product> findByIdWithUser(Long productId);
-  
+
     Page<Product> findAllByUserIdAndDeletedFalse(Long userId, Pageable pageable);
 }

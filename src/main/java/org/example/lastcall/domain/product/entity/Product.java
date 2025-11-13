@@ -14,10 +14,6 @@ import org.example.lastcall.domain.user.entity.User;
 @Table(
         name = "products",
         indexes = {
-                // FK 사용 빈도가 낮아 명시 X
-                // 아래 두 건은 인텔리제이에서 조회 속도 테스트 시 데이터가 적어 효과가 미비함
-                // -> nGrinder로 부하테스트에서 성능 확인 예정
-                // -> 부하 테스트에서도 효과가 미비하면 삭제 예정
                 @Index(name = "idx_product_user_deleted_created", columnList = "user_id, deleted, created_at DESC"),
                 @Index(name = "idx_product_category_created", columnList = "category, created_at DESC"),
         })

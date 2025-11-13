@@ -1,18 +1,15 @@
 package org.example.lastcall.common.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.example.lastcall.common.response.ApiResponse;
+import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.nio.file.AccessDeniedException;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -26,38 +23,45 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, errorCode.getStatus());
     }
 
-    @ExceptionHandler(InsufficientAuthenticationException.class) //콘솔창 로그
-    public ResponseEntity<ApiResponse<?>> handleInsufficientAuthenticationException(Exception ex) {
-        String internalErrorMsg = "로그인한 사용자만 이용할 수 있습니다.";
-
-        ApiResponse<?> errorResponse = ApiResponse.error(internalErrorMsg);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN); // 403
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleSystemException(Exception ex) {
         String internalErrorMsg = "예상치 못한 서버 오류가 발생했습니다.";
 
         ApiResponse<?> errorResponse = ApiResponse.error(internalErrorMsg);
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR); // 500
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<?>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(FieldError::getDefaultMessage)
+                .orElse("잘못된 요청입니다.");
 
-        Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        FieldError::getField,
-                        FieldError::getDefaultMessage,
-                        (existing, replacement) -> existing // 같은 필드 중복 메시지는 하나만
-                ));
-        String detailedMessage = errors.entrySet().stream()
-                .map(entry -> entry.getKey() + ": " + entry.getValue())
-                .collect(Collectors.joining(", "));
+        ApiResponse<?> response = ApiResponse.error(message);
 
-        ApiResponse<Map<String, String>> response = ApiResponse.error(detailedMessage);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        String rootCause = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : "";
+        String uri = request.getRequestURI();
+        String message;
+
+        if (rootCause.contains("UUID")) {
+            message = EmailErrorCode.INVALID_UUID_FORMAT.getMessage();
+        } else if (uri.contains("/login")) {
+            message = "이메일 또는 비밀번호가 비어 있습니다.";
+        } else if (uri.contains("/withdraw")) {
+            return null;
+        } else {
+            message = "요청 본문이 비어 있거나 형식이 잘못되었습니다.";
+        }
+
+        ApiResponse<?> errorResponse = ApiResponse.error(message);
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }

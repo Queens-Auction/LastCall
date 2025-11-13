@@ -26,10 +26,7 @@ public class PageResponse<T> {
     @Schema(description = "현재 페이지 번호 (0부터 시작)", example = "0")
     private final int number;
 
-    public PageResponse(List<T> content,
-                        long totalElements,
-                        int totalPages, int size, int number
-    ) {
+    public PageResponse(List<T> content, long totalElements, int totalPages, int size, int number) {
         this.content = content;
         this.totalElements = totalElements;
         this.totalPages = totalPages;

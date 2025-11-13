@@ -15,6 +15,5 @@ public record LoginRequest(
         @Schema(description = "사용자 비밀번호", example = "mypassword123")
         @NotBlank
         @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-        String password
-) {
+        String password) {
 }

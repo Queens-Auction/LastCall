@@ -17,7 +17,6 @@ import java.util.UUID;
 @Table(name = "email_verification")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EmailVerification extends BaseEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

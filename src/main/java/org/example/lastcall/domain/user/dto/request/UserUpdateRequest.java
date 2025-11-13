@@ -2,7 +2,6 @@ package org.example.lastcall.domain.user.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "사용자 정보 수정 요청 DTO")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -16,10 +15,7 @@ public record UserUpdateRequest(
         @Schema(description = "주소 정보")
         AddressRequest addressInfo) {
     public boolean isEmpty() {
-        boolean addressEmpty = (addressInfo == null) ||
-                (addressInfo.address() == null &&
-                        addressInfo.postcode() == null &&
-                        addressInfo.detailAddress() == null);
+        boolean addressEmpty = (addressInfo == null) || (addressInfo.address() == null && addressInfo.postcode() == null && addressInfo.detailAddress() == null);
 
         return nickname == null && phoneNumber == null && addressEmpty;
     }
@@ -34,7 +30,6 @@ public record UserUpdateRequest(
             String postcode,
 
             @Schema(description = "상세 주소", example = "101동 202호")
-            String detailAddress
-    ) {
+            String detailAddress) {
     }
 }

@@ -13,8 +13,8 @@ import org.example.lastcall.domain.auth.dto.request.TokenReissueRequest;
 import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
-import org.example.lastcall.domain.auth.service.command.AuthCommandService;
 import org.example.lastcall.domain.auth.exception.AuthErrorCode;
+import org.example.lastcall.domain.auth.service.command.AuthCommandService;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,6 +39,7 @@ public class AuthController {
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> signup(@Valid @RequestBody SignupRequest request) {
         authCommandService.signup(request);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("회원가입이 완료되었습니다."));
     }
@@ -49,7 +50,7 @@ public class AuthController {
     )
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Object>> login(@Valid @RequestBody LoginRequest request) {
-        if (request == null){
+        if (request == null) {
             throw new BusinessException(AuthErrorCode.INVALID_EMPTY_EMAIL_OR_PASSWORD);
         }
         LoginResponse loginResponse = authCommandService.login(request);
@@ -68,7 +69,7 @@ public class AuthController {
     )
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(@CookieValue(name = CookieUtil.REFRESH_COOKIE,
-                                                    required = false) String refreshToken) {
+            required = false) String refreshToken) {
         authCommandService.logout(refreshToken);
         ResponseCookie deleteAccessCookie = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefreshCookie = cookieUtil.deleteCookieOfRefreshToken();
@@ -88,13 +89,16 @@ public class AuthController {
     )
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<Void>> withdraw(@AuthenticationPrincipal AuthUser authUser,
-                                                      @Valid @RequestBody WithdrawRequest withdrawRequest) {
-        if(authUser == null){
-            throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
+                                                      @RequestBody(required = false) WithdrawRequest withdrawRequest) {
+        if (authUser == null) {
+            throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
+        }
+
+        if (withdrawRequest == null || withdrawRequest.password() == null || withdrawRequest.password().isBlank()) {
+            throw new BusinessException(AuthErrorCode.MISSING_PASSWORD);
         }
         authCommandService.withdraw(authUser.userId(), withdrawRequest);
 
-        // 쿠키 삭제
         ResponseCookie deleteAccess = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefresh = cookieUtil.deleteCookieOfRefreshToken();
 
@@ -104,12 +108,10 @@ public class AuthController {
                 .body(ApiResponse.success("정상적으로 회원 탈퇴 요청이 완료되었습니다."));
     }
 
-    /**
-     * 리프레시 토큰을 이용해 AccessToken/RefreshToken 재발급
-     */
     @PostMapping("/tokens")
     public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
         LoginResponse response = authCommandService.reissueAccessToken(request.refreshToken());
+
         return ResponseEntity.ok(response);
     }
 }

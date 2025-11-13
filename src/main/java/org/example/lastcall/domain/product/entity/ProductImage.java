@@ -13,9 +13,6 @@ import org.example.lastcall.domain.product.enums.ImageType;
 @Table(
         name = "product_image",
         indexes = {
-                // 인텔리제이에서 조회 속도 테스트 시 데이터가 적어 효과가 미비함
-                // -> nGrinder로 부하테스트에서 성능 확인 예정
-                // -> 부하 테스트에서도 효과가 미비하면 삭제 예정
                 @Index(name = "idx_product_image_product_deleted", columnList = "product_id, deleted")
         })
 public class ProductImage extends BaseEntity {
@@ -31,21 +28,21 @@ public class ProductImage extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private ImageType imageType;
 
-    @Column(name = "image_url", nullable = false, length = 500)
-    private String imageUrl;
+    @Column(name = "image_key", nullable = false, length = 500)
+    private String imageKey;
 
     @Column(name = "file_hash", nullable = false, length = 128)
     private String fileHash;
 
-    private ProductImage(Product product, ImageType imageType, String imageUrl, String fileHash) {
+    private ProductImage(Product product, ImageType imageType, String imageKey, String fileHash) {
         this.product = product;
         this.imageType = imageType;
-        this.imageUrl = imageUrl;
+        this.imageKey = imageKey;
         this.fileHash = fileHash;
     }
 
-    public static ProductImage of(Product product, ImageType imageType, String imageUrl, String fileHash) {
-        return new ProductImage(product, imageType, imageUrl, fileHash);
+    public static ProductImage of(Product product, ImageType imageType, String imageKey, String fileHash) {
+        return new ProductImage(product, imageType, imageKey, fileHash);
     }
 
     public void updateImageType(ImageType imageType) {

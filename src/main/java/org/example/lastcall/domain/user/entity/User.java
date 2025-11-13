@@ -1,8 +1,9 @@
 package org.example.lastcall.domain.user.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Pattern;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.entity.BaseEntity;
 import org.example.lastcall.common.exception.BusinessException;
@@ -27,10 +28,10 @@ public class User extends BaseEntity {
     @Column(name = "username", nullable = false, length = 10)
     private String username;
 
-    @Column(name = "email", nullable = false, unique = true, length = 30)
+    @Column(name = "email", nullable = false, unique = true, length = 50)
     private String email;
 
-    @Column(name = "password", nullable = false, length = 60) // Bcrypt
+    @Column(name = "password", nullable = false, length = 60)
     private String password;
 
     @Column(name = "nickname", nullable = false, unique = true)
@@ -50,21 +51,13 @@ public class User extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role", nullable = false, length = 5)
-    private Role userRole; // ENUM(ADMIN, USER)
+    private Role userRole;
 
     @Column(name = "password_changed_at")
     private LocalDateTime passwordChangedAt;
 
-    private User(UUID publicId,
-                 String username,
-                 String nickname,
-                 String email,
-                 String password,
-                 String address,
-                 String postcode,
-                 String detailAddress,
-                 String phoneNumber,
-                 Role userRole) {
+    private User(UUID publicId, String username, String nickname, String email, String password,
+                 String address, String postcode, String detailAddress, String phoneNumber, Role userRole) {
         this.publicId = publicId;
         this.username = username;
         this.nickname = nickname;
@@ -77,17 +70,8 @@ public class User extends BaseEntity {
         this.userRole = userRole;
     }
 
-    public static User createForSignUp(UUID publicId,
-                                       String username,
-                                       String nickname,
-                                       String email,
-                                       String encodedPassword,
-                                       String address,
-                                       String postcode,
-                                       String detailAddress,
-                                       String phoneNumber,
-                                       Role userRole)
-    {
+    public static User of(UUID publicId, String username, String nickname, String email, String encodedPassword,
+                          String address, String postcode, String detailAddress, String phoneNumber, Role userRole) {
         return new User(publicId,
                 username,
                 nickname,
@@ -106,14 +90,10 @@ public class User extends BaseEntity {
 
     public void changePhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
-
     }
 
-    public void changeAddress(String address,
-                              String postcode,
-                              String detailAddress) {
-        if (address != null)
-        {
+    public void changeAddress(String address, String postcode, String detailAddress) {
+        if (address != null) {
             this.address = address;
         }
         if (postcode != null) {

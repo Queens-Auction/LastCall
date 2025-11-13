@@ -10,16 +10,18 @@ import java.security.NoSuchAlgorithmException;
 
 public class FileHashUtils {
     private FileHashUtils() {
-    } // 인스턴스 생성을 막음
+    }
 
     public static String generateFileHash(MultipartFile file) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashBytes = digest.digest(file.getBytes());
+
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
                 sb.append(String.format("%02x", b));
             }
+
             return sb.toString();
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new BusinessException(ProductErrorCode.RUNTIME_EXCEPTION_FOR_FILE_HASH);

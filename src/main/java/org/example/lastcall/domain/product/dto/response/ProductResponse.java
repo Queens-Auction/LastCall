@@ -31,7 +31,7 @@ public class ProductResponse {
     @Schema(description = "상품 수정일", example = "2025-10-24T14:00:00")
     private final LocalDateTime modifiedAt;
 
-    public ProductResponse(Long id, Long userId, String name, Category category, String description, LocalDateTime createdAt, LocalDateTime modifiedAt) {
+    private ProductResponse(Long id, Long userId, String name, Category category, String description, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
         this.userId = userId;
         this.name = name;

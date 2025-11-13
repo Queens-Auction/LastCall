@@ -7,7 +7,7 @@ import org.example.lastcall.domain.user.enums.Role;
 
 public class UserFixture {
 	public static User createUser() {
-		return User.createForSignUp(
+		return User.of(
 			UUID.randomUUID(),          // publicId
 			"tester",                   // username
 			"테스트유저",                 // nickname
@@ -22,7 +22,7 @@ public class UserFixture {
 	}
 
 	public static User createUser(String email, String nickname) {
-		return User.createForSignUp(
+		return User.of(
 			UUID.randomUUID(),          // publicId
 			"tester",                   // username
 			nickname,                 // nickname

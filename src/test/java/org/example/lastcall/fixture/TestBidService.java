@@ -16,12 +16,15 @@ public class TestBidService {
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public Bid create(Auction auction, User user) {
-		return repository.save(new Bid(auction.getStartingBid() + auction.getBidStep(), auction, user));
+		return repository.save( Bid.of(
+                auction.getStartingBid() + auction.getBidStep(),
+                auction, user));
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public Bid createMaxBid(Auction auction, User user) {
 		return repository.save(
-			new Bid(auction.getStartingBid() + auction.getBidStep() + auction.getBidStep(), auction, user));
+			Bid.of(auction.getStartingBid() + auction.getBidStep() + auction.getBidStep(),
+                    auction, user));
 	}
 }

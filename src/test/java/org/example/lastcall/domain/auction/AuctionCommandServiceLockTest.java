@@ -184,7 +184,7 @@ public class AuctionCommandServiceLockTest extends AbstractIntegrationTest {
         auctionRepository.saveAndFlush(auction);
 
         // 입찰 추가
-        Bid bid = bidRepository.save(new Bid(2000L, auction, bidder));
+        Bid bid = bidRepository.save(Bid.of(2000L, auction, bidder));
 
         int threadCount = 5;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);

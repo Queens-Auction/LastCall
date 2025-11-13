@@ -15,18 +15,14 @@ public enum AuctionErrorCode implements ErrorCode {
     CANNOT_BID_ON_NON_ONGOING_AUCTION(HttpStatus.FORBIDDEN, "진행 중인 경매일 경우에만 입찰이 가능합니다."),
     CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION(HttpStatus.FORBIDDEN, "진행 중이거나 이미 종료된 경매는 수정할 수 없습니다."),
     USER_NOT_PARTICIPATED_IN_AUCTION(HttpStatus.NOT_FOUND, "해당 경매에 참여한 사용자가 아닙니다."),
-    AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 경매입니다.");
+    AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 경매입니다."),
+    // 입력값 유효성 검증
+    INVALID_START_TAME(HttpStatus.BAD_REQUEST, "시작일은 현재 시각 이후여야 합니다."),
+    INVALID_END_TIME(HttpStatus.BAD_REQUEST, "종료일은 현재 시각 이후여야 합니다."),
+    INVALID_END_TIME_ORDER(HttpStatus.BAD_REQUEST, "종료일은 시작일 이후여야 합니다."),
+    INVALID_SAME_TIME(HttpStatus.BAD_REQUEST, "시작일과 종료일이 같을 수 없습니다.");
+
 
     private final HttpStatus status;
     private final String message;
-
-    @Override
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-    @Override
-    public String getMessage() {
-        return message;
-    }
 }

@@ -15,15 +15,20 @@ public class AuctionEventPublisher {
 
     // 경매 시작 이벤트를 큐로 발행하는 메서드
     public void sendAuctionStartEvent(AuctionEvent event, Long delayMillis) {
-        rabbitTemplate.convertAndSend(
-                AuctionConfig.EXCHANGE_NAME,
-                AuctionConfig.START_ROUTING_KEY,
-                event,
-                message -> {
-                    message.getMessageProperties().setHeader("x-delay", delayMillis);
-                    return message;
-                }
-        );
+
+        try {
+            rabbitTemplate.convertAndSend(
+                    AuctionConfig.EXCHANGE_NAME,
+                    AuctionConfig.START_ROUTING_KEY,
+                    event,
+                    message -> {
+                        message.getMessageProperties().setHeader("x-delay", delayMillis);
+                        return message;
+                    }
+            );
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
         log.info("[RabbitMQ] 경매 시작 이벤트 발행: {}", event);
     }
 

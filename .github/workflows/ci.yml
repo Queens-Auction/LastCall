@@ -31,7 +31,7 @@ jobs:
         ports:
           - 6379:6379
       rabbitmq:
-        image: bitnami/rabbitmq:latest
+        image: bitnami/rabbitmq:3.12
         ports:
           - 5672:5672
           - 15672:15672

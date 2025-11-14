@@ -1,20 +1,5 @@
 package org.example.lastcall.domain.product;
 
-import static org.hibernate.validator.internal.util.Contracts.*;
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
@@ -48,6 +33,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductCommandServiceTest {
@@ -373,7 +368,7 @@ class ProductCommandServiceTest {
                 .when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.appendProductImages(product.getId(), requests, images, authUser));
+                () -> productCommandService.appendProductImages(product.getId(), images, authUser));
 
         assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
 

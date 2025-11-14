@@ -1,12 +1,6 @@
 package org.example.lastcall.domain.product.service.command;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
@@ -18,7 +12,8 @@ import org.example.lastcall.domain.product.utils.FileHashUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import lombok.RequiredArgsConstructor;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,14 +21,27 @@ public class ProductImageService {
     private final S3Service s3Service;
     private final ProductImageRepository productImageRepository;
 
-    public ProductImage uploadAndCreateProductImage(
-        Product product,
-        ProductImageCreateRequest request,
-        MultipartFile file,
-        String fileHash,
-        Long productId) {
+    public ProductImage createProductImageFromRequest(
+            Product product,
+            ProductImageCreateRequest request,
+            MultipartFile file,
+            String fileHash,
+            Long productId
+    ) {
         String imageKey = s3Service.uploadToS3(file, "products/" + productId);
-        ImageType imageType = Boolean.TRUE.equals(request.getIsThumbnail()) ? ImageType.THUMBNAIL : ImageType.DETAIL;
+        ImageType imageType = Boolean.TRUE.equals(request.getIsThumbnail())
+                ? ImageType.THUMBNAIL : ImageType.DETAIL;
+
+        return ProductImage.of(product, imageType, imageKey, fileHash);
+    }
+
+    public ProductImage uploadAndCreateProductImage(
+            Product product,
+            MultipartFile file,
+            String fileHash,
+            Long productId,
+            ImageType imageType) {
+        String imageKey = s3Service.uploadToS3(file, "products/" + productId);
 
         return ProductImage.of(product, imageType, imageKey, fileHash);
     }

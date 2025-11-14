@@ -1,11 +1,7 @@
 package org.example.lastcall.domain.product.service.command;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.IntStream;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -27,8 +23,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -53,10 +52,10 @@ public class ProductCommandService {
     }
 
     public List<ProductImageResponse> createProductImages(
-        Long productId,
-        List<ProductImageCreateRequest> requests,
-        List<MultipartFile> images,
-        AuthUser authUser) {
+            Long productId,
+            List<ProductImageCreateRequest> requests,
+            List<MultipartFile> images,
+            AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
@@ -201,14 +200,14 @@ public class ProductCommandService {
     }
 
     public List<ProductImage> uploadAndGenerateImages(
-        Product product,
-        List<ProductImageCreateRequest> requests,
-        List<MultipartFile> images,
-        Long productId) {
+            Product product,
+            List<ProductImageCreateRequest> requests,
+            List<MultipartFile> images,
+            Long productId) {
         Map<MultipartFile, String> fileToHash = productImageService.validateAndGenerateHashes(images, productId);
 
         return IntStream.range(0, requests.size())
-                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
+                .mapToObj(i -> productImageService.createProductImageFromRequest(
                         product,
                         requests.get(i),
                         images.get(i),

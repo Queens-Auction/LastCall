@@ -38,9 +38,10 @@ spring:
     port: 5672
     username: guest
     password: guest
-  redis:
+  data:
     redis:
-      url: redis://redis-dev:6379
+      host: redis-dev
+      port: 6379
 
 springdoc:
   api-docs.enabled: true

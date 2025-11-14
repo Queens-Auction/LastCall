@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.auction.service.command;
 
-import java.time.LocalDateTime;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.lock.DistributedLock;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
@@ -21,8 +21,7 @@ import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -127,7 +126,7 @@ public class AuctionCommandService {
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
         if (!auction.canClose()) {
-            log.warn("[RedissonLock] 이미 종료된 경매 - auctionId={}",  auctionId);
+            log.warn("[RedissonLock] 이미 종료된 경매 - auctionId={}", auctionId);
             throw new BusinessException(AuctionErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
@@ -140,8 +139,8 @@ public class AuctionCommandService {
 
             auction.assignWinner(winnerId, bidAmount);
 
-            pointCommandServiceApi.depositToSettlement(winnerId, auction.getId(), bidAmount);
-            pointCommandServiceApi.depositToAvailablePoint(winnerId, auction.getId(), bidAmount);
+            pointCommandServiceApi.depositToAvailablePoint(auction.getId());
+            pointCommandServiceApi.depositToSettlement(auction.getId());
 
             log.info("[RedissonLock] 경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);
         } else {

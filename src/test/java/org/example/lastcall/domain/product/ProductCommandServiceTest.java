@@ -44,7 +44,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -315,52 +314,46 @@ class ProductCommandServiceTest {
     void appendProductImages_상품_이미지_추가에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
-        List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true),
-                new ProductImageCreateRequest(false));
-
-        List<MultipartFile> images = List.of(
-                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "dummy1".getBytes()),
-                new MockMultipartFile("file2", "file2.jpg", "image/jpeg", "dummy2".getBytes()));
-
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        MockMultipartFile mockFile1 = new MockMultipartFile(
+                "image", "test1.jpg", "image/jpeg", "dummy1".getBytes()
+        );
+        MockMultipartFile mockFile2 = new MockMultipartFile(
+                "image", "test2.jpg", "image/jpeg", "dummy2".getBytes()
+        );
+        List<MultipartFile> inputImages = List.of(mockFile1, mockFile2);
 
         List<ProductImage> existingImages = List.of(
-                ProductImage.of(product, ImageType.DETAIL, "existing-1.jpg", "hash1"),
-                ProductImage.of(product, ImageType.DETAIL, "existing-2.jpg", "hash2"));
+                ProductImage.of(product, ImageType.THUMBNAIL, "existing-1.jpg", "hash1"),
+                ProductImage.of(product, ImageType.DETAIL, "existing-2.jpg", "hash2")
+        );
 
+        ProductImage newImage1 = ProductImage.of(product, ImageType.DETAIL, "test1.jpg", "hash1");
+        ProductImage newImage2 = ProductImage.of(product, ImageType.DETAIL, "test2.jpg", "hash2");
+
+        when(productRepository.findByIdAndDeletedFalse(product.getId())).thenReturn(Optional.of(product));
         when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
-
-        List<ProductImage> newImages = List.of(
-                ProductImage.of(product, ImageType.THUMBNAIL, "new-1.jpg", "hash3"),
-                ProductImage.of(product, ImageType.DETAIL, "new-2.jpg", "hash4"));
-
-        ProductCommandService spyService = Mockito.spy(productCommandService);
-        doReturn(newImages).when(spyService).uploadAndGenerateImages(any(Product.class), anyList(), anyList(), anyLong());
+        when(productImageService.uploadAndGenerateDetailImages(product, inputImages, product.getId()))
+                .thenReturn(List.of(newImage1, newImage2));
+        when(s3Service.generateImageUrl(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
         doNothing().when(productValidatorService).validateImageCount(anyList());
-        doNothing().when(productValidatorService).validateThumbnailConsistencyForAppend(anyList());
 
-        when(productImageRepository.saveAll(newImages)).thenReturn(newImages);
+        when(productImageRepository.saveAll(any())).thenReturn(List.of(newImage1, newImage2));
 
-        List<ProductImageResponse> responses = spyService.appendProductImages(product.getId(), requests, images, authUser);
+        List<ProductImageResponse> responses = productCommandService.appendProductImages(product.getId(), inputImages, authUser);
 
-        assertNotNull(responses);
-        assertEquals(newImages.size(), responses.size());
+        assertEquals(2, responses.size());
+        assertEquals("test1.jpg", responses.get(0).getImageUrl());
+        assertEquals("test2.jpg", responses.get(1).getImageUrl());
 
-        for (ProductImageResponse response : responses) {
-            assertNotNull(response.getImageType());
-        }
-
-        verify(productRepository, times(1)).findById(product.getId());
-        verify(productImageRepository, times(1)).findAllByProductIdAndDeletedFalse(product.getId());
-        verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(product.getId());
+        verify(productRepository, times(1)).findByIdAndDeletedFalse(product.getId());
         verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(productValidatorService, times(1)).validateImageCount(anyList());
-        verify(productValidatorService, times(1)).validateThumbnailConsistencyForAppend(anyList());
-        verify(productImageRepository, times(1)).saveAll(newImages);
+        verify(productImageRepository, times(1)).saveAll(any());
+        verify(productImageService).uploadAndGenerateDetailImages(product, inputImages, product.getId());
     }
 
     @Test
@@ -374,7 +367,7 @@ class ProductCommandServiceTest {
         List<MultipartFile> images = List.of(
                 new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes()));
 
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(product.getId())).thenReturn(Optional.of(product));
 
         doThrow(new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION))
                 .when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
@@ -386,39 +379,6 @@ class ProductCommandServiceTest {
 
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(product.getId());
         verify(productValidatorService, never()).checkOwnership(any(), any());
-    }
-
-    @Test
-    @DisplayName("이미지 추가 시 썸네일 일관성 예외)")
-    void appendProductImages_썸네일_일관성_위반_시_예외가_발생한다() throws Exception {
-        AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
-
-        List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true));
-
-        List<MultipartFile> images = List.of(
-                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes()));
-
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
-
-        doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
-        doNothing().when(productValidatorService).checkOwnership(product, authUser);
-
-        List<ProductImage> newImages = List.of(ProductImage.of(product, ImageType.DETAIL, "new.jpg", "hash"));
-        List<ProductImage> existingImages = List.of(ProductImage.of(product, ImageType.DETAIL, "exist", "hash2"));
-
-        ProductCommandService spyService = Mockito.spy(productCommandService);
-        doReturn(newImages).when(spyService).uploadAndGenerateImages(product, requests, images, product.getId());
-
-        when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
-
-        doThrow(new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED))
-                .when(productValidatorService).validateThumbnailConsistencyForAppend(anyList());
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> spyService.appendProductImages(product.getId(), requests, images, authUser));
-
-        assertEquals(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED, exception.getErrorCode());
     }
 
     @Test

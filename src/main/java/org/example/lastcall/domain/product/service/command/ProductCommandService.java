@@ -92,29 +92,23 @@ public class ProductCommandService {
     }
 
     public List<ProductImageResponse> appendProductImages(
-        Long productId,
-        List<ProductImageCreateRequest> requests,
-        List<MultipartFile> images,
-        AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+            Long productId,
+            List<MultipartFile> images,
+            AuthUser authUser) {
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(product.getId());
         productValidatorService.checkOwnership(product, authUser);
 
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
-        List<ProductImage> newImages = uploadAndGenerateImages(product, requests, images, productId);
+        List<ProductImage> newImages = productImageService.uploadAndGenerateDetailImages(product, images, productId);
 
         List<ProductImage> allImages = new ArrayList<>(existingImages);
         allImages.addAll(newImages);
 
         productValidatorService.validateImageCount(allImages);
-        productValidatorService.validateThumbnailConsistencyForAppend(allImages);
 
         return productImageRepository.saveAll(newImages).stream()
                 .map(image -> ProductImageResponse.from(image, s3Service))
@@ -141,7 +135,7 @@ public class ProductCommandService {
         newThumbnail.updateImageType(ImageType.THUMBNAIL);
 
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
-
+        //TODO : 썸네일 갯수 검증 삭제 : 현재 메서드는 ‘썸네일이 정확히 1개가 되도록 만드는 로직 구조
         long thumbnailCount = productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
 
         if (thumbnailCount > 1) {

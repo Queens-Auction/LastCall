@@ -63,4 +63,19 @@ public class ProductImageService {
 
         return fileToHash;
     }
+
+    public List<ProductImage> uploadAndGenerateDetailImages(Product product,
+                                                            List<MultipartFile> images,
+                                                            Long productId) {
+        Map<MultipartFile, String> fileToHash = validateAndGenerateHashes(images, productId);
+
+        return images.stream()
+                .map(image -> uploadAndCreateProductImage(
+                        product,
+                        image,
+                        fileToHash.get(image),
+                        productId,
+                        ImageType.DETAIL))
+                .toList();
+    }
 }

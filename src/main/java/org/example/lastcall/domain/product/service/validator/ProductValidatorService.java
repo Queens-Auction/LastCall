@@ -6,7 +6,6 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
@@ -47,16 +46,6 @@ public class ProductValidatorService {
 
         if (newThumbnailCount == 0 && !requests.isEmpty() && !hasExistingThumbnail) {
             requests.set(0, requests.get(0).toBuilder().isThumbnail(true).build());
-        }
-    }
-
-    public void validateThumbnailConsistencyForAppend(List<ProductImage> allImages) {
-        long thumbnailCount = allImages.stream()
-                .filter(img -> img.getImageType() == ImageType.THUMBNAIL)
-                .count();
-
-        if (thumbnailCount > 1) {
-            throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
         }
     }
 }

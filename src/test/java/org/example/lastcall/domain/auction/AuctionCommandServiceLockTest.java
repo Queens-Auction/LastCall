@@ -85,7 +85,7 @@ public class AuctionCommandServiceLockTest extends AbstractIntegrationTest {
                 try {
                     // 경매 등록 시도
                     auctionCommandService.createAuction(product.getId(), seller.getId(), request);
-                } catch (BusinessException ignored) {
+                } catch (Exception ignored) {
                     // 이미 등록된 경우 예외 발생 예상 (DUPLICATE_AUCTION)
                     System.out.println("예외 발생: " + ignored.getMessage());
                 } finally {

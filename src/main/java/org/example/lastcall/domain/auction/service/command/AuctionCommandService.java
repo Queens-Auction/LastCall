@@ -1,7 +1,7 @@
 package org.example.lastcall.domain.auction.service.command;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.lock.DistributedLock;
 import org.example.lastcall.domain.auction.dto.request.AuctionCreateRequest;
@@ -17,104 +17,92 @@ import org.example.lastcall.domain.point.service.command.PointCommandService;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.service.query.ProductQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.service.UserServiceApi;
+import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j // 추가
-public class AuctionCommandService implements AuctionCommandServiceApi {
-
+@Slf4j
+public class AuctionCommandService {
     private final AuctionRepository auctionRepository;
-    private final UserServiceApi userServiceApi;
+    private final UserQueryServiceApi userQueryServiceApi;
     private final ProductQueryServiceApi productQueryServiceApi;
     private final BidQueryServiceApi bidQueryServiceApi;
     private final PointCommandService pointCommandServiceApi;
     private final AuctionEventScheduler auctionEventScheduler;
 
-    // 경매 등록 //
+    // 경매 등록
     @DistributedLock(key = "'product:' + #productId")
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
         log.debug("[RedissonLock] 락 획득 후 작업 실행: 경매 등록 처리 시작 - productId={}", productId);
 
-        // 1. 상품 존재 여부 확인 (상품 소유자 검증) -> 이미 상품쪽에서 검증 완료
         productQueryServiceApi.validateProductOwner(productId, userId);
         log.debug("[RedissonLock] 상품 소유자 검증 완료 - productId={}, userId={}", productId, userId);
 
-        // 2. 중복 경매 등록 방지
         if (auctionRepository.existsActiveAuction(productId)) {
             log.warn("[RedissonLock] 이미 활성화된 경매 존재 - productId={}", productId);
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
 
-        // 입력값 유효성 검사 추가 (시간 관계)
-        // endTime
         if (!request.getEndTime().isAfter(LocalDateTime.now())) {
             throw new BusinessException(AuctionErrorCode.INVALID_END_TIME);
         }
+
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new BusinessException(AuctionErrorCode.INVALID_END_TIME_ORDER);
         }
+
         if (request.getStartTime().equals(request.getEndTime())) {
             throw new BusinessException(AuctionErrorCode.INVALID_SAME_TIME);
         }
 
-        // 3. User 조회
-        User user = userServiceApi.findById(userId);
+        User user = userQueryServiceApi.findById(userId);
         log.debug("[RedissonLock] 판매자 조회 완료 - userId={}", userId);
 
-        // 4. 상품 조회
         Product product = productQueryServiceApi.findById(productId);
         log.debug("[RedissonLock] 상품 조회 완료 - productId={}", productId);
 
-        // 5. Auction 엔티티 생성/저장 -> 경매 상태는 내부 로직에서 자동 계산됨
         Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);
-        log.info("[RedissonLock] 경매 생성 완료 - auctionId={}, productId={}, startPrice={}, endTime={}",
-                auction.getId(), productId, auction.getStartingBid(), auction.getEndTime());
+        log.info("[RedissonLock] 경매 생성 완료 - auctionId={}, productId={}, startPrice={}, endTime={}", auction.getId(), productId, auction.getStartingBid(), auction.getEndTime());
 
-        // 이벤트 스케줄링 분리
-        // 경매 시작/종료 이벤트 예약 발행
         auctionEventScheduler.scheduleAuctionEvents(auction);
-        log.info("경매 등록 완료 및 이벤트 예약 - auctionId={}, startTime={}, endTime={}",
-                auction.getId(), auction.getStartTime(), auction.getEndTime());
-
+        log.info("경매 등록 완료 및 이벤트 예약 - auctionId={}, startTime={}, endTime={}", auction.getId(), auction.getStartTime(), auction.getEndTime());
         log.info("[RedissonLock] 락 점유한 작업 종료 - productId={}", productId);
+
         return AuctionResponse.fromCreate(auction);
     }
 
-    // 내 경매 수정 //
-    // 수정 시 이벤트 재발행
+    // 내 경매 수정
     public AuctionResponse updateAuction(Long userId, Long auctionId, AuctionUpdateRequest request) {
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-        // 수정 권한 검증
+
         if (!auction.getUser().getId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
-        // 진행중/종료된 경매는 수정 불가
+
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
-        // 수정 관련 이벤트 반영 //
-        auction.update(request);
-        // 버전 증가 (수정시마다 +1 증가되어, 이전 이벤트 무시되게 해줌)
-        auction.increaseVersion();
-        auctionRepository.save(auction);
 
+        auction.update(request);
+        auction.increaseVersion();
+
+        auctionRepository.save(auction);
         log.info("경매 수정됨 - auctionId={},startTime={}, endTime={}", auction.getId(), auction.getStartTime(), auction.getEndTime());
 
-        // 새 시간 기준으로 이벤트 재등록
         auctionEventScheduler.rescheduleAuctionEvents(auction);
 
         return AuctionResponse.fromUpdate(auction);
     }
 
-    // 내 경매 삭제 //
+    // 내 경매 삭제
     public void deleteAuction(Long userId, Long auctionId) {
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
@@ -122,9 +110,11 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         if (!auction.getUser().getId().equals(userId)) {
             throw new BusinessException(AuctionErrorCode.UNAUTHORIZED_SELLER);
         }
+
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
         }
+
         auction.markAsDeleted();
     }
 
@@ -133,34 +123,24 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
     public void closeAuction(Long auctionId) {
         log.debug("[RedissonLock] 락 획득 후 작업 실행: 경매 종료 처리 시작 - auctionId={}", auctionId);
 
-        // 1. 경매 엔티티 조회
         Auction auction = auctionRepository.findById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
-        // 2. 종료 여부 검증
         if (!auction.canClose()) {
             log.warn("[RedissonLock] 이미 종료된 경매 - auctionId={}",  auctionId);
             throw new BusinessException(AuctionErrorCode.AUCTION_ALREADY_CLOSED);
         }
 
-        // 3. 최고 입찰자 조회
         Bid topBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElse(null);
 
         if (topBid != null) {
-            // 입찰 존재 시, 낙찰 처리
             Long winnerId = topBid.getUser().getId();
             Long bidAmount = topBid.getBidAmount();
-            log.debug("[RedissonLock] 낙찰 처리 진행 - auctionId={}, winnerId={}, bidAmount={}"
-                    , auctionId, winnerId, bidAmount);
+            log.debug("[RedissonLock] 낙찰 처리 진행 - auctionId={}, winnerId={}, bidAmount={}", auctionId, winnerId, bidAmount);
 
-            // 낙찰 처리
             auction.assignWinner(winnerId, bidAmount);
 
-            // 포인트 처리
-            // 1. 낙찰자 : 예치 -> 정산
             pointCommandServiceApi.depositToSettlement(winnerId, auction.getId(), bidAmount);
-
-            // 2. 유찰자들 : 예치 -> 가용
             pointCommandServiceApi.depositToAvailablePoint(winnerId, auction.getId(), bidAmount);
 
             log.info("[RedissonLock] 경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);
@@ -168,6 +148,7 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
             auction.closeAsFailed();
             log.info("[RedissonLock] 경매 종료 - 입찰 없음(유찰 처리): auctionId={}", auctionId);
         }
+
         auctionRepository.save(auction);
         log.info("[RedissonLock] 락 점유한 작업 종료 - auctionId={}", auctionId);
     }
@@ -177,16 +158,14 @@ public class AuctionCommandService implements AuctionCommandServiceApi {
         Auction auction = auctionRepository.findById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
-        // 상태 검증
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             log.warn("경매 시작 불가: auctionId={}", auctionId);
+
             return;
         }
 
-        // 상태 변경
         auction.updateStatus(AuctionStatus.ONGOING);
         auctionRepository.save(auction);
-
         log.info("경매 시작 상태로 변경 완료: auctionId={}, startTime={}", auctionId, auction.getStartTime());
     }
 }

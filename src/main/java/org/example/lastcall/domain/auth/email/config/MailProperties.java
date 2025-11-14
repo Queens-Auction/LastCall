@@ -26,8 +26,7 @@ public record MailProperties(
             @Valid @NotNull Starttls starttls,
             @NotNull Duration connectiontimeout,
             @NotNull Duration timeout,
-            @NotNull Duration writetimeout
-    ) {}
+            @NotNull Duration writetimeout) {}
 
     public record Starttls(boolean enable) {}
 }

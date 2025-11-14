@@ -1,7 +1,11 @@
 package org.example.lastcall.domain.auth.service.command;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
+
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
+
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.security.jwt.JwtUtil;
@@ -27,12 +31,8 @@ import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-
-import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
-import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_NOT_FOUND;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -50,6 +50,7 @@ public class AuthCommandService {
         if (request.getVerificationPublicId() == null) {
             throw new BusinessException(EmailErrorCode.INVALID_VERIFICATION_ID);
         }
+
         EmailVerification emailVerification = emailVerificationRepository
                 .findByPublicId(request.getVerificationPublicId())
                 .orElseThrow(() -> new BusinessException(EmailErrorCode.NOT_REQUESTED));
@@ -67,6 +68,7 @@ public class AuthCommandService {
                     if (existingUser.isDeleted()) {
                         throw new BusinessException(UserErrorCode.DELETED_ACCOUNT);
                     }
+
                     throw new BusinessException(UserErrorCode.DUPLICATE_EMAIL);
                 });
 
@@ -80,8 +82,8 @@ public class AuthCommandService {
                 request.getPostcode(),
                 request.getDetailAddress(),
                 request.getPhoneNumber(),
-                Role.USER
-        );
+                Role.USER);
+
         userRepository.save(user);
     }
 
@@ -115,8 +117,7 @@ public class AuthCommandService {
                 user.getId(),
                 refreshToken,
                 RefreshTokenStatus.ACTIVE,
-                refreshTokenExpiredAt
-        );
+                refreshTokenExpiredAt);
 
         List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndStatus(user.getId(), RefreshTokenStatus.ACTIVE);
         activeTokens.forEach(RefreshToken::revoke);
@@ -132,6 +133,7 @@ public class AuthCommandService {
 
         User user = userRepository.findById(validRefreshToken.getUserId())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
+
         if (user.isDeleted()) {
             throw new BusinessException(AuthErrorCode.ACCOUNT_DELETED);
         }
@@ -146,14 +148,12 @@ public class AuthCommandService {
                 user.getId(),
                 newRefreshToken,
                 RefreshTokenStatus.ACTIVE,
-                refreshTokenExpiredAt
-        );
+                refreshTokenExpiredAt);
 
         refreshTokenRepository.revokeAllActiveByUserId(
                 user.getId(),
                 RefreshTokenStatus.ACTIVE,
-                RefreshTokenStatus.REVOKED
-        );
+                RefreshTokenStatus.REVOKED);
 
         refreshTokenRepository.save(newRtEntity);
 
@@ -186,10 +186,7 @@ public class AuthCommandService {
 
         RefreshToken refreshToken = authValidatorService.validateRefreshToken(requestedRefreshToken);
 
-        List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndStatus(
-                refreshToken.getUserId(),
-                RefreshTokenStatus.ACTIVE
-        );
+        List<RefreshToken> activeTokens = refreshTokenRepository.findByUserIdAndStatus(refreshToken.getUserId(), RefreshTokenStatus.ACTIVE);
 
         if (activeTokens == null || activeTokens.isEmpty()) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
@@ -202,7 +199,11 @@ public class AuthCommandService {
     public void withdraw(Long userId, WithdrawRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(USER_NOT_FOUND));
-        if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
+
+        if (user.isDeleted()) {
+            throw new BusinessException(USER_ALREADY_DELETED);
+        }
+
         user.validatePassword(passwordEncoder, request.password());
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
@@ -210,9 +211,11 @@ public class AuthCommandService {
         }
 
         int updated = userRepository.softDeleteById(userId);
+
         if (updated == 0) {
             throw new BusinessException(USER_ALREADY_DELETED);
         }
+
         user.softDelete();
 
         refreshTokenRepository.revokeAllActiveByUserId(user.getId(), RefreshTokenStatus.ACTIVE, RefreshTokenStatus.REVOKED);

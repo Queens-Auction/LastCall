@@ -7,6 +7,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class PointFixture {
 	public static PointCreateRequest pointCreateRequest() {
 		PointCreateRequest request = new PointCreateRequest();
+
 		ReflectionTestUtils.setField(request, "userId", 1L);
 		ReflectionTestUtils.setField(request, "bidId", 10L);
 		ReflectionTestUtils.setField(request, "type", PointLogType.EARN);
@@ -18,6 +19,7 @@ public class PointFixture {
 
 	public static PointCreateRequest pointCreateRequest(Long incomPoint) {
 		PointCreateRequest request = new PointCreateRequest();
+
 		ReflectionTestUtils.setField(request, "userId", 1L);
 		ReflectionTestUtils.setField(request, "bidId", 10L);
 		ReflectionTestUtils.setField(request, "type", PointLogType.EARN);

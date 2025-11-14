@@ -1,15 +1,21 @@
 package org.example.lastcall.domain.auth.email.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.email.dto.request.EmailVerificationSendRequest;
 import org.example.lastcall.domain.auth.email.dto.request.VerifyEmailVerificationCodeDto;
 import org.example.lastcall.domain.auth.email.service.EmailVerificationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @Tag(name = "이메일 인증(Email Verification) API", description = "회원가입 전 이메일 인증 관련 기능 제공")
 @RestController
@@ -24,7 +30,7 @@ public class EmailVerificationController {
     )
     @PostMapping("/email-verifications")
     public ResponseEntity<ApiResponse<Object>> sendEmailVerificationCode(
-            @Valid @RequestBody EmailVerificationSendRequest.Request request) {
+        @Valid @RequestBody EmailVerificationSendRequest.Request request) {
         emailVerificationService.sendEmailVerificationCode(request);
 
         return ResponseEntity.ok(ApiResponse.success("인증 코드가 발송되었습니다."));
@@ -47,7 +53,7 @@ public class EmailVerificationController {
     )
     @PostMapping("/email-verifications/status")
     public ResponseEntity<ApiResponse<VerifyEmailVerificationCodeDto.Response>> verifyEmailVerificationCode(
-            @Valid @RequestBody VerifyEmailVerificationCodeDto.Request request) {
+        @Valid @RequestBody VerifyEmailVerificationCodeDto.Request request) {
         var result = emailVerificationService.verifyEmailVerificationCode(request);
 
         return ResponseEntity.ok(ApiResponse.success("이메일 인증이 완료되었습니다.", result));

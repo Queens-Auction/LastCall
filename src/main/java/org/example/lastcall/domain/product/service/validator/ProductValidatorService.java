@@ -1,6 +1,7 @@
 package org.example.lastcall.domain.product.service.validator;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
@@ -11,7 +12,7 @@ import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -39,6 +40,7 @@ public class ProductValidatorService {
                 .count();
 
         long totalThumbnails = (hasExistingThumbnail ? 1 : 0) + newThumbnailCount;
+
         if (totalThumbnails > 1) {
             throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
         }

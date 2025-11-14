@@ -71,15 +71,16 @@ class BidQueryServiceTest {
 		PageResponse<BidGetAllResponse> bids = bidQueryService.getAllBids(auctionId, pageable);
 
 		assertThat(bids).isNotNull();
-		assertThat(bids.getContent()).hasSize(2); // 내용물이 2개인지 확인
-		assertThat(bids.getNumber()).isEqualTo(0); // 현재 페이지 번호 확인
-		assertThat(bids.getTotalElements()).isEqualTo(2); // 전체 요소 개수 확인
+		assertThat(bids.getContent()).hasSize(2);
+		assertThat(bids.getNumber()).isEqualTo(0);
+		assertThat(bids.getTotalElements()).isEqualTo(2);
 
 		BidGetAllResponse firstBidDto = bids.getContent().get(0);
 		assertThat(firstBidDto.getBidAmount()).isEqualTo(10000L);
 		assertThat(firstBidDto.getNickname()).isEqualTo("강아지");
 
 		BidGetAllResponse secondBidDto = bids.getContent().get(1);
+
 		assertThat(secondBidDto.getBidAmount()).isEqualTo(11000L);
 		assertThat(secondBidDto.getNickname()).isEqualTo("고양이");
 
@@ -115,21 +116,23 @@ class BidQueryServiceTest {
 		boolean result = bidQueryService.existsByAuctionIdAndUserId(auctionId, userId);
 
 		assertThat(result).isTrue();
+
 		verify(bidRepository, times(1)).existsByAuctionIdAndUserId(auctionId, userId);
 	}
 
 	@Test
 	@DisplayName("현재 최고 입찰가 조회 성공")
-	void getCurrentBidAmount_현재_최고_입찰가_조회에_성공한다() {
+	void findCurrentBidAmount_현재_최고_입찰가_조회에_성공한다() {
 		Long auctionId = 1L;
 		Auction auction = mock(Auction.class);
 
 		given(auctionFinder.findById(auctionId)).willReturn(auction);
 		given(bidRepository.findMaxBidAmountByAuction(auction)).willReturn(Optional.of(20000L));
 
-		Long result = bidQueryService.getCurrentBidAmount(auctionId);
+		Long result = bidQueryService.findCurrentBidAmount(auctionId);
 
 		assertThat(result).isEqualTo(20000L);
+
 		verify(auctionFinder, times(1)).findById(auctionId);
 		verify(bidRepository, times(1)).findMaxBidAmountByAuction(auction);
 	}
@@ -150,6 +153,7 @@ class BidQueryServiceTest {
 
 		assertThat(result).isNotNull();
 		assertThat(result.getBidAmount()).isEqualTo(10000L);
+
 		verify(bidRepository, times(1)).findById(bidId);
 	}
 

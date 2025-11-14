@@ -23,7 +23,5 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
          where rt.userId = :userId
            and rt.status = :active
         """)
-    int revokeAllActiveByUserId(@Param("userId") Long userId,
-                                @Param("active") RefreshTokenStatus active,
-                                @Param("revoked") RefreshTokenStatus revoked);
+    int revokeAllActiveByUserId(@Param("userId") Long userId, @Param("active") RefreshTokenStatus active, @Param("revoked") RefreshTokenStatus revoked);
 }

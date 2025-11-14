@@ -1,10 +1,5 @@
 package org.example.lastcall.domain.auth.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
@@ -21,7 +16,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Tag(name = "인증(Auth) API", description = "회원가입, 로그인, 로그아웃, 회원탈퇴 등 인증 관련 기능 제공")
 @Slf4j
@@ -40,8 +45,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Object>> signup(@Valid @RequestBody SignupRequest request) {
         authCommandService.signup(request);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("회원가입이 완료되었습니다."));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("회원가입이 완료되었습니다."));
     }
 
     @Operation(
@@ -53,6 +57,7 @@ public class AuthController {
         if (request == null) {
             throw new BusinessException(AuthErrorCode.INVALID_EMPTY_EMAIL_OR_PASSWORD);
         }
+
         LoginResponse loginResponse = authCommandService.login(request);
 
         ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(loginResponse.accessToken());
@@ -68,13 +73,14 @@ public class AuthController {
             description = "사용자의 Refresh Token을 무효화하고, 인증 관련 쿠키를 삭제합니다."
     )
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(@CookieValue(name = CookieUtil.REFRESH_COOKIE,
-            required = false) String refreshToken) {
+    public ResponseEntity<ApiResponse<Void>> logout(@CookieValue(name = CookieUtil.REFRESH_COOKIE, required = false) String refreshToken) {
         authCommandService.logout(refreshToken);
+
         ResponseCookie deleteAccessCookie = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefreshCookie = cookieUtil.deleteCookieOfRefreshToken();
 
         HttpHeaders headers = new HttpHeaders();
+
         headers.add(HttpHeaders.SET_COOKIE, deleteAccessCookie.toString());
         headers.add(HttpHeaders.SET_COOKIE, deleteRefreshCookie.toString());
 
@@ -88,8 +94,9 @@ public class AuthController {
             description = "로그인한 사용자가 본인 계정을 탈퇴합니다. 탈퇴 후 인증 쿠키는 삭제됩니다."
     )
     @PostMapping("/withdraw")
-    public ResponseEntity<ApiResponse<Void>> withdraw(@AuthenticationPrincipal AuthUser authUser,
-                                                      @RequestBody(required = false) WithdrawRequest withdrawRequest) {
+    public ResponseEntity<ApiResponse<Void>> withdraw(
+        @AuthenticationPrincipal AuthUser authUser,
+        @RequestBody(required = false) WithdrawRequest withdrawRequest) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
         }
@@ -97,6 +104,7 @@ public class AuthController {
         if (withdrawRequest == null || withdrawRequest.password() == null || withdrawRequest.password().isBlank()) {
             throw new BusinessException(AuthErrorCode.MISSING_PASSWORD);
         }
+
         authCommandService.withdraw(authUser.userId(), withdrawRequest);
 
         ResponseCookie deleteAccess = cookieUtil.deleteCookieOfAccessToken();

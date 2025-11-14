@@ -35,7 +35,6 @@ public class Point extends BaseEntity {
     private PointLogType type;
 
     @OneToOne(fetch = FetchType.LAZY)
-    // unique 추가 -> DB 데이터 정합성 보장 위해 (한 유저당 하나의 포인트)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
@@ -48,33 +47,26 @@ public class Point extends BaseEntity {
     @Column(name = "settlement_point", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private Long settlementPoint = 0L;
 
-    public Point(User user, Long availablePoint, Long depositPoint, Long settlementPoint) {
+    private Point(User user, PointLogType type, Long incomePoint) {
         this.user = user;
-        this.availablePoint = availablePoint;
-        this.depositPoint = depositPoint;
-        this.settlementPoint = settlementPoint;
+        this.type = type;
+		this.availablePoint = incomePoint;
     }
 
-    public static Point create(User user, PointLogType type, Long incomePoint) {
-        Point point = new Point();
-        point.user = user;
-        point.type = type;
-        point.availablePoint = incomePoint;
-        return point;
+    public static Point of(User user, PointLogType type, Long incomePoint) {
+        return new Point(user, type, incomePoint);
     }
 
     public void updateAvailablePoint(Long incomePoint) {
-
 		this.availablePoint = this.availablePoint + incomePoint;
 	}
 
 	public void updateDepositPoint(Long amount) {
-		this.availablePoint = availablePoint - amount;
-		this.depositPoint = depositPoint + amount;
+		this.availablePoint -= amount;
+		this.depositPoint += amount;
 	}
 
 	public void depositToSettlement(Long amount) {
-
 		if (this.depositPoint < amount) {
 			throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);
 		}
@@ -87,6 +79,7 @@ public class Point extends BaseEntity {
 		if (this.availablePoint < amount) {
 			throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
 		}
+
 		this.availablePoint -= amount;
 	}
 
@@ -94,28 +87,12 @@ public class Point extends BaseEntity {
 		this.depositPoint += amount;
 	}
 
-	// 유찰 시 : 예치 -> 가용 포인트 이동 (반환)
 	public void moveDepositToAvailable(Long amount) {
 		this.depositPoint -= amount;
 		this.availablePoint += amount;
 	}
 
-	// 유찰 시 이동 가능 여부 확인
 	public boolean canMoveDepositToAvailable(Long amount) {
 		return this.depositPoint >= amount;
 	}
 }
-
-/*
-    @Column 애너테이션에는 default 속성이 따로 없다.
-
-    1. DB 테이블 생성 시점에 DEFAULT = 0을 넣고 싶다면 columnDefinition을 직접 지정해야한다.
-    하지만 columnDefinition은 DB Dialect에 따라 문법 차이가 날 수 있다.
-
-    2. DB에 Default를 두지 않고, 애플리케이션에서 새 엔티티 생성 시 자동으로 0이 들어가도록 하려면 필드에서 초기화 해도 된다.
-    이 방식은 JPA persist 시점에 명시적으로 0이 insert 되기 때문에 db의 default는 사용하지 않는다.
-
-    3. 두 방식 같이 써도 됨!
-    두 방식을 같이 사용하면 DB 레벨에서는 default 0이 있고, Java 객체 생성 시에도 초기값이 0으로 들어가게 된다.
-    양쪽에서 일관성 있게 0으로 시작하기 때문에 안전하게 사용 가능하고 실무에서도 많이 사용한다.
- */

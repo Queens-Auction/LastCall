@@ -18,9 +18,9 @@ public class RedissonConfig {
 	@Bean
 	public RedissonClient redissonClient() {
 		Config config = new Config();
-		config.useSingleServer()                            // Redis 서버 연결 방식 지정 (Redis 단일 서버 모드 사용)
-			.setAddress("redis://" + host + ":" + port);    // Redis 서버 주소 (호스트와 포트)
+		config.useSingleServer()
+			.setAddress("redis://" + host + ":" + port);
 
-		return Redisson.create(config);                     // RedissonClient 객체 생성 및 반환
+		return Redisson.create(config);
 	}
 }

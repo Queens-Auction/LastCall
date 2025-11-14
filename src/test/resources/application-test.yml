@@ -27,8 +27,8 @@ spring:
     password: guest
     listener:
       simple:
-        acknowledge-mode: manual # ACK 수동 설정
-        missing-queues-fatal: false  # 큐가 없어도 컨텍스트 로딩 실패로 보지 않음
+        acknowledge-mode: manual      # ACK 수동 설정
+        missing-queues-fatal: false   # 큐가 없어도 컨텍스트 로딩 실패로 보지 않음
 
   cache:
     type: redis

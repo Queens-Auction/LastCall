@@ -1,6 +1,8 @@
 package org.example.lastcall.domain.user.service.command;
 
-import lombok.RequiredArgsConstructor;
+import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.*;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
+
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.repository.RefreshTokenRepository;
@@ -13,9 +15,7 @@ import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.ACTIVE;
-import static org.example.lastcall.domain.auth.enums.RefreshTokenStatus.REVOKED;
-import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -32,12 +32,14 @@ public class UserCommandService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
 
         if (req.nickname() != null && !req.nickname().equals(user.getNickname())) {
             if (userRepository.existsByNickname(req.nickname())) {
                 throw new BusinessException(UserErrorCode.DUPLICATE_NICKNAME);
             }
+
             user.changeNickname(req.nickname());
         }
 
@@ -56,9 +58,11 @@ public class UserCommandService {
     public void changeMyPassword(Long userId, PasswordChangeRequest req) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
+
         if (user.isDeleted()) throw new BusinessException(USER_ALREADY_DELETED);
 
         user.validatePassword(passwordEncoder, req.oldPassword());
+
         if (passwordEncoder.matches(req.newPassword(), user.getPassword())) {
             throw new BusinessException(UserErrorCode.SAME_AS_OLD_PASSWORD);
         }

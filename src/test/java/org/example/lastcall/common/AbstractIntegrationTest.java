@@ -5,7 +5,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
-@ActiveProfiles("test") // ✅ application-test.yml 사용
+@ActiveProfiles("test")
 @TestPropertySource(properties = {
 	"spring.cloud.aws.region.static=dummy",
 	"jwt.secret=u9vL0W5FvC47qkSmFl8D9DzRrXz7pXzMwx3xYV0I6MMktQoOE6rwpOBjXDEj9ywr4K9Q2CFw5UazUvH1wj3jbg==",
@@ -24,5 +24,4 @@ import org.springframework.test.context.TestPropertySource;
 	"spring.cloud.aws.s3.bucket=dummy",
 })
 public abstract class AbstractIntegrationTest {
-
 }

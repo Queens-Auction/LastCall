@@ -1,4 +1,9 @@
-package org.example.lastcall.domain.point;
+package org.example.lastcall.domain.point.service;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+
+import java.util.Optional;
 
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -8,7 +13,7 @@ import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.point.repository.PointRepository;
 import org.example.lastcall.domain.point.service.query.PointQueryService;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.service.UserServiceApi;
+import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,17 +22,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-
 class PointQueryServiceTest {
     @Mock
     private PointRepository pointRepository;
 
     @Mock
-    private UserServiceApi userServiceApi;
+    private UserQueryServiceApi userQueryServiceApi;
 
     @InjectMocks
     private PointQueryService pointQueryService;
@@ -59,9 +59,9 @@ class PointQueryServiceTest {
 
     @Test
     @DisplayName("내 포인트 조회 성공")
-    void getUserPoint_내포인트조회_성공한다() {
+    void getUserPoint_내_포인트_조회에_성공한다() {
         given(authUser.userId()).willReturn(1L);
-        given(userServiceApi.findById(1L)).willReturn(user);
+        given(userQueryServiceApi.findById(1L)).willReturn(user);
         given(pointRepository.findByUserId(1L)).willReturn(Optional.of(point));
 
         PointResponse response = pointQueryService.getUserPoint(authUser);
@@ -75,9 +75,9 @@ class PointQueryServiceTest {
 
     @Test
     @DisplayName("내 포인트 조회 실패 - 포인트 기록 없음 예외 발생")
-    void getUserPoint_포인트기록없으면_예외발생한다() {
+    void getUserPoint_포인트_기록이_없을_시_예외가_발생한다() {
         given(authUser.userId()).willReturn(1L);
-        given(userServiceApi.findById(1L)).willReturn(user);
+        given(userQueryServiceApi.findById(1L)).willReturn(user);
         given(pointRepository.findByUserId(1L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> pointQueryService.getUserPoint(authUser))
@@ -87,7 +87,7 @@ class PointQueryServiceTest {
 
     @Test
     @DisplayName("입찰 가능 - 포인트 충분")
-    void validateSufficientPoints_포인트충분하면_입찰가능하다() {
+    void validateSufficientPoints_포인트가_충분하면_입찰에_성공한다() {
         given(pointRepository.findByUserId(1L)).willReturn(Optional.of(point));
 
         assertThatCode(() -> pointQueryService.validateSufficientPoints(1L, 3000L))
@@ -96,7 +96,7 @@ class PointQueryServiceTest {
 
     @Test
     @DisplayName("입찰 불가 - 포인트 부족 예외 발생")
-    void validateSufficientPoints_포인트부족하면_예외발생한다() {
+    void validateSufficientPoints_포인트가_부족하면_예외가_발생한다() {
         given(pointRepository.findByUserId(1L)).willReturn(Optional.of(point));
 
         assertThatThrownBy(() -> pointQueryService.validateSufficientPoints(1L, 10000L))

@@ -42,7 +42,11 @@ public class RefreshToken extends BaseEntity {
     }
 
     public static RefreshToken create(Long userId, String token, RefreshTokenStatus status, LocalDateTime expiredAt) {
-        return new RefreshToken(userId, token, status, expiredAt);
+        return new RefreshToken(
+            userId,
+            token,
+            status,
+            expiredAt);
     }
 
     public boolean isRevoked() {

@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ public class ProductImageService {
     private final S3Service s3Service;
     private final ProductImageRepository productImageRepository;
 
-    public ProductImage createProductImageFromRequest(
+    private ProductImage createProductImageWithRequest(
             Product product,
             ProductImageCreateRequest request,
             MultipartFile file,
@@ -44,6 +45,38 @@ public class ProductImageService {
         String imageKey = s3Service.uploadToS3(file, "products/" + productId);
 
         return ProductImage.of(product, imageType, imageKey, fileHash);
+    }
+
+    public List<ProductImage> uploadAndGenerateImages(
+            Product product,
+            List<ProductImageCreateRequest> requests,
+            List<MultipartFile> images,
+            Long productId) {
+        Map<MultipartFile, String> fileToHash = validateAndGenerateHashes(images, productId);
+
+        return IntStream.range(0, requests.size())
+                .mapToObj(i -> createProductImageWithRequest(
+                        product,
+                        requests.get(i),
+                        images.get(i),
+                        fileToHash.get(images.get(i)),
+                        productId))
+                .toList();
+    }
+
+    public List<ProductImage> uploadAndGenerateDetailImages(Product product,
+                                                            List<MultipartFile> images,
+                                                            Long productId) {
+        Map<MultipartFile, String> fileToHash = validateAndGenerateHashes(images, productId);
+
+        return images.stream()
+                .map(image -> uploadAndCreateProductImage(
+                        product,
+                        image,
+                        fileToHash.get(image),
+                        productId,
+                        ImageType.DETAIL))
+                .toList();
     }
 
     public Map<MultipartFile, String> validateAndGenerateHashes(List<MultipartFile> files, Long productId) {
@@ -70,20 +103,5 @@ public class ProductImageService {
         }
 
         return fileToHash;
-    }
-
-    public List<ProductImage> uploadAndGenerateDetailImages(Product product,
-                                                            List<MultipartFile> images,
-                                                            Long productId) {
-        Map<MultipartFile, String> fileToHash = validateAndGenerateHashes(images, productId);
-
-        return images.stream()
-                .map(image -> uploadAndCreateProductImage(
-                        product,
-                        image,
-                        fileToHash.get(image),
-                        productId,
-                        ImageType.DETAIL))
-                .toList();
     }
 }

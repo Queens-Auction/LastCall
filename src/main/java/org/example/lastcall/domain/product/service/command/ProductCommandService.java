@@ -25,9 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +65,7 @@ public class ProductCommandService {
         productValidatorService.validateImageCount(requests);
         productValidatorService.validateThumbnailConsistencyForCreate(productId, requests);
 
-        List<ProductImage> imagesToSave = uploadAndGenerateImages(product, requests, images, productId);
+        List<ProductImage> imagesToSave = productImageService.uploadAndGenerateImages(product, requests, images, productId);
 
         return productImageRepository.saveAll(imagesToSave).stream()
                 .map(image -> ProductImageResponse.from(image, s3Service))
@@ -197,22 +195,5 @@ public class ProductCommandService {
                 newThumbnail.updateImageType(ImageType.THUMBNAIL);
             }
         }
-    }
-
-    public List<ProductImage> uploadAndGenerateImages(
-            Product product,
-            List<ProductImageCreateRequest> requests,
-            List<MultipartFile> images,
-            Long productId) {
-        Map<MultipartFile, String> fileToHash = productImageService.validateAndGenerateHashes(images, productId);
-
-        return IntStream.range(0, requests.size())
-                .mapToObj(i -> productImageService.createProductImageFromRequest(
-                        product,
-                        requests.get(i),
-                        images.get(i),
-                        fileToHash.get(images.get(i)),
-                        productId))
-                .toList();
     }
 }

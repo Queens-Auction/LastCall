@@ -31,7 +31,7 @@ jobs:
         ports:
           - 6379:6379
       rabbitmq:
-        image: bitnami/rabbitmq:3.12
+        image: rabbitmq:3-management
         ports:
           - 5672:5672
           - 15672:15672
@@ -68,38 +68,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Wait for RabbitMQ (HTTP API)
-        run: |
-          for i in {1..30}; do
-            if curl -s -u guest:guest http://127.0.0.1:15672/api/overview > /dev/null; then
-              echo "RabbitMQ ready"; exit 0; fi; sleep 2; done
-          echo "RabbitMQ not ready"; exit 1
 
-      # Pre-declare exchange/queues/bindings required by the app to avoid race with listener startup
-      - name: Declare RabbitMQ resources
-        run: |
-          # Create delayed exchange
-          curl -sS -u guest:guest -H "content-type: application/json" \
-            -XPUT http://127.0.0.1:15672/api/exchanges/%2f/auction.exchange \
-            -d '{"type":"x-delayed-message","durable":true,"auto_delete":false,"arguments":{"x-delayed-type":"direct"}}'
-
-          # Create queues
-          curl -sS -u guest:guest -H "content-type: application/json" \
-            -XPUT http://127.0.0.1:15672/api/queues/%2f/auction.start.queue \
-            -d '{"durable":true}'
-
-          curl -sS -u guest:guest -H "content-type: application/json" \
-            -XPUT http://127.0.0.1:15672/api/queues/%2f/auction.end.queue \
-            -d '{"durable":true}'
-
-          # Bind queues to exchange with routing keys
-          curl -sS -u guest:guest -H "content-type: application/json" \
-            -XPOST http://127.0.0.1:15672/api/bindings/%2f/e/auction.exchange/q/auction.start.queue \
-            -d '{"routing_key":"auction.start.key","arguments":{}}'
-
-          curl -sS -u guest:guest -H "content-type: application/json" \
-            -XPOST http://127.0.0.1:15672/api/bindings/%2f/e/auction.exchange/q/auction.end.queue \
-            -d '{"routing_key":"auction.end.key","arguments":{}}'
 
       - name: Build (tests included)
         env:

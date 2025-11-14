@@ -15,6 +15,7 @@ public class AuctionEventPublisher {
 
     // 경매 시작 이벤트를 큐로 발행하는 메서드
     public void sendAuctionStartEvent(AuctionEvent event, Long delayMillis) {
+
         rabbitTemplate.convertAndSend(
                 AuctionConfig.EXCHANGE_NAME,
                 AuctionConfig.START_ROUTING_KEY,
@@ -24,7 +25,7 @@ public class AuctionEventPublisher {
                     return message;
                 }
         );
-        log.info("경매 시작 이벤트 발행: {}", event);
+        log.info("[RabbitMQ] 경매 시작 이벤트 발행: {}", event);
     }
 
     // 경매 종료 이벤트를 큐로 발행하는 메서드
@@ -41,6 +42,6 @@ public class AuctionEventPublisher {
                     return message;
                 }
         );
-        log.info("경매 종료 이벤트 발행: {}", event);
+        log.info("[RabbitMQ] 경매 종료 이벤트 발행: {}", event);
     }
 }

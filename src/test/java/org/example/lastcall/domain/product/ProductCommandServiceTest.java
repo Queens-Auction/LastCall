@@ -390,18 +390,16 @@ class ProductCommandServiceTest {
         allImages.add(currentThumbnail);
         allImages.add(newThumbnail);
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
         when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
                 .thenReturn(Optional.of(currentThumbnail));
-        when(productImageRepository.findById(newThumbnailId))
+        when(productImageRepository.findByIdAndDeletedFalse(newThumbnailId))
                 .thenReturn(Optional.of(newThumbnail));
         when(productImageRepository.findAllByProductIdAndDeletedFalse(productId))
                 .thenReturn(allImages);
-        when(productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL))
-                .thenReturn(1L);
         when(s3Service.generateImageUrl(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<ProductImageResponse> responses = productCommandService.updateThumbnailImage(productId, newThumbnailId, authUser);
@@ -411,14 +409,13 @@ class ProductCommandServiceTest {
         assertEquals(ImageType.DETAIL, currentThumbnail.getImageType());
         assertEquals(ImageType.THUMBNAIL, newThumbnail.getImageType());
 
-        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, times(1)).findByIdAndDeletedFalse(productId);
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
         verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(productImageRepository, times(1))
                 .findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
-        verify(productImageRepository, times(1)).findById(newThumbnailId);
+        verify(productImageRepository, times(1)).findByIdAndDeletedFalse(newThumbnailId);
         verify(productImageRepository, times(1)).findAllByProductIdAndDeletedFalse(productId);
-        verify(productImageRepository, times(1)).countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
     }
 
     @Test
@@ -428,46 +425,18 @@ class ProductCommandServiceTest {
         Long newThumbnailId = 100L;
         AuthUser authUSer = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
         doNothing().when(productValidatorService).checkOwnership(product, authUSer);
         when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
                 .thenReturn(Optional.empty());
-        when(productImageRepository.findById(newThumbnailId))
+        when(productImageRepository.findByIdAndDeletedFalse(newThumbnailId))
                 .thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.updateThumbnailImage(productId, newThumbnailId, authUSer));
 
         assertEquals(ProductErrorCode.IMAGE_NOT_FOUND, exception.getErrorCode());
-    }
-
-    @Test
-    @DisplayName("썸네일 변경 시 중복 썸네일 존재 예외 발생")
-    void updateThumbnailImage_중복_썸네일_존재_시_예외가_발생한다() {
-        Long productId = product.getId();
-        Long newThumbnailId = 100L;
-        AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
-
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidatorService).checkOwnership(product, authUser);
-
-        ProductImage oldThumbnail = ProductImage.of(product, ImageType.THUMBNAIL, "old-thumb.jpg", "hash");
-        ProductImage newThumbnail = ProductImage.of(product, ImageType.DETAIL, "newThumb.jpg", "hash2");
-
-        when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
-                .thenReturn(Optional.of(oldThumbnail));
-        when(productImageRepository.findById(newThumbnailId)).thenReturn(Optional.of(newThumbnail));
-        when(productImageRepository.findAllByProductIdAndDeletedFalse(productId))
-                .thenReturn(List.of(oldThumbnail, newThumbnail));
-        when(productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL))
-                .thenReturn(2L);
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.updateThumbnailImage(productId, newThumbnailId, authUser));
-
-        assertEquals(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED, exception.getErrorCode());
     }
 
     @Test

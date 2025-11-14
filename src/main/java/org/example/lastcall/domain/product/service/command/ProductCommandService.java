@@ -113,12 +113,8 @@ public class ProductCommandService {
     }
 
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
@@ -126,18 +122,12 @@ public class ProductCommandService {
         Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
         currentThumbnail.ifPresent(image -> image.updateImageType(ImageType.DETAIL));
 
-        ProductImage newThumbnail = productImageRepository.findById(newThumbnailImageId)
+        ProductImage newThumbnail = productImageRepository.findByIdAndDeletedFalse(newThumbnailImageId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
 
         newThumbnail.updateImageType(ImageType.THUMBNAIL);
 
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
-        //TODO : 썸네일 갯수 검증 삭제 : 현재 메서드는 ‘썸네일이 정확히 1개가 되도록 만드는 로직 구조
-        long thumbnailCount = productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
-
-        if (thumbnailCount > 1) {
-            throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
-        }
 
         return ProductImageResponse.from(productImages, s3Service);
     }

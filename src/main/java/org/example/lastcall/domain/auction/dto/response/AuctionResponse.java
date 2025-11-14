@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class AuctionResponse {
     @Schema(description = "경매 ID", example = "101")
-    private Long auctionId;
+    private Long id;
 
     @Schema(description = "상품 ID", example = "55")
     private Long productId;
@@ -45,7 +45,7 @@ public class AuctionResponse {
     // 정적 팩토리 메서드 (from) - 경매 등록 응답용
     public static AuctionResponse fromCreate(Auction auction) {
         return AuctionResponse.builder()
-                .auctionId(auction.getId())
+                .id(auction.getId())
                 .productId(auction.getProduct().getId())
                 .userId(auction.getUser().getId())
                 .startingBid(auction.getStartingBid())
@@ -60,7 +60,7 @@ public class AuctionResponse {
     // 정적 팩토리 메서드 (from) - 경매 수정 응답용
     public static AuctionResponse fromUpdate(Auction auction) {
         return AuctionResponse.builder()
-                .auctionId(auction.getId())
+                .id(auction.getId())
                 .productId(auction.getProduct().getId())
                 .userId(auction.getUser().getId())
                 .startingBid(auction.getStartingBid())

@@ -40,8 +40,7 @@ public class EmailVerificationService {
         EmailVerification emailVerification = EmailVerification.create(
                 GeneratorUtil.generatePublicId(),
                 verificationCode,
-                request.email()
-        );
+                request.email());
 
         emailVerificationRepository.save(emailVerification);
 
@@ -51,9 +50,11 @@ public class EmailVerificationService {
     private void sendEmail(final String userEmail, final String verificationCode) {
         try {
             SimpleMailMessage mail = new SimpleMailMessage();
+
             mail.setTo(userEmail);
             mail.setSubject("LastCall! 인증 코드");
             mail.setText(verificationCode);
+
             javaMailSender.send(mail);
         } catch (MailException e) {
             log.error("이메일 발송 실패. 수신자: {}, 원인: {}", userEmail, e.getMessage(), e);
@@ -64,6 +65,7 @@ public class EmailVerificationService {
     @Transactional
     public void validateDuplicateEmail(final String email) {
         boolean existsInUser = userRepository.existsByEmail(email);
+
         if (existsInUser) {
             throw new BusinessException(EmailErrorCode.DUPLICATE_EMAIL);
         }
@@ -79,6 +81,7 @@ public class EmailVerificationService {
         UUID verificationPublicId = emailVerification.getPublicId();
 
         validateExpiredVerificationCode(createdAt);
+
         emailVerification.validateVerificationCode(request.verificationCode());
         emailVerification.updateStatus(EmailVerificationStatus.VERIFIED);
 
@@ -87,6 +90,7 @@ public class EmailVerificationService {
 
     private void validateExpiredVerificationCode(final LocalDateTime createdAt) {
         long compareRequestTime = Duration.between(createdAt, LocalDateTime.now()).getSeconds();
+
         if (compareRequestTime > EmailConfig.POSSIBLE_REQUEST_TIME) {
             throw new BusinessException(EmailErrorCode.EXPIRED);
         }

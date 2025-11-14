@@ -1,12 +1,13 @@
 package org.example.lastcall.domain.product.dto.response;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.enums.Category;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 
 @Schema(description = "상품 단건 조회 응답 DTO (상품 기본 정보 + 이미지 목록 포함)")
 @Getter
@@ -56,7 +57,6 @@ public class ProductReadOneResponse {
                 product.getDescription(),
                 images,
                 product.getCreatedAt(),
-                product.getModifiedAt()
-        );
+                product.getModifiedAt());
     }
 }

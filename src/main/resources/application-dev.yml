@@ -31,8 +31,8 @@ spring:
       starttls:
         enable: true
       connectiontimeout: 5s  # 연결 타임아웃 (5초)
-      timeout: 5s           # 읽기 타임아웃 (5초)
-      writetimeout: 5s  # 쓰기 타임아웃 (5초)
+      timeout: 5s            # 읽기 타임아웃 (5초)
+      writetimeout: 5s       # 쓰기 타임아웃 (5초)
   rabbitmq:
     host: rabbitmq-dev
     port: 5672
@@ -57,4 +57,4 @@ auth:
       enabled: false  # 로컬 개발환경은 HTTP 사용
   security:
     cookie:
-      secure: false  # HTTP 환경에서는 Secure 속성 불필요
+      secure: false   # HTTP 환경에서는 Secure 속성 불필요

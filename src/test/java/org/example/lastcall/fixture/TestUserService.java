@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class TestUserService {
-
 	@Autowired
 	private UserRepository repository;
 

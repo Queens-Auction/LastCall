@@ -1,5 +1,20 @@
 package org.example.lastcall.domain.product;
 
+import static org.hibernate.validator.internal.util.Contracts.*;
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
@@ -22,7 +37,7 @@ import org.example.lastcall.domain.product.service.command.S3Service;
 import org.example.lastcall.domain.product.service.validator.ProductValidatorService;
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
-import org.example.lastcall.domain.user.service.UserServiceApi;
+import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,23 +50,13 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class ProductCommandServiceTest {
     @Mock
     private ProductRepository productRepository;
 
     @Mock
-    private UserServiceApi userServiceApi;
+    private UserQueryServiceApi userQueryServiceApi;
 
     @Mock
     private ProductImageRepository productImageRepository;
@@ -86,15 +91,13 @@ class ProductCommandServiceTest {
                 "12345",
                 "Apt 101",
                 "010-0000-0000",
-                Role.USER
-        );
+                Role.USER);
 
         product = Product.of(
                 user,
                 "제가 그린 기린 그림",
                 Category.ART_PAINTING,
-                "제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다."
-        );
+                "제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다.");
 
         product2 = Product.of(
                 user,
@@ -108,14 +111,14 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("상품 등록 성공")
-    void createProduct_상품등록_성공한다() {
+    void createProduct_상품_등록에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductCreateRequest request = new ProductCreateRequest(
                 product.getName(),
                 product.getCategory(),
                 product.getDescription());
 
-        when(userServiceApi.findById(authUser.userId())).thenReturn(product.getUser());
+        when(userQueryServiceApi.findById(authUser.userId())).thenReturn(product.getUser());
         when(productRepository.save(any(Product.class))).thenReturn(product);
 
         ProductResponse response = productCommandService.createProduct(authUser, request);
@@ -126,23 +129,21 @@ class ProductCommandServiceTest {
         assertEquals(product.getCategory(), response.getCategory());
         assertEquals(product.getDescription(), response.getDescription());
 
-        verify(userServiceApi, times(1)).findById(authUser.userId());
+        verify(userQueryServiceApi, times(1)).findById(authUser.userId());
         verify(productRepository, times(1)).save(any(Product.class));
     }
 
     @Test
     @DisplayName("상품 이미지 등록 성공")
-    void createProductImages_상품이미지등록_성공한다() {
+    void createProductImages_상품_이미지_등록에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         List<ProductImageCreateRequest> requests = List.of(
                 new ProductImageCreateRequest(true),
-                new ProductImageCreateRequest(false)
-        );
+                new ProductImageCreateRequest(false));
 
         List<MultipartFile> images = List.of(
                 new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "dummy content".getBytes()),
-                new MockMultipartFile("file1", "file2.jpg", "image/jpeg", "dummy content".getBytes())
-        );
+                new MockMultipartFile("file1", "file2.jpg", "image/jpeg", "dummy content".getBytes()));
 
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
         doNothing().when(productValidatorService).validateImageCount(requests);
@@ -151,6 +152,7 @@ class ProductCommandServiceTest {
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
         List<ProductImage> savedImages = new ArrayList<>();
+
         for (int i = 0; i < requests.size(); i++) {
             ProductImage img = ProductImage.of(
                     product,
@@ -171,6 +173,7 @@ class ProductCommandServiceTest {
 
         assertNotNull(responses);
         assertEquals(savedImages.size(), responses.size());
+
         for (int i = 0; i < responses.size(); i++) {
             assertEquals(savedImages.get(i).getId(), responses.get(i).getId());
             assertEquals(savedImages.get(i).getImageType(), responses.get(i).getImageType());
@@ -185,7 +188,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("상품이 없으면 예외 발생")
-    void createProductImages_상품없으면_예외발생한다() {
+    void createProductImages_상품이_없으면_예외가_발생한다() {
         Long productId = 1L;
         AuthUser authUser = new AuthUser(1L, "user", "USER");
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
@@ -195,12 +198,13 @@ class ProductCommandServiceTest {
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.createProductImages(productId, requests, images, authUser));
+
         assertEquals(ProductErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test
     @DisplayName("삭제된 상품이면 예외 발생")
-    void createProductImages_삭제된상품이면_예외발생한다() {
+    void createProductImages_삭제된_상품이면_예외가_발생한다() {
         Long productId = 1L;
         AuthUser authUser = new AuthUser(1L, "user", "USER");
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
@@ -208,6 +212,7 @@ class ProductCommandServiceTest {
 
         Product deletedProduct = Product.of(product.getUser(), "name", Category.ART_PAINTING, "desc");
         deletedProduct.softDelete();
+
         when(productRepository.findById(productId)).thenReturn(Optional.of(deletedProduct));
 
         BusinessException exception = assertThrows(BusinessException.class,
@@ -217,7 +222,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("이미지 개수 초과 시 BusinessException 발생")
-    void createProductImages_이미지개수초과시_BusinessException_발생한다() {
+    void createProductImages_이미지_개수_초과_시_예외가_발생한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
@@ -236,15 +241,14 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("상품 정보 수정 성공")
-    void updateProduct_상품정보수정_성공한다() {
+    void updateProduct_상품_정보_수정에_성공한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         ProductUpdateRequest request = new ProductUpdateRequest(
                 "수정된 상품명",
                 Category.HOME_DECOR,
-                "수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명"
-        );
+                "수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명");
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
@@ -264,7 +268,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("경매 진행 중인 상품 수정 시 예외 발생")
-    void updateProduct_경매진행중이면_예외발생한다() {
+    void updateProduct_경매가_진행중이면_예외가_발생한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductUpdateRequest request = new ProductUpdateRequest("new name", Category.HOME_DECOR, "new description");
@@ -285,7 +289,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("상품 수정 시 소유권 검증 실패")
-    void updateProduct_소유권검증실패시_예외발생한다() {
+    void updateProduct_소유권_검증_실패_시_예외가_발생한다() {
         Long productId = product.getId();
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductUpdateRequest request = new ProductUpdateRequest("new name", Category.HOME_DECOR, "new describe");
@@ -308,32 +312,28 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("상품 이미지 추가 성공")
-    void appendProductImages_상품이미지추가_성공한다() {
+    void appendProductImages_상품_이미지_추가에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         List<ProductImageCreateRequest> requests = List.of(
                 new ProductImageCreateRequest(true),
-                new ProductImageCreateRequest(false)
-        );
+                new ProductImageCreateRequest(false));
 
         List<MultipartFile> images = List.of(
                 new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "dummy1".getBytes()),
-                new MockMultipartFile("file2", "file2.jpg", "image/jpeg", "dummy2".getBytes())
-        );
+                new MockMultipartFile("file2", "file2.jpg", "image/jpeg", "dummy2".getBytes()));
 
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
         List<ProductImage> existingImages = List.of(
                 ProductImage.of(product, ImageType.DETAIL, "existing-1.jpg", "hash1"),
-                ProductImage.of(product, ImageType.DETAIL, "existing-2.jpg", "hash2")
-        );
+                ProductImage.of(product, ImageType.DETAIL, "existing-2.jpg", "hash2"));
 
         when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
 
         List<ProductImage> newImages = List.of(
                 ProductImage.of(product, ImageType.THUMBNAIL, "new-1.jpg", "hash3"),
-                ProductImage.of(product, ImageType.DETAIL, "new-2.jpg", "hash4")
-        );
+                ProductImage.of(product, ImageType.DETAIL, "new-2.jpg", "hash4"));
 
         ProductCommandService spyService = Mockito.spy(productCommandService);
         doReturn(newImages).when(spyService).uploadAndGenerateImages(any(Product.class), anyList(), anyList(), anyLong());
@@ -349,6 +349,7 @@ class ProductCommandServiceTest {
 
         assertNotNull(responses);
         assertEquals(newImages.size(), responses.size());
+
         for (ProductImageResponse response : responses) {
             assertNotNull(response.getImageType());
         }
@@ -364,15 +365,14 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("경매 진행 중인 이미지 추가 시 예외 발생")
-    void appendProductImages_경매진행중이면_예외발생한다() {
+    void appendProductImages_경매_진행중이면_예외가_발생한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true)
-        );
+                new ProductImageCreateRequest(true));
+
         List<MultipartFile> images = List.of(
-                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes())
-        );
+                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes()));
 
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
@@ -390,15 +390,14 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("이미지 추가 시 썸네일 일관성 예외)")
-    void appendProductImages_썸네일일관성위반시_예외발생한다() throws Exception {
+    void appendProductImages_썸네일_일관성_위반_시_예외가_발생한다() throws Exception {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
         List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true)
-        );
+                new ProductImageCreateRequest(true));
+
         List<MultipartFile> images = List.of(
-                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes())
-        );
+                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes()));
 
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
@@ -410,6 +409,7 @@ class ProductCommandServiceTest {
 
         ProductCommandService spyService = Mockito.spy(productCommandService);
         doReturn(newImages).when(spyService).uploadAndGenerateImages(product, requests, images, product.getId());
+
         when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
 
         doThrow(new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED))
@@ -423,7 +423,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("썸네일 이미지 변경 성공")
-    void updateThumbnailImage_썸네일이미지변경_성공한다() {
+    void updateThumbnailImage_썸네일_이미지_변경에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         Long productId = product.getId();
         Long newThumbnailId = 10L;
@@ -447,16 +447,13 @@ class ProductCommandServiceTest {
                 .thenReturn(allImages);
         when(productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL))
                 .thenReturn(1L);
-
         when(s3Service.generateImageUrl(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<ProductImageResponse> responses = productCommandService.updateThumbnailImage(productId, newThumbnailId, authUser);
 
         assertNotNull(responses);
         assertEquals(allImages.size(), responses.size());
-
         assertEquals(ImageType.DETAIL, currentThumbnail.getImageType());
-
         assertEquals(ImageType.THUMBNAIL, newThumbnail.getImageType());
 
         verify(productRepository, times(1)).findById(productId);
@@ -471,7 +468,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("썸네일 변경 시 새로운 이미지 없음 예외 발생")
-    void updateThumbnailImage_새로운이미지없으면_예외발생한다() {
+    void updateThumbnailImage_새로운_이미지가_없을_시_예외가_발생한다() {
         Long productId = product.getId();
         Long newThumbnailId = 100L;
         AuthUser authUSer = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
@@ -492,7 +489,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("썸네일 변경 시 중복 썸네일 존재 예외 발생")
-    void updateThumbnailImage_중복썸네일존재시_예외발생한다() {
+    void updateThumbnailImage_중복_썸네일_존재_시_예외가_발생한다() {
         Long productId = product.getId();
         Long newThumbnailId = 100L;
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
@@ -520,7 +517,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("상품 삭제 성공")
-    void deleteProduct_상품삭제_성공한다() {
+    void deleteProduct_상품_삭제에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         Long productId = product.getId();
 
@@ -551,7 +548,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("이미지 단건 삭제 성공")
-    void deleteProductImage_이미지단건삭제_성공한다() {
+    void deleteProductImage_이미지_단건_삭제에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         Long productId = product.getId();
         Long imageId = 10L;
@@ -584,7 +581,7 @@ class ProductCommandServiceTest {
 
     @Test
     @DisplayName("이미지가 상품에 속하지 않음")
-    void deleteProductImage_이미지가상품에속하지않으면_예외발생한다() {
+    void deleteProductImage_이미지가_상품에_속하지않을_시_예외가_발생한다() {
         Long productId = product.getId();
         Long imageId = 2L;
         AuthUser authUSer = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");

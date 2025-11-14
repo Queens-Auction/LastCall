@@ -1,11 +1,13 @@
 package org.example.lastcall.common.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 
 @Schema(description = "페이징 처리된 응답 DTO")
 @Getter
@@ -40,8 +42,7 @@ public class PageResponse<T> {
                 page.getTotalElements(),
                 page.getTotalPages(),
                 page.getSize(),
-                page.getNumber()
-        );
+                page.getNumber());
     }
 
     public static <R> PageResponse<R> of(Page<?> page, List<R> mappedContent) {
@@ -50,7 +51,6 @@ public class PageResponse<T> {
                 page.getTotalElements(),
                 page.getTotalPages(),
                 page.getSize(),
-                page.getNumber()
-        );
+                page.getNumber());
     }
 }

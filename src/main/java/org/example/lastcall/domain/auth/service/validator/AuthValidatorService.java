@@ -32,6 +32,7 @@ public class AuthValidatorService {
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));
 
         final LocalDateTime now = LocalDateTime.now();
+
         if (refreshToken.getExpiredAt().isBefore(now)) {
             throw new BusinessException(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
         }

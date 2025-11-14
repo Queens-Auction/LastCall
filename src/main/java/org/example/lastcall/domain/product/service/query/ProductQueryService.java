@@ -1,6 +1,10 @@
 package org.example.lastcall.domain.product.service.query;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -19,10 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -35,8 +36,8 @@ public class ProductQueryService implements ProductQueryServiceApi {
     public PageResponse<ProductReadAllResponse> getAllMyProducts(AuthUser authuser, int page, int size) {
         Page<Product> products = productRepository.findAllByUserIdAndDeletedFalse(
                 authuser.userId(),
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
-        );
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+
         Map<Long, String> thumbnailUrlMap = getThumbnailUrlMap(products);
 
         return ProductReadAllResponse.from(products, thumbnailUrlMap);
@@ -84,7 +85,6 @@ public class ProductQueryService implements ProductQueryServiceApi {
                 .stream()
                 .collect(Collectors.toMap(
                         pi -> pi.getProduct().getId(),
-                        pi -> s3Service.generateImageUrl(pi.getImageKey())
-                ));
+                        pi -> s3Service.generateImageUrl(pi.getImageKey())));
     }
 }

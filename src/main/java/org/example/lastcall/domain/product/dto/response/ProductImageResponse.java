@@ -1,13 +1,14 @@
 package org.example.lastcall.domain.product.dto.response;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.service.command.S3Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 
 @Schema(description = "상품 이미지 응답 DTO")
 @Getter
@@ -30,7 +31,8 @@ public class ProductImageResponse {
     @Schema(description = "이미지 수정일", example = "2025-10-24T13:00:00")
     private final LocalDateTime modifiedAt;
 
-    public ProductImageResponse(Long id, Long productId, ImageType imageType, String imageUrl, LocalDateTime createdAt, LocalDateTime modifiedAt) {
+    public ProductImageResponse(Long id, Long productId, ImageType imageType,
+                                String imageUrl, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
         this.productId = productId;
         this.imageType = imageType;

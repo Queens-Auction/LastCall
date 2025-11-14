@@ -12,5 +12,4 @@ import org.springframework.context.annotation.Configuration;
         JwtProperties.class,
         AuthProperties.class
 })
-public class PropertiesConfig {
-}
+public class PropertiesConfig {}

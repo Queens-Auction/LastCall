@@ -1,13 +1,9 @@
 package org.example.lastcall.common.security.jwt;
 
-import io.jsonwebtoken.Claims;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.example.lastcall.common.util.DateTimeUtil;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.auth.utils.CookieUtil;
@@ -22,9 +18,14 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.List;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -34,9 +35,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserRepository userRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req,
-                                    HttpServletResponse res,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(
+        HttpServletRequest req,
+        HttpServletResponse res,
+        FilterChain chain) throws ServletException, IOException {
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(req, res);
 
@@ -44,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = resolveToken(req);
+
         if (token == null || token.isBlank()) {
             chain.doFilter(req, res);
 
@@ -86,6 +89,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (user.getPasswordChangedAt() != null) {
                 LocalDateTime tokenIat = DateTimeUtil.convertToLocalDateTime(claims.getIssuedAt());
+
                 if (tokenIat != null && tokenIat.isBefore(user.getPasswordChangedAt())) {
                     log.warn("비밀번호 변경 이후 이전 토큰 거부: userId={}", userId);
                     SecurityContextHolder.clearContext();
@@ -116,6 +120,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest req) {
         String h = req.getHeader("Authorization");
+
         if (h != null && h.startsWith("Bearer ")) {
             return h.substring(7);
         }
@@ -125,6 +130,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             for (Cookie c : cookies) {
                 if (CookieUtil.ACCESS_COOKIE.equals(c.getName())) {
                     String v = c.getValue();
+
                     return (v == null || v.isBlank()) ? null : v;
                 }
             }

@@ -12,18 +12,19 @@ import java.util.Properties;
 @RequiredArgsConstructor
 public class EmailConfig {
     public static final int POSSIBLE_REQUEST_TIME = 180;
-
     private final MailProperties mailProperties;
 
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+
         mailSender.setHost(mailProperties.host());
         mailSender.setPort(mailProperties.port());
         mailSender.setUsername(mailProperties.username());
         mailSender.setPassword(mailProperties.password());
 
         Properties props = mailSender.getJavaMailProperties();
+
         props.put("mail.transport.protocol", mailProperties.transport().protocol());
         props.put("mail.smtp.auth", String.valueOf(mailProperties.smtp().auth()));
         props.put("mail.smtp.starttls.enable", String.valueOf(mailProperties.smtp().starttls().enable()));

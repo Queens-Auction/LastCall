@@ -1,7 +1,11 @@
 package org.example.lastcall.domain.product.service.command;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.IntStream;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -18,16 +22,13 @@ import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.repository.ProductRepository;
 import org.example.lastcall.domain.product.service.validator.ProductValidatorService;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.service.UserServiceApi;
+import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.IntStream;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -36,26 +37,29 @@ import java.util.stream.IntStream;
 public class ProductCommandService {
     private final ProductRepository productRepository;
     private final AuctionQueryServiceApi auctionQueryServiceApi;
-    private final UserServiceApi userServiceApi;
+    private final UserQueryServiceApi userQueryServiceApi;
     private final ProductImageRepository productImageRepository;
     private final ProductValidatorService productValidatorService;
     private final ProductImageService productImageService;
     private final S3Service s3Service;
 
     public ProductResponse createProduct(AuthUser authuser, ProductCreateRequest request) {
-        User user = userServiceApi.findById(authuser.userId());
+        User user = userQueryServiceApi.findById(authuser.userId());
+
         Product product = Product.of(user, request.getName(), request.getCategory(), request.getDescription());
         Product savedProduct = productRepository.save(product);
 
         return ProductResponse.from(savedProduct);
     }
 
-    public List<ProductImageResponse> createProductImages(Long productId,
-                                                          List<ProductImageCreateRequest> requests,
-                                                          List<MultipartFile> images,
-                                                          AuthUser authUser) {
+    public List<ProductImageResponse> createProductImages(
+        Long productId,
+        List<ProductImageCreateRequest> requests,
+        List<MultipartFile> images,
+        AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
         if (product.isDeleted()) {
             throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
         }
@@ -87,10 +91,11 @@ public class ProductCommandService {
         return ProductResponse.from(product);
     }
 
-    public List<ProductImageResponse> appendProductImages(Long productId,
-                                                          List<ProductImageCreateRequest> requests,
-                                                          List<MultipartFile> images,
-                                                          AuthUser authUser) {
+    public List<ProductImageResponse> appendProductImages(
+        Long productId,
+        List<ProductImageCreateRequest> requests,
+        List<MultipartFile> images,
+        AuthUser authUser) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
@@ -128,16 +133,17 @@ public class ProductCommandService {
         productValidatorService.checkOwnership(product, authUser);
 
         Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
-
         currentThumbnail.ifPresent(image -> image.updateImageType(ImageType.DETAIL));
 
         ProductImage newThumbnail = productImageRepository.findById(newThumbnailImageId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
+
         newThumbnail.updateImageType(ImageType.THUMBNAIL);
 
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 
         long thumbnailCount = productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
+
         if (thumbnailCount > 1) {
             throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
         }
@@ -152,6 +158,7 @@ public class ProductCommandService {
         if (product.isDeleted()) {
             throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
         }
+
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
 
@@ -160,6 +167,7 @@ public class ProductCommandService {
         for (ProductImage image : images) {
             s3Service.deleteFile(image.getImageKey());
         }
+
         product.softDelete();
 
         productImageRepository.softDeleteByProductId(productId);
@@ -178,6 +186,7 @@ public class ProductCommandService {
 
         ProductImage productImage = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
+
         if (!productImage.getProduct().getId().equals(productId)) {
             throw new BusinessException(ProductErrorCode.IMAGE_NOT_BELONGS_TO_PRODUCT);
         }
@@ -185,11 +194,11 @@ public class ProductCommandService {
         boolean isThumbnail = productImage.getImageType() == ImageType.THUMBNAIL;
 
         s3Service.deleteFile(productImage.getImageKey());
-
         productImage.softDelete();
 
         if (isThumbnail) {
             List<ProductImage> remainingImages = productImageRepository.findByProductIdAndDeletedFalseOrderByIdAsc(productId);
+
             if (!remainingImages.isEmpty()) {
                 ProductImage newThumbnail = remainingImages.get(0);
                 newThumbnail.updateImageType(ImageType.THUMBNAIL);
@@ -197,10 +206,11 @@ public class ProductCommandService {
         }
     }
 
-    public List<ProductImage> uploadAndGenerateImages(Product product,
-                                                      List<ProductImageCreateRequest> requests,
-                                                      List<MultipartFile> images,
-                                                      Long productId) {
+    public List<ProductImage> uploadAndGenerateImages(
+        Product product,
+        List<ProductImageCreateRequest> requests,
+        List<MultipartFile> images,
+        Long productId) {
         Map<MultipartFile, String> fileToHash = productImageService.validateAndGenerateHashes(images, productId);
 
         return IntStream.range(0, requests.size())

@@ -67,7 +67,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // ✅ H2 in-memory DB for tests
-//    testImplementation 'com.h2database:h2'
+    testImplementation 'com.h2database:h2'
     testImplementation 'com.mysql:mysql-connector-j'
 
     // Swagger

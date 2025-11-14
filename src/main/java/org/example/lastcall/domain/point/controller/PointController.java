@@ -1,5 +1,6 @@
 package org.example.lastcall.domain.point.controller;
 
+import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.point.dto.request.PointCreateRequest;
 import org.example.lastcall.domain.point.dto.response.PointResponse;
@@ -34,13 +35,12 @@ public class PointController {
 			"요청 시 본인 인증이 필요하며, 충전 금액은 0보다 커야 합니다."
 	)
 	@PostMapping("/earn")
-	public ResponseEntity<PointResponse> createPoint(
-        @AuthenticationPrincipal AuthUser authUser,
+	public ResponseEntity<ApiResponse<PointResponse>> createPoint(
+		@AuthenticationPrincipal AuthUser authUser,
 		@RequestBody @Valid PointCreateRequest request) {
-
 		PointResponse pointResponse = pointCommandService.createPoint(authUser, request);
 
-		return ResponseEntity.status(HttpStatus.CREATED).body(pointResponse);
+		return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("포인트 충전이 완료되었습니다.", pointResponse));
 	}
 
 	// 유저 포인트 조회
@@ -49,10 +49,9 @@ public class PointController {
 		description = "로그인한 사용자의 현재 포인트 잔액을 조회합니다."
 	)
 	@GetMapping
-	public ResponseEntity<PointResponse> getUserPoint(@AuthenticationPrincipal AuthUser authUser) {
-
+	public ResponseEntity<ApiResponse<PointResponse>> getUserPoint(@AuthenticationPrincipal AuthUser authUser) {
 		PointResponse pointResponse = pointQueryService.getUserPoint(authUser);
 
-		return ResponseEntity.status(HttpStatus.OK).body(pointResponse);
+		return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success("포인트 조회가 완료되었습니다.", pointResponse));
 	}
 }

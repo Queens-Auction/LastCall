@@ -6,7 +6,6 @@ import lombok.Getter;
 @Schema(description = "포인트 변동 유형 (입찰/환불/정산 등)")
 @Getter
 public enum PointLogType {
-
     @Schema(description = "포인트 결제로 인한 충전")
     EARN("포인트 결제로 인한 충전"),
 

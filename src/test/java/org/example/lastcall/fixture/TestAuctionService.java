@@ -29,6 +29,7 @@ public class TestAuctionService {
 	public Auction create(User user) {
 		Product product = productRepository.save(
 			Product.of(user, "test_product", Category.ACCESSORY, "test_description"));
+
 		return repository.save(Auction.of(user, product, AuctionFixture.createRequest()));
 	}
 
@@ -36,14 +37,15 @@ public class TestAuctionService {
 	public Auction create(User user, Long bidStep) {
 		Product product = productRepository.save(
 			Product.of(user, "test_product", Category.ACCESSORY, "test_description"));
+
 		return repository.save(Auction.of(user, product, AuctionFixture.createRequest(bidStep)));
 	}
 
-    // 테스트용: 진행 중인 경매 생성
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Auction createOngoingAuction(User seller, Category category, Long startingBid, Long bidStep) {
         Product product = productRepository.save(
                 Product.of(seller, "ongoing_product", category, "ongoing_auction"));
+
         AuctionCreateRequest request = new AuctionCreateRequest();
         ReflectionTestUtils.setField(request, "startingBid", startingBid);
         ReflectionTestUtils.setField(request, "bidStep", bidStep);
@@ -52,18 +54,18 @@ public class TestAuctionService {
 
         Auction auction = Auction.of(seller, product, request);
         ReflectionTestUtils.setField(auction, "status", AuctionStatus.ONGOING);
+
         return repository.saveAndFlush(auction);
     }
 
-    // 테스트용: 변경된 경매 저장
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Auction save(Auction auction) {
         return repository.saveAndFlush(auction);
     }
 
-    // 테스트용: 경매 단건 조회
     public Auction findById(Long id) {
         Optional<Auction> auction = repository.findById(id);
+
         return auction.orElseThrow(() -> new IllegalStateException("테스트용 경매가 존재하지 않습니다."));
     }
 
@@ -74,6 +76,7 @@ public class TestAuctionService {
 			ReflectionTestUtils.setField(request, "bidStep", 100L);
 			ReflectionTestUtils.setField(request, "startTime", LocalDateTime.now().minusDays(1));
 			ReflectionTestUtils.setField(request, "endTime", LocalDateTime.now().plusDays(2));
+
 			return request;
 		}
 
@@ -83,6 +86,7 @@ public class TestAuctionService {
 			ReflectionTestUtils.setField(request, "bidStep", bidStep);
 			ReflectionTestUtils.setField(request, "startTime", LocalDateTime.now().minusDays(1));
 			ReflectionTestUtils.setField(request, "endTime", LocalDateTime.now().plusDays(2));
+
 			return request;
 		}
 	}

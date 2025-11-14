@@ -21,20 +21,9 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 
     boolean existsByAuctionIdAndUserId(Long auctionId, Long userId);
 
-    @Query("SELECT b FROM Bid b WHERE b.auction = :auction ORDER BY b.bidAmount DESC LIMIT 1 OFFSET 1")
-    Optional<Bid> findPreviousHighestBidByAuction(@Param("auction") Auction auction);
-
     Optional<Bid> findTopByAuctionOrderByBidAmountDesc(Auction auction);
 
-    Optional<Bid> findTopByAuctionIdAndUserIdOrderByBidAmountDesc(Long auctionId, Long userId);
-
     Optional<Bid> findTopByAuctionIdAndUserIdAndIdNotOrderByBidAmountDesc(Long auctionId, Long userId, Long currentBidId);
-
-    @Query("SELECT DISTINCT b.auction.id FROM Bid b WHERE b.user.id = :userId")
-    List<Long> findDistinctAuctionsByUserId(@Param("userId") Long userId);
-
-    @Query("SELECT COUNT(DISTINCT b.user.id) FROM Bid b WHERE b.auction.id = :auctionId")
-    int countDistinctByAuctionId(Long auctionId);
 
     @Query("SELECT b FROM Bid b JOIN FETCH b.user WHERE b.auction.id = :auctionId")
     List<Bid> findAllByAuctionId(@Param("auctionId") Long auctionId);

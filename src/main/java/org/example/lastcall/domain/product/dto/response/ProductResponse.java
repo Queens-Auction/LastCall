@@ -1,11 +1,12 @@
 package org.example.lastcall.domain.product.dto.response;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import java.time.LocalDateTime;
+
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.enums.Category;
 
-import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
 
 @Schema(description = "상품 등록/수정 응답 DTO")
 @Getter
@@ -31,7 +32,8 @@ public class ProductResponse {
     @Schema(description = "상품 수정일", example = "2025-10-24T14:00:00")
     private final LocalDateTime modifiedAt;
 
-    private ProductResponse(Long id, Long userId, String name, Category category, String description, LocalDateTime createdAt, LocalDateTime modifiedAt) {
+    private ProductResponse(Long id, Long userId, String name, Category category,
+                            String description, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
         this.userId = userId;
         this.name = name;
@@ -49,7 +51,6 @@ public class ProductResponse {
                 product.getCategory(),
                 product.getDescription(),
                 product.getCreatedAt(),
-                product.getModifiedAt()
-        );
+                product.getModifiedAt());
     }
 }

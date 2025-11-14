@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class TestPointService {
-
 	@Autowired
 	PointRepository repository;
 
@@ -22,16 +21,17 @@ public class TestPointService {
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public Point create(Long auctionId, Long bidId, User user, Long point) {
-		Point savedPoint = repository.save(Point.create(user, PointLogType.EARN, point));
-		pointLogRepository.save(PointLog.create(
+		Point savedPoint = repository.save(Point.of(user, PointLogType.EARN, point));
+
+		pointLogRepository.save(PointLog.of(
 			savedPoint,
 			user.getId(),
 			PointLogType.EARN,
 			"포인트 등록",
 			point,
 			auctionId,
-			bidId
-		));
+			bidId));
+
 		return savedPoint;
 	}
 
@@ -40,16 +40,18 @@ public class TestPointService {
 		Point savedPoint = create(auctionId, bidId, user, userPoint);
 
 		savedPoint.updateDepositPoint(depositPoint);
+
 		repository.save(savedPoint);
-		pointLogRepository.save(PointLog.create(
+
+		pointLogRepository.save(PointLog.of(
 			savedPoint,
 			user.getId(),
 			PointLogType.DEPOSIT,
 			"입찰금 예치 처리",
 			depositPoint,
 			auctionId,
-			bidId
-		));
+			bidId));
+
 		return savedPoint;
 	}
 }

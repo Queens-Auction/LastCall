@@ -54,12 +54,8 @@ public class ProductCommandService {
             List<ProductImageCreateRequest> requests,
             List<MultipartFile> images,
             AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         productValidatorService.checkOwnership(product, authUser);
         productValidatorService.validateImageCount(requests);
@@ -73,12 +69,8 @@ public class ProductCommandService {
     }
 
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
@@ -133,12 +125,8 @@ public class ProductCommandService {
     }
 
     public void deleteProduct(Long productId, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
@@ -155,17 +143,13 @@ public class ProductCommandService {
     }
 
     public void deleteProductImage(Long productId, Long imageId, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
 
-        ProductImage productImage = productImageRepository.findById(imageId)
+        ProductImage productImage = productImageRepository.findByIdAndDeletedFalse(imageId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
 
         if (!productImage.getProduct().getId().equals(productId)) {

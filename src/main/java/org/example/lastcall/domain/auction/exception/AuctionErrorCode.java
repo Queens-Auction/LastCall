@@ -19,7 +19,6 @@ public enum AuctionErrorCode implements ErrorCode {
     AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 경매입니다."),
 
     INVALID_START_TIME(HttpStatus.BAD_REQUEST, "시작일은 현재 시각 이후여야 합니다."),
-    INVALID_END_TIME(HttpStatus.BAD_REQUEST, "종료일은 현재 시각 이후여야 합니다."),
     INVALID_END_TIME_ORDER(HttpStatus.BAD_REQUEST, "종료일은 시작일 이후여야 합니다."),
     INVALID_SAME_TIME(HttpStatus.BAD_REQUEST, "시작일과 종료일이 같을 수 없습니다.");
 

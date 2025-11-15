@@ -46,10 +46,6 @@ public class AuctionCommandService {
             log.warn("[RedissonLock] 이미 활성화된 경매 존재 - productId={}", productId);
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
-//의미X -> 시작일 이후 조건만 있으면 지금보다 이후인건 자동 보장됨
-//        if (!request.getEndTime().isAfter(LocalDateTime.now())) {
-//            throw new BusinessException(AuctionErrorCode.INVALID_END_TIME);
-//        }
 
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new BusinessException(AuctionErrorCode.INVALID_END_TIME_ORDER);

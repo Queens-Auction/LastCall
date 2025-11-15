@@ -120,15 +120,8 @@ public class PointLog {
 //                bidId);
 //    }
 
-    public static PointLog of(
-            Point point,
-            Long userId,
-            PointLogType type,
-            String description,
-            Long change,
-            Long auctionId,
-            Long bidId
-    ) {
+    public static PointLog of(Point point, Long userId, PointLogType type, String description, Long change,
+                              Long auctionId, Long bidId) {
         PointLog log = new PointLog(
                 point,
                 userId,

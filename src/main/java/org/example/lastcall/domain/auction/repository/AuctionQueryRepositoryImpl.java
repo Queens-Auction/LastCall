@@ -173,15 +173,27 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
         // 2. 참여 경매 정보 조회
         // id 목록 기반으로 실제 경매 정보 조회 - 2단계
         List<MyParticipatedResponse> results = jpaQueryFactory
-                .select(Projections.fields(MyParticipatedResponse.class,
+                .select(Projections.constructor(MyParticipatedResponse.class,
                         a.id,
-                        i.imageKey.as("imageKey"),
+                        ExpressionUtils.as(thumbnailSubquery(), "imageUrl"),
                         p.name,
                         p.description,
-                        b.bidAmount.max().as("currentBid"),
+                        a.currentBid,
                         a.status,
                         a.startTime,
-                        a.endTime))
+                        a.endTime,
+                        ExpressionUtils.as(
+                                Expressions.booleanTemplate(
+                                        "{0} = {1}",
+                                        myMaxBidSubquery(userId),
+                                        JPAExpressions.select(b.bidAmount.max())
+                                                .from(b)
+                                                .where(b.auction.id.eq(a.id))
+                                ),
+                                "isLeading"
+                        ),
+                        ExpressionUtils.as(myMaxBidSubquery(userId), "myBidAmount")
+                ))
                 .from(a)
                 .join(a.product, p)
                 .leftJoin(i).on(i.product.id.eq(p.id)
@@ -213,24 +225,27 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     public Optional<MyParticipatedResponse> findMyParticipatedAuctionDetail(Long auctionId, Long userId) {
         return Optional.ofNullable(
                 jpaQueryFactory
-                        .select(Projections.fields(MyParticipatedResponse.class,
-                                a.id.as("id"),
+                        .select(Projections.constructor(MyParticipatedResponse.class,
+                                a.id,
                                 ExpressionUtils.as(thumbnailSubquery(), "imageUrl"),
-                                p.name.as("productName"),
-                                p.description.as("productDescription"),
+                                p.name,
+                                p.description,
                                 a.currentBid,
                                 a.status,
                                 a.startTime,
                                 a.endTime,
-                                ExpressionUtils.as(myMaxBidSubquery(userId), "myBidAmount"),
                                 ExpressionUtils.as(
-                                        JPAExpressions.selectOne()
-                                                .from(b)
-                                                .where(b.auction.id.eq(a.id)
-                                                        .and(b.user.id.eq(userId))
-                                                        .and(b.bidAmount.eq(myMaxBidSubquery(userId))))
-                                                .exists(),
-                                        "isLeading")))
+                                        Expressions.booleanTemplate(
+                                                "{0} = {1}",
+                                                myMaxBidSubquery(userId),
+                                                JPAExpressions.select(b.bidAmount.max())
+                                                        .from(b)
+                                                        .where(b.auction.id.eq(a.id))
+                                        ),
+                                        "isLeading"
+                                ),
+                                ExpressionUtils.as(myMaxBidSubquery(userId), "myBidAmount")
+                        ))
                         .from(a)
                         .join(a.product, p)
                         .where(a.id.eq(auctionId), a.deleted.isFalse())

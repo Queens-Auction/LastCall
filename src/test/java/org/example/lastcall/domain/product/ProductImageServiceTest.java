@@ -1,15 +1,5 @@
 package org.example.lastcall.domain.product;
 
-import static org.hibernate.validator.internal.util.Contracts.*;
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
@@ -32,6 +22,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductImageServiceTest {
@@ -77,7 +77,7 @@ public class ProductImageServiceTest {
 
         when(s3Service.uploadToS3(file, "products/1")).thenReturn("s3-key.jpg");
 
-        ProductImage image = productImageService.uploadAndCreateProductImage(product, request, file, "hash", 1L);
+        ProductImage image = productImageService.uploadAndCreateProductImage(product, file, "hash", 1L, ImageType.THUMBNAIL);
 
         assertNotNull(image);
         assertEquals(ImageType.THUMBNAIL, image.getImageType());
@@ -91,7 +91,7 @@ public class ProductImageServiceTest {
 
         when(s3Service.uploadToS3(file, "products/1")).thenReturn("s3-key-detail.jpg");
 
-        ProductImage image = productImageService.uploadAndCreateProductImage(product, request, file, "hash", 1L);
+        ProductImage image = productImageService.uploadAndCreateProductImage(product, file, "hash", 1L, ImageType.DETAIL);
 
         assertNotNull(image);
         assertEquals(ImageType.DETAIL, image.getImageType());

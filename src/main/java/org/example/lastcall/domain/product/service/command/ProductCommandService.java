@@ -1,11 +1,7 @@
 package org.example.lastcall.domain.product.service.command;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.IntStream;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -27,8 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -53,22 +50,18 @@ public class ProductCommandService {
     }
 
     public List<ProductImageResponse> createProductImages(
-        Long productId,
-        List<ProductImageCreateRequest> requests,
-        List<MultipartFile> images,
-        AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+            Long productId,
+            List<ProductImageCreateRequest> requests,
+            List<MultipartFile> images,
+            AuthUser authUser) {
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         productValidatorService.checkOwnership(product, authUser);
         productValidatorService.validateImageCount(requests);
         productValidatorService.validateThumbnailConsistencyForCreate(productId, requests);
 
-        List<ProductImage> imagesToSave = uploadAndGenerateImages(product, requests, images, productId);
+        List<ProductImage> imagesToSave = productImageService.uploadAndGenerateImages(product, requests, images, productId);
 
         return productImageRepository.saveAll(imagesToSave).stream()
                 .map(image -> ProductImageResponse.from(image, s3Service))
@@ -76,12 +69,8 @@ public class ProductCommandService {
     }
 
     public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
@@ -92,29 +81,23 @@ public class ProductCommandService {
     }
 
     public List<ProductImageResponse> appendProductImages(
-        Long productId,
-        List<ProductImageCreateRequest> requests,
-        List<MultipartFile> images,
-        AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+            Long productId,
+            List<MultipartFile> images,
+            AuthUser authUser) {
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(product.getId());
         productValidatorService.checkOwnership(product, authUser);
 
         List<ProductImage> existingImages = productImageRepository.findAllByProductIdAndDeletedFalse(product.getId());
 
-        List<ProductImage> newImages = uploadAndGenerateImages(product, requests, images, productId);
+        List<ProductImage> newImages = productImageService.uploadAndGenerateDetailImages(product, images, productId);
 
         List<ProductImage> allImages = new ArrayList<>(existingImages);
         allImages.addAll(newImages);
 
         productValidatorService.validateImageCount(allImages);
-        productValidatorService.validateThumbnailConsistencyForAppend(allImages);
 
         return productImageRepository.saveAll(newImages).stream()
                 .map(image -> ProductImageResponse.from(image, s3Service))
@@ -122,12 +105,8 @@ public class ProductCommandService {
     }
 
     public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
@@ -135,29 +114,19 @@ public class ProductCommandService {
         Optional<ProductImage> currentThumbnail = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
         currentThumbnail.ifPresent(image -> image.updateImageType(ImageType.DETAIL));
 
-        ProductImage newThumbnail = productImageRepository.findById(newThumbnailImageId)
+        ProductImage newThumbnail = productImageRepository.findByIdAndDeletedFalse(newThumbnailImageId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
 
         newThumbnail.updateImageType(ImageType.THUMBNAIL);
 
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 
-        long thumbnailCount = productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
-
-        if (thumbnailCount > 1) {
-            throw new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED);
-        }
-
         return ProductImageResponse.from(productImages, s3Service);
     }
 
     public void deleteProduct(Long productId, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
@@ -174,17 +143,13 @@ public class ProductCommandService {
     }
 
     public void deleteProductImage(Long productId, Long imageId, AuthUser authUser) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        if (product.isDeleted()) {
-            throw new BusinessException(ProductErrorCode.PRODUCT_DELETED);
-        }
 
         auctionQueryServiceApi.validateAuctionStatusForModification(productId);
         productValidatorService.checkOwnership(product, authUser);
 
-        ProductImage productImage = productImageRepository.findById(imageId)
+        ProductImage productImage = productImageRepository.findByIdAndDeletedFalse(imageId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.IMAGE_NOT_FOUND));
 
         if (!productImage.getProduct().getId().equals(productId)) {
@@ -204,22 +169,5 @@ public class ProductCommandService {
                 newThumbnail.updateImageType(ImageType.THUMBNAIL);
             }
         }
-    }
-
-    public List<ProductImage> uploadAndGenerateImages(
-        Product product,
-        List<ProductImageCreateRequest> requests,
-        List<MultipartFile> images,
-        Long productId) {
-        Map<MultipartFile, String> fileToHash = productImageService.validateAndGenerateHashes(images, productId);
-
-        return IntStream.range(0, requests.size())
-                .mapToObj(i -> productImageService.uploadAndCreateProductImage(
-                        product,
-                        requests.get(i),
-                        images.get(i),
-                        fileToHash.get(images.get(i)),
-                        productId))
-                .toList();
     }
 }

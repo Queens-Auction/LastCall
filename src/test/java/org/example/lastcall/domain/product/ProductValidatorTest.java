@@ -4,8 +4,6 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
-import org.example.lastcall.domain.product.entity.ProductImage;
-import org.example.lastcall.domain.product.enums.ImageType;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
 import org.example.lastcall.domain.product.service.validator.ProductValidatorService;
@@ -77,18 +75,5 @@ public class ProductValidatorTest {
 
         assertThrows(BusinessException.class,
                 () -> productValidatorService.validateThumbnailConsistencyForCreate(1L, requests));
-    }
-
-    @Test
-    @DisplayName("썸네일 중복 시 예외 발생 - append")
-    void validateThumbnailConsistencyForAppend_이미지_추가_시_썸네일이_중복되면_예외가_발생한다() {
-        List<ProductImage> images = List.of(
-                ProductImage.of(mock(Product.class), ImageType.THUMBNAIL, "1.jpg", "hash"),
-                ProductImage.of(mock(Product.class), ImageType.THUMBNAIL, "2.jpg", "hash2"));
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> productValidatorService.validateThumbnailConsistencyForAppend(images));
-
-        assertEquals(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED, exception.getErrorCode());
     }
 }

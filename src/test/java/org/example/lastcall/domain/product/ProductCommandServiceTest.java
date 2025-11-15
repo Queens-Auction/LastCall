@@ -1,20 +1,5 @@
 package org.example.lastcall.domain.product;
 
-import static org.hibernate.validator.internal.util.Contracts.*;
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
@@ -44,11 +29,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductCommandServiceTest {
@@ -149,7 +143,7 @@ class ProductCommandServiceTest {
         doNothing().when(productValidatorService).validateImageCount(requests);
         doNothing().when(productValidatorService).validateThumbnailConsistencyForCreate(product.getId(), requests);
 
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(product.getId())).thenReturn(Optional.of(product));
 
         List<ProductImage> savedImages = new ArrayList<>();
 
@@ -182,7 +176,7 @@ class ProductCommandServiceTest {
         verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(productValidatorService, times(1)).validateImageCount(requests);
         verify(productValidatorService, times(1)).validateThumbnailConsistencyForCreate(product.getId(), requests);
-        verify(productRepository, times(1)).findById(product.getId());
+        verify(productRepository, times(1)).findByIdAndDeletedFalse(product.getId());
         verify(productImageRepository, times(1)).saveAll(anyList());
     }
 
@@ -194,30 +188,12 @@ class ProductCommandServiceTest {
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
         List<MultipartFile> images = List.of(new MockMultipartFile("file", "file.jpg", "image/jpeg", "data".getBytes()));
 
-        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.createProductImages(productId, requests, images, authUser));
 
         assertEquals(ProductErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
-    }
-
-    @Test
-    @DisplayName("삭제된 상품이면 예외 발생")
-    void createProductImages_삭제된_상품이면_예외가_발생한다() {
-        Long productId = 1L;
-        AuthUser authUser = new AuthUser(1L, "user", "USER");
-        List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
-        List<MultipartFile> images = List.of(new MockMultipartFile("file,", "file.jpg", "image/jpeg", "data".getBytes()));
-
-        Product deletedProduct = Product.of(product.getUser(), "name", Category.ART_PAINTING, "desc");
-        deletedProduct.softDelete();
-
-        when(productRepository.findById(productId)).thenReturn(Optional.of(deletedProduct));
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.createProductImages(productId, requests, images, authUser));
-        assertEquals(ProductErrorCode.PRODUCT_DELETED, exception.getErrorCode());
     }
 
     @Test
@@ -228,7 +204,7 @@ class ProductCommandServiceTest {
         List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
         List<MultipartFile> images = List.of(new MockMultipartFile("file", "file.jpg", "image/jpeg", "data".getBytes()));
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
 
         doThrow(new BusinessException(ProductErrorCode.TOO_MANY_IMAGES))
                 .when(productValidatorService).validateImageCount(requests);
@@ -250,7 +226,7 @@ class ProductCommandServiceTest {
                 Category.HOME_DECOR,
                 "수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명 수정된 상품 설명");
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
@@ -261,7 +237,7 @@ class ProductCommandServiceTest {
         assertEquals(request.getCategory(), response.getCategory());
         assertEquals(request.getDescription(), response.getDescription());
 
-        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, times(1)).findByIdAndDeletedFalse(productId);
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
         verify(productValidatorService, times(1)).checkOwnership(product, authUser);
     }
@@ -273,7 +249,7 @@ class ProductCommandServiceTest {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductUpdateRequest request = new ProductUpdateRequest("new name", Category.HOME_DECOR, "new description");
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
 
         doThrow(new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION))
                 .when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
@@ -294,7 +270,7 @@ class ProductCommandServiceTest {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
         ProductUpdateRequest request = new ProductUpdateRequest("new name", Category.HOME_DECOR, "new describe");
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
 
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
 
@@ -315,52 +291,46 @@ class ProductCommandServiceTest {
     void appendProductImages_상품_이미지_추가에_성공한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
-        List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true),
-                new ProductImageCreateRequest(false));
-
-        List<MultipartFile> images = List.of(
-                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "dummy1".getBytes()),
-                new MockMultipartFile("file2", "file2.jpg", "image/jpeg", "dummy2".getBytes()));
-
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        MockMultipartFile mockFile1 = new MockMultipartFile(
+                "image", "test1.jpg", "image/jpeg", "dummy1".getBytes()
+        );
+        MockMultipartFile mockFile2 = new MockMultipartFile(
+                "image", "test2.jpg", "image/jpeg", "dummy2".getBytes()
+        );
+        List<MultipartFile> inputImages = List.of(mockFile1, mockFile2);
 
         List<ProductImage> existingImages = List.of(
-                ProductImage.of(product, ImageType.DETAIL, "existing-1.jpg", "hash1"),
-                ProductImage.of(product, ImageType.DETAIL, "existing-2.jpg", "hash2"));
+                ProductImage.of(product, ImageType.THUMBNAIL, "existing-1.jpg", "hash1"),
+                ProductImage.of(product, ImageType.DETAIL, "existing-2.jpg", "hash2")
+        );
 
+        ProductImage newImage1 = ProductImage.of(product, ImageType.DETAIL, "test1.jpg", "hash1");
+        ProductImage newImage2 = ProductImage.of(product, ImageType.DETAIL, "test2.jpg", "hash2");
+
+        when(productRepository.findByIdAndDeletedFalse(product.getId())).thenReturn(Optional.of(product));
         when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
-
-        List<ProductImage> newImages = List.of(
-                ProductImage.of(product, ImageType.THUMBNAIL, "new-1.jpg", "hash3"),
-                ProductImage.of(product, ImageType.DETAIL, "new-2.jpg", "hash4"));
-
-        ProductCommandService spyService = Mockito.spy(productCommandService);
-        doReturn(newImages).when(spyService).uploadAndGenerateImages(any(Product.class), anyList(), anyList(), anyLong());
+        when(productImageService.uploadAndGenerateDetailImages(product, inputImages, product.getId()))
+                .thenReturn(List.of(newImage1, newImage2));
+        when(s3Service.generateImageUrl(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
         doNothing().when(productValidatorService).validateImageCount(anyList());
-        doNothing().when(productValidatorService).validateThumbnailConsistencyForAppend(anyList());
 
-        when(productImageRepository.saveAll(newImages)).thenReturn(newImages);
+        when(productImageRepository.saveAll(any())).thenReturn(List.of(newImage1, newImage2));
 
-        List<ProductImageResponse> responses = spyService.appendProductImages(product.getId(), requests, images, authUser);
+        List<ProductImageResponse> responses = productCommandService.appendProductImages(product.getId(), inputImages, authUser);
 
-        assertNotNull(responses);
-        assertEquals(newImages.size(), responses.size());
+        assertEquals(2, responses.size());
+        assertEquals("test1.jpg", responses.get(0).getImageUrl());
+        assertEquals("test2.jpg", responses.get(1).getImageUrl());
 
-        for (ProductImageResponse response : responses) {
-            assertNotNull(response.getImageType());
-        }
-
-        verify(productRepository, times(1)).findById(product.getId());
-        verify(productImageRepository, times(1)).findAllByProductIdAndDeletedFalse(product.getId());
-        verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(product.getId());
+        verify(productRepository, times(1)).findByIdAndDeletedFalse(product.getId());
         verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(productValidatorService, times(1)).validateImageCount(anyList());
-        verify(productValidatorService, times(1)).validateThumbnailConsistencyForAppend(anyList());
-        verify(productImageRepository, times(1)).saveAll(newImages);
+        verify(productImageRepository, times(1)).saveAll(any());
+        verify(productImageService).uploadAndGenerateDetailImages(product, inputImages, product.getId());
     }
 
     @Test
@@ -374,51 +344,18 @@ class ProductCommandServiceTest {
         List<MultipartFile> images = List.of(
                 new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes()));
 
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(product.getId())).thenReturn(Optional.of(product));
 
         doThrow(new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION))
                 .when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.appendProductImages(product.getId(), requests, images, authUser));
+                () -> productCommandService.appendProductImages(product.getId(), images, authUser));
 
         assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
 
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(product.getId());
         verify(productValidatorService, never()).checkOwnership(any(), any());
-    }
-
-    @Test
-    @DisplayName("이미지 추가 시 썸네일 일관성 예외)")
-    void appendProductImages_썸네일_일관성_위반_시_예외가_발생한다() throws Exception {
-        AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
-
-        List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true));
-
-        List<MultipartFile> images = List.of(
-                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes()));
-
-        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
-
-        doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
-        doNothing().when(productValidatorService).checkOwnership(product, authUser);
-
-        List<ProductImage> newImages = List.of(ProductImage.of(product, ImageType.DETAIL, "new.jpg", "hash"));
-        List<ProductImage> existingImages = List.of(ProductImage.of(product, ImageType.DETAIL, "exist", "hash2"));
-
-        ProductCommandService spyService = Mockito.spy(productCommandService);
-        doReturn(newImages).when(spyService).uploadAndGenerateImages(product, requests, images, product.getId());
-
-        when(productImageRepository.findAllByProductIdAndDeletedFalse(product.getId())).thenReturn(existingImages);
-
-        doThrow(new BusinessException(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED))
-                .when(productValidatorService).validateThumbnailConsistencyForAppend(anyList());
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> spyService.appendProductImages(product.getId(), requests, images, authUser));
-
-        assertEquals(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED, exception.getErrorCode());
     }
 
     @Test
@@ -435,18 +372,16 @@ class ProductCommandServiceTest {
         allImages.add(currentThumbnail);
         allImages.add(newThumbnail);
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
         when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
                 .thenReturn(Optional.of(currentThumbnail));
-        when(productImageRepository.findById(newThumbnailId))
+        when(productImageRepository.findByIdAndDeletedFalse(newThumbnailId))
                 .thenReturn(Optional.of(newThumbnail));
         when(productImageRepository.findAllByProductIdAndDeletedFalse(productId))
                 .thenReturn(allImages);
-        when(productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL))
-                .thenReturn(1L);
         when(s3Service.generateImageUrl(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<ProductImageResponse> responses = productCommandService.updateThumbnailImage(productId, newThumbnailId, authUser);
@@ -456,14 +391,13 @@ class ProductCommandServiceTest {
         assertEquals(ImageType.DETAIL, currentThumbnail.getImageType());
         assertEquals(ImageType.THUMBNAIL, newThumbnail.getImageType());
 
-        verify(productRepository, times(1)).findById(productId);
+        verify(productRepository, times(1)).findByIdAndDeletedFalse(productId);
         verify(auctionQueryServiceApi, times(1)).validateAuctionStatusForModification(productId);
         verify(productValidatorService, times(1)).checkOwnership(product, authUser);
         verify(productImageRepository, times(1))
                 .findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL);
-        verify(productImageRepository, times(1)).findById(newThumbnailId);
+        verify(productImageRepository, times(1)).findByIdAndDeletedFalse(newThumbnailId);
         verify(productImageRepository, times(1)).findAllByProductIdAndDeletedFalse(productId);
-        verify(productImageRepository, times(1)).countByProductIdAndImageType(productId, ImageType.THUMBNAIL);
     }
 
     @Test
@@ -473,46 +407,18 @@ class ProductCommandServiceTest {
         Long newThumbnailId = 100L;
         AuthUser authUSer = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
         doNothing().when(productValidatorService).checkOwnership(product, authUSer);
         when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
                 .thenReturn(Optional.empty());
-        when(productImageRepository.findById(newThumbnailId))
+        when(productImageRepository.findByIdAndDeletedFalse(newThumbnailId))
                 .thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.updateThumbnailImage(productId, newThumbnailId, authUSer));
 
         assertEquals(ProductErrorCode.IMAGE_NOT_FOUND, exception.getErrorCode());
-    }
-
-    @Test
-    @DisplayName("썸네일 변경 시 중복 썸네일 존재 예외 발생")
-    void updateThumbnailImage_중복_썸네일_존재_시_예외가_발생한다() {
-        Long productId = product.getId();
-        Long newThumbnailId = 100L;
-        AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
-
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
-        doNothing().when(productValidatorService).checkOwnership(product, authUser);
-
-        ProductImage oldThumbnail = ProductImage.of(product, ImageType.THUMBNAIL, "old-thumb.jpg", "hash");
-        ProductImage newThumbnail = ProductImage.of(product, ImageType.DETAIL, "newThumb.jpg", "hash2");
-
-        when(productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL))
-                .thenReturn(Optional.of(oldThumbnail));
-        when(productImageRepository.findById(newThumbnailId)).thenReturn(Optional.of(newThumbnail));
-        when(productImageRepository.findAllByProductIdAndDeletedFalse(productId))
-                .thenReturn(List.of(oldThumbnail, newThumbnail));
-        when(productImageRepository.countByProductIdAndImageType(productId, ImageType.THUMBNAIL))
-                .thenReturn(2L);
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.updateThumbnailImage(productId, newThumbnailId, authUser));
-
-        assertEquals(ProductErrorCode.MULTIPLE_THUMBNAILS_NOT_ALLOWED, exception.getErrorCode());
     }
 
     @Test
@@ -525,7 +431,7 @@ class ProductCommandServiceTest {
         ProductImage image2 = ProductImage.of(product, ImageType.DETAIL, "detail.jpg", "hash2");
         List<ProductImage> images = List.of(image1, image2);
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
@@ -556,13 +462,16 @@ class ProductCommandServiceTest {
         ProductImage thumbnailImage = ProductImage.of(product, ImageType.THUMBNAIL, "thumb.jpg", "hash-thumb");
         ProductImage detailImage = ProductImage.of(product, ImageType.DETAIL, "detail.jpg", "hash-detail");
 
+        ReflectionTestUtils.setField(thumbnailImage, "id", imageId);
+        ReflectionTestUtils.setField(detailImage, "id", imageId + 1);
+
         List<ProductImage> remainingImages = List.of(detailImage);
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
         doNothing().when(auctionQueryServiceApi).validateAuctionStatusForModification(productId);
         doNothing().when(productValidatorService).checkOwnership(product, authUser);
 
-        when(productImageRepository.findById(imageId)).thenReturn(Optional.of(thumbnailImage));
+        when(productImageRepository.findByIdAndDeletedFalse(imageId)).thenReturn(Optional.of(thumbnailImage));
         when(productImageRepository.findByProductIdAndDeletedFalseOrderByIdAsc(productId))
                 .thenReturn(remainingImages);
         doNothing().when(s3Service).deleteFile(thumbnailImage.getImageKey());
@@ -588,8 +497,8 @@ class ProductCommandServiceTest {
 
         ProductImage wrongImage = ProductImage.of(product2, ImageType.THUMBNAIL, "worngImage.jpg", "hash");
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(productImageRepository.findById(imageId)).thenReturn(Optional.of(wrongImage));
+        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
+        when(productImageRepository.findByIdAndDeletedFalse(imageId)).thenReturn(Optional.of(wrongImage));
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> productCommandService.deleteProductImage(productId, imageId, authUSer));

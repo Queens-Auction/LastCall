@@ -5,6 +5,8 @@ import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -87,34 +89,33 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
             whereBuilder.and(p.category.eq(category));
         }
 
+        NumberExpression<Long> participantCountExpr =
+                Expressions.numberTemplate(
+                        Long.class,
+                        "({0})",
+                        JPAExpressions
+                                .select(b.user.id.countDistinct())
+                                .from(b)
+                                .where(b.auction.id.eq(a.id))
+                );
+
         // 2️. 동적 정렬 조건 구성
         // 여러 정렬 기준(endTime, participantCount 등)이 들어올 수 있기 때문에
         // OrderSpecifier들을 List에 누적하여 관리한다.
         List<OrderSpecifier<?>> orderSpecifiers = new ArrayList<>();
 
-        if (pageable.getSort().isEmpty()) {
-            orderSpecifiers.add(a.createdAt.desc());
-            orderSpecifiers.add(a.id.desc());
-        } else {
-            pageable.getSort().forEach(order -> {
-                String property = order.getProperty();  // 정렬 기준(필드)
-                boolean asc = order.isAscending();      // 정렬 기준(오름/내림)
+        pageable.getSort().forEach(order -> {
+            String property = order.getProperty();  // 정렬 기준(필드)
+            boolean asc = order.isAscending();      // 정렬 기준(오름/내림)
 
-                switch (property) {
-                    case "endTime" -> orderSpecifiers.add(asc ? a.endTime.asc() : a.endTime.desc());
-                    case "participantCount" ->
-                            orderSpecifiers.add(asc ? a.participantCount.asc() : a.participantCount.desc());
-//                    case "participantCount" -> orderSpecifiers.add(
-//                            asc ? Expressions.numberPath(Long.class, "participantCount").asc()
-//                                    : Expressions.numberPath(Long.class, "participantCount").desc());
-                }
-            });
-        }
-//        // 3.정렬 조건 비어 있을 경우 대비 -> 중복 코드
-//        if (orderSpecifiers.isEmpty()) {
-//            orderSpecifiers.add(a.createdAt.desc());
-//            orderSpecifiers.add(a.id.desc());
-//        }
+            switch (property) {
+                case "createdAt" -> orderSpecifiers.add(asc ? a.createdAt.asc() : a.createdAt.desc());
+                case "id" -> orderSpecifiers.add(asc ? a.id.asc() : a.id.desc());
+                case "endTime" -> orderSpecifiers.add(asc ? a.endTime.asc() : a.endTime.desc());
+                case "participantCount" ->
+                        orderSpecifiers.add(asc ? participantCountExpr.asc() : participantCountExpr.desc());
+            }
+        });
 
         // 4. 실제 데이터 조회
         // 실제 경매에 참여한 참여자 수 조회 (중복 유저 제외)

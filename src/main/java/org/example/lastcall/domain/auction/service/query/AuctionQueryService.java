@@ -50,13 +50,10 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 
         boolean participated = false;
-        // 공개용/로그인용 같이 쓰기
-        if (userId != null) {
-            participated = bidQueryServiceApi.existsByAuctionIdAndUserId(auctionId, userId);
-        }
-        // 입찰 가능 여부 canBid 계산
         boolean canBid = false;
         if (userId != null) {
+            participated = bidQueryServiceApi.existsByAuctionIdAndUserId(auctionId, userId);
+
             boolean isNotOwner = !auction.getProduct().getUser().getId().equals(userId);
             boolean isOngoing = auction.getDynamicStatus() == AuctionStatus.ONGOING;
             canBid = isNotOwner && isOngoing;

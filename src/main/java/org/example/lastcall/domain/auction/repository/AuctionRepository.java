@@ -12,19 +12,18 @@ import java.util.Optional;
 
 public interface AuctionRepository extends JpaRepository<Auction, Long>, AuctionQueryRepository {
     // 경매 재등록 가능 여부 검증
-    @Query("SELECT COUNT(a) > 0 " +
-            "FROM Auction a " +
-            "WHERE a.product.id = :productId " +
-            "AND(" +
-            "a.status = 'SCHEDULED'" +
-            "OR a.status = 'ONGOING'" +
-            "OR (a.status = 'CLOSED')" +
-            " )"
-    )
+    @Query("""
+            SELECT COUNT(a) > 0
+            FROM Auction a
+            WHERE a.product.id = :productId
+              AND (a.status = 'SCHEDULED'
+                    OR a.status = 'ONGOING'
+                    OR a.status = 'CLOSED')
+            """)
     boolean existsActiveAuction(@Param("productId") Long productId);
 
     // 내가 판매한 경매 목록 조회 (페이징)
-    @Query("""
+    @Query(value = """
                    SELECT new org.example.lastcall.domain.auction.dto.response.MySellingResponse(
                         a.id,
                             (
@@ -50,18 +49,25 @@ public interface AuctionRepository extends JpaRepository<Auction, Long>, Auction
                         WHERE a.user.id = :userId
                           AND a.deleted = false
                         ORDER BY a.createdAt DESC
-            """)
+            """,
+            countQuery = """
+                    SELECT COUNT(a)
+                    FROM Auction a
+                    JOIN a.product p
+                    WHERE a.user.id = :userId
+                    AND a.deleted = false
+                    """)
     Page<MySellingResponse> findMySellingAuctions(@Param("userId") Long userId, Pageable pageable);
 
     // 내가 판매한 특정 경매 단건 조회
     @Query("SELECT a FROM Auction a WHERE a.user.id = :userId AND a.id = :auctionId")
-    Optional<Auction> findBySellerIdAndAuctionId(Long userId, Long auctionId);
+    Optional<Auction> findBySellerIdAndAuctionId(@Param("userId") Long userId, @Param("auctionId") Long auctionId);
 
     // 상품 ID로 연결된 경매 조회
     @Query("SELECT a FROM Auction a WHERE a.product.id = :productId AND a.deleted = false")
-    Optional<Auction> findByProductId(Long productId);
+    Optional<Auction> findByProductId(@Param("productId") Long productId);
 
     // 삭제된 경매는 제외하고 조회
     @Query("SELECT a FROM Auction a WHERE a.id = :auctionId AND a.deleted = false")
-    Optional<Auction> findActiveById(Long auctionId);
+    Optional<Auction> findActiveById(@Param("auctionId") Long auctionId);
 }

@@ -14,7 +14,7 @@ public enum AuctionErrorCode implements ErrorCode {
     CANNOT_MODIFY_PRODUCT_DURING_AUCTION(HttpStatus.FORBIDDEN, "시작되지 않은 경매만 상품을 수정하거나 삭제할 수 있습니다."),
     AUCTION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 경매가 존재하지 않습니다."),
     CANNOT_BID_ON_NON_ONGOING_AUCTION(HttpStatus.FORBIDDEN, "진행 중인 경매일 경우에만 입찰이 가능합니다."),
-    CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION(HttpStatus.FORBIDDEN, "진행 중이거나 이미 종료된 경매는 수정할 수 없습니다."),
+    CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION(HttpStatus.FORBIDDEN, "시작되지 않은 경매만 수정하거나 삭제할 수 있습니다."),
     USER_NOT_PARTICIPATED_IN_AUCTION(HttpStatus.NOT_FOUND, "해당 경매에 참여한 사용자가 아닙니다."),
     AUCTION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 경매입니다."),
 

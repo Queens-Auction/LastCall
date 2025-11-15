@@ -21,8 +21,6 @@ import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -40,17 +38,18 @@ public class AuctionCommandService {
     public AuctionResponse createAuction(Long productId, Long userId, AuctionCreateRequest request) {
         log.debug("[RedissonLock] 락 획득 후 작업 실행: 경매 등록 처리 시작 - productId={}", productId);
 
-        productQueryServiceApi.validateProductOwner(productId, userId);
+        Product product = productQueryServiceApi.validateProductOwner(productId, userId);
+        User user = product.getUser();
         log.debug("[RedissonLock] 상품 소유자 검증 완료 - productId={}, userId={}", productId, userId);
 
         if (auctionRepository.existsActiveAuction(productId)) {
             log.warn("[RedissonLock] 이미 활성화된 경매 존재 - productId={}", productId);
             throw new BusinessException(AuctionErrorCode.DUPLICATE_AUCTION);
         }
-
-        if (!request.getEndTime().isAfter(LocalDateTime.now())) {
-            throw new BusinessException(AuctionErrorCode.INVALID_END_TIME);
-        }
+//의미X -> 시작일 이후 조건만 있으면 지금보다 이후인건 자동 보장됨
+//        if (!request.getEndTime().isAfter(LocalDateTime.now())) {
+//            throw new BusinessException(AuctionErrorCode.INVALID_END_TIME);
+//        }
 
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new BusinessException(AuctionErrorCode.INVALID_END_TIME_ORDER);
@@ -59,12 +58,6 @@ public class AuctionCommandService {
         if (request.getStartTime().equals(request.getEndTime())) {
             throw new BusinessException(AuctionErrorCode.INVALID_SAME_TIME);
         }
-
-        User user = userQueryServiceApi.findById(userId);
-        log.debug("[RedissonLock] 판매자 조회 완료 - userId={}", userId);
-
-        Product product = productQueryServiceApi.findById(productId);
-        log.debug("[RedissonLock] 상품 조회 완료 - productId={}", productId);
 
         Auction auction = Auction.of(user, product, request);
         auctionRepository.save(auction);

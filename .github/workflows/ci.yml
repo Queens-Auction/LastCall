@@ -94,7 +94,7 @@ jobs:
           RABBITMQ_PORT: 5672
           RABBITMQ_USERNAME: guest
           RABBITMQ_PASSWORD: guest
-        run: ./gradlew clean build -x test --no-daemon
+        run: ./gradlew clean build --no-daemon
 
       - name: Upload problems report
         if: always()

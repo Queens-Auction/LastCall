@@ -119,7 +119,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
 
         AuctionStatus status = auctionOpt.get().getStatus();
 
-        if (status == AuctionStatus.ONGOING || status == AuctionStatus.CLOSED) {
+        if (!status.equals(AuctionStatus.SCHEDULED)) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
         }
     }

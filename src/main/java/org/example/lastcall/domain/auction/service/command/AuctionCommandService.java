@@ -17,7 +17,6 @@ import org.example.lastcall.domain.point.service.command.PointCommandService;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.service.query.ProductQueryServiceApi;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AuctionCommandService {
     private final AuctionRepository auctionRepository;
-    private final UserQueryServiceApi userQueryServiceApi;
     private final ProductQueryServiceApi productQueryServiceApi;
     private final BidQueryServiceApi bidQueryServiceApi;
     private final PointCommandService pointCommandServiceApi;
@@ -77,6 +75,14 @@ public class AuctionCommandService {
 
         if (auction.getStatus() != AuctionStatus.SCHEDULED) {
             throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_ONGOING_OR_CLOSED_AUCTION);
+        }
+
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new BusinessException(AuctionErrorCode.INVALID_END_TIME_ORDER);
+        }
+
+        if (request.getStartTime().equals(request.getEndTime())) {
+            throw new BusinessException(AuctionErrorCode.INVALID_SAME_TIME);
         }
 
         auction.update(request);

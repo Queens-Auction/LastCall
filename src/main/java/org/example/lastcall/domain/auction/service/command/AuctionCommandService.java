@@ -134,8 +134,12 @@ public class AuctionCommandService {
 
             auction.assignWinner(winnerId, bidAmount);
 
-            pointCommandServiceApi.depositToAvailablePoint(auction.getId());
-            pointCommandServiceApi.depositToSettlement(auction.getId());
+            try {
+                pointCommandServiceApi.depositToAvailablePoint(auction.getId());
+                pointCommandServiceApi.depositToSettlement(auction.getId());
+            } catch (Exception e) {
+                log.error("[RedissonLock] 포인트 처리 실패 - auctionId={}, error={}", auctionId, e.getMessage());
+            }
 
             log.info("[RedissonLock] 경매 종료 - 낙찰자 id: {}, 낙찰가: {}원", winnerId, bidAmount);
         } else {

@@ -110,6 +110,10 @@ public class AuthController {
                 .body(ApiResponse.success("정상적으로 회원 탈퇴 요청이 완료되었습니다."));
     }
 
+    @Operation(
+            summary = "Refresh Token 재발급",
+            description = "만료된 Access Token을 갱신하기 위해 클라이언트가 보유한 Refresh Token을 요청 본문으로 전달하여 새로운 Access Token과 Refresh Token을 재발급합니다."
+    )
     @PostMapping("/tokens")
     public ResponseEntity<ApiResponse<Object>> reissueToken(
             @CookieValue(name = CookieUtil.REFRESH_COOKIE, required = false) String refreshToken

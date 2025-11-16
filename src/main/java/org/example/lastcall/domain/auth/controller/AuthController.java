@@ -1,10 +1,14 @@
 package org.example.lastcall.domain.auth.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
-import org.example.lastcall.domain.auth.dto.request.TokenReissueRequest;
 import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -16,17 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "인증(Auth) API", description = "회원가입, 로그인, 로그아웃, 회원탈퇴 등 인증 관련 기능 제공")
 @Slf4j
@@ -95,8 +89,8 @@ public class AuthController {
     )
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<Void>> withdraw(
-        @AuthenticationPrincipal AuthUser authUser,
-        @RequestBody(required = false) WithdrawRequest withdrawRequest) {
+            @AuthenticationPrincipal AuthUser authUser,
+            @RequestBody(required = false) WithdrawRequest withdrawRequest) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
         }
@@ -117,9 +111,16 @@ public class AuthController {
     }
 
     @PostMapping("/tokens")
-    public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
-        LoginResponse response = authCommandService.reissueAccessToken(request.refreshToken());
+    public ResponseEntity<ApiResponse<Object>> reissueToken(
+            @CookieValue(name = CookieUtil.REFRESH_COOKIE, required = false) String refreshToken
+    ) {
+        LoginResponse response = authCommandService.reissueAccessToken(refreshToken);
 
-        return ResponseEntity.ok(response);
+        ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(response.accessToken());
+        ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(response.refreshToken());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString(), refreshCookie.toString())
+                .body(ApiResponse.success("토큰이 재발급되었습니다."));
     }
 }

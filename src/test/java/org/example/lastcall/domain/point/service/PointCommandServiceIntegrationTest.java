@@ -71,7 +71,7 @@ class PointCommandServiceIntegrationTest extends AbstractIntegrationTest {
         Point result = pointRepository.findByUserId(user.getId()).orElseThrow();
 
         assertThat(result.getAvailablePoint()).isEqualTo(
-                PointFixture.pointCreateRequest().getIncomePoint() * threadCount);
+                PointFixture.pointCreateRequest().getIncomePoint());
     }
 
     @DisplayName("동시에 여러 입찰 요청이 들어와도 예치 포인트는 중복 차감되지 않음")

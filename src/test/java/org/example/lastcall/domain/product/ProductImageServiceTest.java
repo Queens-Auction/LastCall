@@ -1,7 +1,6 @@
 package org.example.lastcall.domain.product;
 
 import org.example.lastcall.common.exception.BusinessException;
-import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.Category;
@@ -71,24 +70,8 @@ public class ProductImageServiceTest {
     }
 
     @Test
-    @DisplayName("이미지 업로드 후 ProductImage 생성 - 썸네일")
-    void uploadAndCreateProductImage_이미지_업로드_후_썸네일을_생성한다() {
-        ProductImageCreateRequest request = new ProductImageCreateRequest(true);
-
-        when(s3Service.uploadToS3(file, "products/1")).thenReturn("s3-key.jpg");
-
-        ProductImage image = productImageService.uploadAndCreateProductImage(product, file, "hash", 1L, ImageType.THUMBNAIL);
-
-        assertNotNull(image);
-        assertEquals(ImageType.THUMBNAIL, image.getImageType());
-        assertEquals("s3-key.jpg", image.getImageKey());
-    }
-
-    @Test
     @DisplayName("이미지 업로드 후 ProductImage 생성 - 상세")
     void uploadAndCreateProductImage_이미지_업로드_후_상세_이미지를_생성한다() {
-        ProductImageCreateRequest request = new ProductImageCreateRequest(false);
-
         when(s3Service.uploadToS3(file, "products/1")).thenReturn("s3-key-detail.jpg");
 
         ProductImage image = productImageService.uploadAndCreateProductImage(product, file, "hash", 1L, ImageType.DETAIL);

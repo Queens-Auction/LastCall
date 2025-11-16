@@ -1,8 +1,6 @@
 package org.example.lastcall.domain.auction.service.query;
 
-import java.util.List;
-import java.util.Optional;
-
+import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auction.dto.response.AuctionReadAllResponse;
@@ -23,112 +21,119 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuctionQueryService implements AuctionQueryServiceApi {
-	private final AuctionRepository auctionRepository;
-	private final ProductQueryServiceApi productQueryServiceApi;
-	private final BidQueryServiceApi bidQueryServiceApi;
+    private final AuctionRepository auctionRepository;
+    private final ProductQueryServiceApi productQueryServiceApi;
+    private final BidQueryServiceApi bidQueryServiceApi;
 
-	// 경매 전체 조회
-	public PageResponse<AuctionReadAllResponse> getAllAuctions(Category category, Pageable pageable) {
-		Page<AuctionReadAllResponse> auctions = auctionRepository.findAllAuctionSummaries(category, pageable);
+    // 경매 전체 조회
+    public PageResponse<AuctionReadAllResponse> getAllAuctions(Category category, Pageable pageable) {
+        Page<AuctionReadAllResponse> auctions = auctionRepository.findAllAuctionSummaries(category, pageable);
 
-		return PageResponse.of(auctions);
-	}
+        return PageResponse.of(auctions);
+    }
 
-	// 경매 단건 상세 조회
-	public AuctionReadResponse getAuction(Long auctionId, Long userId) {
-		Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
-			() -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+    // 경매 단건 상세 조회 //
+    // 로그인 하지 않은 사용자도 접근 가능
+    public AuctionReadResponse getAuction(Long auctionId, Long userId) {
+        // 1. 경매 조회
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+        // 2. 상품 이미지 조회
+        List<ProductImageResponse> images = productQueryServiceApi.findAllProductImage(auction.getProduct().getId());
+        String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 
-		List<ProductImageResponse> images = productQueryServiceApi.findAllProductImage(auction.getProduct().getId());
-		String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
+        boolean participated = false;
+        boolean canBid = false;
+        if (userId != null) {
+            participated = bidQueryServiceApi.existsByAuctionIdAndUserId(auctionId, userId);
 
-		boolean participated = false;
+            boolean isNotOwner = !auction.getProduct().getUser().getId().equals(userId);
+            boolean isOngoing = auction.getDynamicStatus() == AuctionStatus.ONGOING;
+            canBid = isNotOwner && isOngoing;
+        }
 
-		if (userId != null) {
-			participated = bidQueryServiceApi.existsByAuctionIdAndUserId(auctionId, userId);
-		}
+        return AuctionReadResponse.from(
+                auction,
+                auction.getProduct(),
+                imageUrl,
+                participated,
+                canBid
+        );
+    }
 
-		return AuctionReadResponse.from(
-			auction,
-			auction.getProduct(),
-			imageUrl,
-			participated);
-	}
+    // 내가 판매한 경매 목록 조회
+    public PageResponse<MySellingResponse> getMySellingAuctions(Long userId, Pageable pageable) {
+        Page<MySellingResponse> auctions = auctionRepository.findMySellingAuctions(userId, pageable);
 
-	// 내가 판매한 경매 목록 조회
-	public PageResponse<MySellingResponse> getMySellingAuctions(Long userId, Pageable pageable) {
-		Page<MySellingResponse> auctions = auctionRepository.findMySellingAuctions(userId, pageable);
+        return PageResponse.of(auctions);
+    }
 
-		return PageResponse.of(auctions);
-	}
+    // 내가 판매한 경매 상세 조회
+    public MySellingResponse getMySellingDetailAuction(Long userId, Long auctionId) {
+        Auction auction = auctionRepository.findBySellerIdAndAuctionId(userId, auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
-	// 내가 판매한 경매 상세 조회
-	public MySellingResponse getMySellingDetailAuction(Long userId, Long auctionId) {
-		Auction auction = auctionRepository.findBySellerIdAndAuctionId(userId, auctionId).orElseThrow(
-			() -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+        Product product = auction.getProduct();
 
-		Product product = auction.getProduct();
+        String imageUrl = productQueryServiceApi
+                .findThumbnailImage(product.getId())
+                .getImageUrl();
 
-		String imageUrl = productQueryServiceApi
-			.findThumbnailImage(product.getId())
-			.getImageUrl();
+        Long currentBid = bidQueryServiceApi.findCurrentBidAmount(auction.getId());
 
-		Long currentBid = bidQueryServiceApi.findCurrentBidAmount(auction.getId());
+        return MySellingResponse.from(
+                auction,
+                product,
+                imageUrl,
+                currentBid);
+    }
 
-		return MySellingResponse.from(
-			auction,
-			product,
-			imageUrl,
-			currentBid);
-	}
+    // 내가 참여한 경매 전체 조회
+    public PageResponse<MyParticipatedResponse> getMyParticipatedAuctions(Long userId, Pageable pageable) {
+        Page<MyParticipatedResponse> page = auctionRepository.findMyParticipatedAuctions(userId, pageable);
 
-	// 내가 참여한 경매 전체 조회
-	public PageResponse<MyParticipatedResponse> getMyParticipatedAuctions(Long userId, Pageable pageable) {
-		Page<MyParticipatedResponse> page = auctionRepository.findMyParticipatedAuctions(userId, pageable);
+        return PageResponse.of(page);
+    }
 
-		return PageResponse.of(page);
-	}
+    // 내가 참여한 경매 단건 조회
+    public MyParticipatedResponse getMyParticipatedDetailAuction(Long userId, Long auctionId) {
+        return auctionRepository.findMyParticipatedAuctionDetail(auctionId, userId)
+                .orElseThrow(() -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+    }
 
-	// 내가 참여한 경매 단건 조회
-	public MyParticipatedResponse getMyParticipatedDetailAuction(Long userId, Long auctionId) {
-		return auctionRepository.findMyParticipatedAuctionDetail(auctionId, userId)
-			.orElseThrow(() -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-	}
+    // 상품 수정 시, 해당 상품이 연결된 경매 확인 후 수정 가능 여부 검증
+    @Override
+    public void validateAuctionStatusForModification(Long productId) {
+        Optional<Auction> auctionOpt = auctionRepository.findByProductId(productId);
 
-	// 상품 수정 시, 해당 상품이 연결된 경매 확인 후 수정 가능 여부 검증
-	@Override
-	public void validateAuctionStatusForModification(Long productId) {
-		Optional<Auction> auctionOpt = auctionRepository.findByProductId(productId);
+        if (auctionOpt.isEmpty()) {
+            return;
+        }
 
-		if (auctionOpt.isEmpty()) {
-			return;
-		}
+        AuctionStatus status = auctionOpt.get().getStatus();
 
-		AuctionStatus status = auctionOpt.get().getStatus();
+        if (!status.equals(AuctionStatus.SCHEDULED)) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
+        }
+    }
 
-		if (status == AuctionStatus.ONGOING || status == AuctionStatus.CLOSED) {
-			throw new BusinessException(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION);
-		}
-	}
+    // 입찰 가능한 경매 여부 검증
+    @Override
+    public Auction findBiddableAuction(Long auctionId) {
+        Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+        
+        if (!auction.getStatus().equals(AuctionStatus.ONGOING)) {
+            throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
+        }
 
-	// 입찰 가능한 경매 여부 검증
-	@Override
-	public Auction findBiddableAuction(Long auctionId) {
-		Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
-			() -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-
-		if (auction.getStatus() == AuctionStatus.SCHEDULED
-			|| auction.getStatus() == AuctionStatus.CLOSED
-			|| auction.getStatus() == AuctionStatus.CLOSED_FAILED) {
-			throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
-		}
-
-		return auction;
-	}
+        return auction;
+    }
 }

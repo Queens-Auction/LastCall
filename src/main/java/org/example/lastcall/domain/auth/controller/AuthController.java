@@ -111,8 +111,8 @@ public class AuthController {
     }
 
     @Operation(
-            summary = "Refresh Token 재발급",
-            description = "만료된 Access Token을 갱신하기 위해 클라이언트가 보유한 Refresh Token을 요청 본문으로 전달하여 새로운 Access Token과 Refresh Token을 재발급합니다."
+            summary = "refresh token 재발급",
+            description = "유효한 Refresh Token을 이용해 새로운 Access Token을 재발급합니다."
     )
     @PostMapping("/tokens")
     public ResponseEntity<ApiResponse<Object>> reissueToken(

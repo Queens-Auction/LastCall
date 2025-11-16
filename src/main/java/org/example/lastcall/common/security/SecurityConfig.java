@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auctions/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/email-verifications/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/v1/email-verifications/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/email/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/healthz").permitAll()

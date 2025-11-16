@@ -9,7 +9,6 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
-import org.example.lastcall.domain.auth.dto.request.TokenReissueRequest;
 import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -116,9 +115,16 @@ public class AuthController {
             description = "유효한 Refresh Token을 이용해 새로운 Access Token을 재발급합니다."
     )
     @PostMapping("/tokens")
-    public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
-        LoginResponse response = authCommandService.reissueAccessToken(request.refreshToken());
+    public ResponseEntity<ApiResponse<Object>> reissueToken(
+            @CookieValue(name = CookieUtil.REFRESH_COOKIE, required = false) String refreshToken
+    ) {
+        LoginResponse response = authCommandService.reissueAccessToken(refreshToken);
 
-        return ResponseEntity.ok(response);
+        ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(response.accessToken());
+        ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(response.refreshToken());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString(), refreshCookie.toString())
+                .body(ApiResponse.success("토큰이 재발급되었습니다."));
     }
 }

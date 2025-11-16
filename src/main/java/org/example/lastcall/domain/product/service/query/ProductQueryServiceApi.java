@@ -12,5 +12,5 @@ public interface ProductQueryServiceApi {
 
     List<ProductImageResponse> findAllProductImage(Long productId);
 
-    void validateProductOwner(Long productId, Long userId);
+    Product validateProductOwner(Long productId, Long userId);
 }

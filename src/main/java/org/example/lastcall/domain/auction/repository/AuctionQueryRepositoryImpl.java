@@ -223,32 +223,49 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     // 서브 쿼리 : 내가 참여한 경매에서 최고 입찰가 여부
     @Override
     public Optional<MyParticipatedResponse> findMyParticipatedAuctionDetail(Long auctionId, Long userId) {
-        return Optional.ofNullable(
-                jpaQueryFactory
-                        .select(Projections.constructor(MyParticipatedResponse.class,
-                                a.id,
-                                ExpressionUtils.as(thumbnailSubquery(), "imageUrl"),
-                                p.name,
-                                p.description,
-                                a.currentBid,
-                                a.status,
-                                a.startTime,
-                                a.endTime,
-                                ExpressionUtils.as(
-                                        Expressions.booleanTemplate(
-                                                "{0} = {1}",
-                                                myMaxBidSubquery(userId),
-                                                JPAExpressions.select(b.bidAmount.max())
-                                                        .from(b)
-                                                        .where(b.auction.id.eq(a.id))
-                                        ),
-                                        "isLeading"
+
+        BooleanBuilder participatedCondition = new BooleanBuilder()
+                .and(JPAExpressions
+                        .selectOne()
+                        .from(b)
+                        .where(
+                                b.auction.id.eq(a.id),
+                                b.user.id.eq(userId)
+                        )
+                        .exists()
+                );
+
+        MyParticipatedResponse result = jpaQueryFactory
+                .select(Projections.constructor(MyParticipatedResponse.class,
+                        a.id,
+                        ExpressionUtils.as(thumbnailSubquery(), "imageUrl"),
+                        p.name,
+                        p.description,
+                        a.currentBid,
+                        a.status,
+                        a.startTime,
+                        a.endTime,
+                        ExpressionUtils.as(
+                                Expressions.booleanTemplate(
+                                        "{0} = {1}",
+                                        myMaxBidSubquery(userId),
+                                        JPAExpressions.select(b.bidAmount.max())
+                                                .from(b)
+                                                .where(b.auction.id.eq(a.id))
                                 ),
-                                ExpressionUtils.as(myMaxBidSubquery(userId), "myBidAmount")
-                        ))
-                        .from(a)
-                        .join(a.product, p)
-                        .where(a.id.eq(auctionId), a.deleted.isFalse())
-                        .fetchOne());
+                                "isLeading"
+                        ),
+                        ExpressionUtils.as(myMaxBidSubquery(userId), "myBidAmount")
+                ))
+                .from(a)
+                .join(a.product, p)
+                .where(
+                        a.id.eq(auctionId),
+                        a.deleted.isFalse(),
+                        participatedCondition
+                )
+                .fetchOne();
+
+        return Optional.ofNullable(result);
     }
 }

@@ -13,6 +13,7 @@ import org.example.lastcall.domain.auction.service.command.AuctionCommandService
 import org.example.lastcall.domain.auction.service.query.AuctionQueryService;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.enums.Category;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -52,6 +53,7 @@ public class AuctionController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuctionReadAllResponse>>> getAllAuctions(
             @RequestParam(required = false) Category category,
+            @ParameterObject
             @PageableDefault(size = 10, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<AuctionReadAllResponse> pageResponse = auctionQueryService.getAllAuctions(category, pageable);
 
@@ -83,6 +85,7 @@ public class AuctionController {
     @GetMapping("/me/selling")
     public ResponseEntity<ApiResponse<PageResponse<MySellingResponse>>> getMySellingAuctions(
             @AuthenticationPrincipal AuthUser authUser,
+            @ParameterObject
             @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<MySellingResponse> pageResponse = auctionQueryService.getMySellingAuctions(authUser.userId(), pageable);
 
@@ -110,6 +113,7 @@ public class AuctionController {
     @GetMapping("/me/participated")
     public ResponseEntity<ApiResponse<PageResponse<MyParticipatedResponse>>> getMyParticipatedAuctions(
             @AuthenticationPrincipal AuthUser authUser,
+            @ParameterObject
             @PageableDefault(size = 2, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<MyParticipatedResponse> pageResponse = auctionQueryService.getMyParticipatedAuctions(authUser.userId(), pageable);
 

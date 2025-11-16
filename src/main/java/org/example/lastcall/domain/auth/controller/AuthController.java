@@ -1,5 +1,10 @@
 package org.example.lastcall.domain.auth.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
@@ -16,17 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "인증(Auth) API", description = "회원가입, 로그인, 로그아웃, 회원탈퇴 등 인증 관련 기능 제공")
 @Slf4j
@@ -95,8 +90,8 @@ public class AuthController {
     )
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<Void>> withdraw(
-        @AuthenticationPrincipal AuthUser authUser,
-        @RequestBody(required = false) WithdrawRequest withdrawRequest) {
+            @AuthenticationPrincipal AuthUser authUser,
+            @RequestBody(required = false) WithdrawRequest withdrawRequest) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
         }
@@ -116,6 +111,10 @@ public class AuthController {
                 .body(ApiResponse.success("정상적으로 회원 탈퇴 요청이 완료되었습니다."));
     }
 
+    @Operation(
+            summary = "refresh token 재발급",
+            description = "유효한 Refresh Token을 이용해 새로운 Access Token을 재발급합니다."
+    )
     @PostMapping("/tokens")
     public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
         LoginResponse response = authCommandService.reissueAccessToken(request.refreshToken());

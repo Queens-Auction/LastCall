@@ -1,10 +1,6 @@
 package org.example.lastcall.domain.product.service.query;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -23,7 +19,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,15 +66,16 @@ public class ProductQueryService implements ProductQueryServiceApi {
     }
 
     @Override
-    public void validateProductOwner(Long productId, Long userId) {
+    public Product validateProductOwner(Long productId, Long userId) {
         Product product = productRepository.findByIdWithUser(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         if (!Objects.equals(product.getUser().getId(), userId)) {
             throw new BusinessException(ProductErrorCode.UNAUTHORIZED_PRODUCT_OWNER);
         }
+        return product;
     }
-    
+
     private Map<Long, String> getThumbnailUrlMap(Page<Product> products) {
         List<Long> productIds = products.stream()
                 .map(Product::getId)

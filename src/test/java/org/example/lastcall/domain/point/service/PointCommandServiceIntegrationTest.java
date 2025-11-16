@@ -50,6 +50,8 @@ class PointCommandServiceIntegrationTest extends AbstractIntegrationTest {
         User user = testUserService.saveTestUser(email, nickname);
         AuthUser authUser = new AuthUser(user.getId(), user.getPublicId().toString(), user.getUserRole().name());
 
+        pointCommandService.createPoint(authUser, PointFixture.pointCreateRequest());
+
         int threadCount = 5;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
@@ -68,10 +70,12 @@ class PointCommandServiceIntegrationTest extends AbstractIntegrationTest {
 
         latch.await();
 
-        Point result = pointRepository.findByUserId(user.getId()).orElseThrow();
+        Point result = pointRepository.findByUserId(user.getId()).orElseThrow(
+                () -> new IllegalStateException("포인트 계좌 없음")
+        );
 
         assertThat(result.getAvailablePoint()).isEqualTo(
-                PointFixture.pointCreateRequest().getIncomePoint() * threadCount);
+                PointFixture.pointCreateRequest().getIncomePoint());
     }
 
     @DisplayName("동시에 여러 입찰 요청이 들어와도 예치 포인트는 중복 차감되지 않음")

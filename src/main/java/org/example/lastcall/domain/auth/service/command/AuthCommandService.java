@@ -1,11 +1,7 @@
 package org.example.lastcall.domain.auth.service.command;
 
-import static org.example.lastcall.domain.user.exception.UserErrorCode.*;
-
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.config.PasswordEncoder;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.security.jwt.JwtUtil;
@@ -31,8 +27,12 @@ import org.example.lastcall.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
+
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_ALREADY_DELETED;
+import static org.example.lastcall.domain.user.exception.UserErrorCode.USER_NOT_FOUND;
 
 @Slf4j
 @Service
@@ -128,8 +128,8 @@ public class AuthCommandService {
     }
 
     @Transactional
-    public LoginResponse reissueAccessToken(final String requestedRefreshToken) {
-        RefreshToken validRefreshToken = validateRefreshToken(requestedRefreshToken);
+    public LoginResponse reissueAccessToken(final String refreshTokenFromCookie) {
+        RefreshToken validRefreshToken = validateRefreshToken(refreshTokenFromCookie);
 
         User user = userRepository.findById(validRefreshToken.getUserId())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_REFRESH_TOKEN));

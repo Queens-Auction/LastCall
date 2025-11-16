@@ -34,6 +34,7 @@ public class RefreshToken extends BaseEntity {
     @Column(name = "expired_at", nullable = false)
     private LocalDateTime expiredAt;
 
+
     private RefreshToken(Long userId, String token, RefreshTokenStatus status, LocalDateTime expiredAt) {
         this.userId = userId;
         this.token = token;
@@ -43,10 +44,10 @@ public class RefreshToken extends BaseEntity {
 
     public static RefreshToken create(Long userId, String token, RefreshTokenStatus status, LocalDateTime expiredAt) {
         return new RefreshToken(
-            userId,
-            token,
-            status,
-            expiredAt);
+                userId,
+                token,
+                status,
+                expiredAt);
     }
 
     public boolean isRevoked() {

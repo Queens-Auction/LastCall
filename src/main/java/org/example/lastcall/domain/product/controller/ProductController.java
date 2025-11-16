@@ -17,6 +17,7 @@ import org.example.lastcall.domain.product.service.command.ProductCommandService
 import org.example.lastcall.domain.product.service.query.ProductQueryService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -48,7 +49,9 @@ public class ProductController {
             summary = "상품 이미지 등록",
             description = "등록된 상품에 이미지를 추가합니다."
     )
-    @PostMapping("/{productId}/images")
+    @PostMapping(
+            value = "/{productId}/images",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> uploadImages(
             @PathVariable Long productId,
             @RequestPart("images") List<ProductImageCreateRequest> requests,
@@ -92,7 +95,10 @@ public class ProductController {
             summary = "상품 이미지 추가 등록",
             description = "기존 상품에 이미지를 추가로 등록합니다."
     )
-    @PostMapping("/{productId}/images/append")
+    @PostMapping(
+            value = "/{productId}/images/append",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<ApiResponse<List<ProductImageResponse>>> appendProductImages(
             @PathVariable Long productId,
             @RequestPart("image") List<MultipartFile> image,

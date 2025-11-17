@@ -48,6 +48,7 @@ spring:
     redis:
       time-to-live: 3600s
       cache-null-values: false
+      enable-statistics: true
     cache-names: userPoints
 
 springdoc:

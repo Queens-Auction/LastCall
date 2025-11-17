@@ -13,45 +13,68 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class TestPointService {
-	@Autowired
-	PointRepository repository;
+    @Autowired
+    PointRepository repository;
 
-	@Autowired
-	PointLogRepository pointLogRepository;
+    @Autowired
+    PointLogRepository pointLogRepository;
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public Point create(Long auctionId, Long bidId, User user, Long point) {
-		Point savedPoint = repository.save(Point.of(user, PointLogType.EARN, point));
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Point create(Long auctionId, Long bidId, User user, Long point) {
+        Point savedPoint = repository.save(Point.of(user, PointLogType.EARN, point));
 
-		pointLogRepository.save(PointLog.of(
-			savedPoint,
-			user.getId(),
-			PointLogType.EARN,
-			"포인트 등록",
-			point,
-			auctionId,
-			bidId));
+        pointLogRepository.save(PointLog.of(
+                savedPoint,
+                user.getId(),
+                PointLogType.EARN,
+                "포인트 등록",
+                point,
+                auctionId,
+                bidId));
 
-		return savedPoint;
-	}
+        return savedPoint;
+    }
 
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public Point createFirstDeposit(Long auctionId, Long bidId, User user, Long userPoint, Long depositPoint) {
-		Point savedPoint = create(auctionId, bidId, user, userPoint);
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Point createFirstDeposit(Long auctionId, Long bidId, User user, Long userPoint, Long depositPoint) {
+        Point savedPoint = create(auctionId, bidId, user, userPoint);
 
-		savedPoint.updateDepositPoint(depositPoint);
+        savedPoint.updateDepositPoint(depositPoint);
 
-		repository.save(savedPoint);
+        repository.save(savedPoint);
 
-		pointLogRepository.save(PointLog.of(
-			savedPoint,
-			user.getId(),
-			PointLogType.DEPOSIT,
-			"입찰금 예치 처리",
-			depositPoint,
-			auctionId,
-			bidId));
+        pointLogRepository.save(PointLog.of(
+                savedPoint,
+                user.getId(),
+                PointLogType.DEPOSIT,
+                "입찰금 예치 처리",
+                depositPoint,
+                auctionId,
+                bidId));
 
-		return savedPoint;
-	}
+        return savedPoint;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Point createForBid(Long auctionId, Long bidId, User user, Long depositPoint) {
+
+        Point savedPoint = repository.save(
+                Point.of(user, PointLogType.EARN, depositPoint)
+        );
+
+        savedPoint.updateDepositPoint(depositPoint);
+        repository.save(savedPoint);
+
+        pointLogRepository.save(PointLog.of(
+                savedPoint,
+                user.getId(),
+                PointLogType.DEPOSIT,
+                "입찰금 예치",
+                depositPoint,
+                auctionId,
+                bidId
+        ));
+
+        return savedPoint;
+    }
 }

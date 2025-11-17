@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiResponse<?>> handleSystemException(Exception ex) {
 		String internalErrorMsg = "예상치 못한 서버 오류가 발생했습니다.";
-		log.error("system exception : {} / {}", ex.toString(), ex);
+
 		ApiResponse<?> errorResponse = ApiResponse.error(internalErrorMsg);
 
 		return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -8,32 +8,6 @@ Content-Type: application/json
   "description": "방바닥에 놓고 먹으면 짱맛있습니다. 거래 가격은 삼만원부터 시작합니다. 다들 즐건 경매하시길 후후훗"
 }
 
-### 이미지 등록
-POST http://localhost:8080/api/v1/products/519/images
-Content-Type: multipart/form-data; boundary=boundary
-
---boundary
-Content-Disposition: form-data; name="images"
-Content-Type: application/json
-
-[
-  {"isThumbnail": true},
-  {"isThumbnail": false}
-]
---boundary
-Content-Disposition: form-data; name="image"; filename="testImage.png"
-Content-Type: image/png
-
-< /Users/t2024-m0159/Desktop/testImage.png
-
---boundary
-Content-Disposition: form-data; name="image"; filename="testImage2.jpeg"
-Content-Type: image/jpeg
-
-< /Users/t2024-m0159/Desktop/testImage2.jpeg
---boundary--
-
-
 ###나의 상품 전체 조회
 GET http://localhost:8080/api/v1/products/me
 
@@ -51,24 +25,16 @@ Content-Type: application/json
 ###상품 삭제
 DELETE http://localhost:8080/api/v1/products/14
 
-###이미지 변경 업데이트
-PATCH http://localhost:8080/api/v1/products/1/images/1
+###썸네일 지정
+PATCH http://localhost:8080/api/v1/products/530/images/1073/thumbnail
 
 ###이미지 삭제
 DELETE http://localhost:8080/api/v1/products/14/images/19
 
-### 기존 이미지에 추가 이미지 등록
-POST http://localhost:8080/api/v1/products/519/images/append
+### 이미지 등록
+POST http://localhost:8080/api/v1/products/530/images
 Content-Type: multipart/form-data; boundary=boundary
 
---boundary
-Content-Disposition: form-data; name="images"
-Content-Type: application/json
-
-[
-  {"isThumbnail": true},
-  {"isThumbnail": false}
-]
 --boundary
 Content-Disposition: form-data; name="image"; filename="testImage.png"
 Content-Type: image/png

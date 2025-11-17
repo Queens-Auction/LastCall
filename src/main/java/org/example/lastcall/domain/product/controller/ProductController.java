@@ -8,7 +8,6 @@ import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
-import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
@@ -51,15 +50,30 @@ public class ProductController {
     )
     @PostMapping(
             value = "/{productId}/images",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> uploadImages(
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> createProductImages(
             @PathVariable Long productId,
-            @RequestPart("images") List<ProductImageCreateRequest> requests,
             @RequestPart("image") List<MultipartFile> image,
             @AuthenticationPrincipal AuthUser authUser) {
-        List<ProductImageResponse> response = productService.createProductImages(productId, requests, image, authUser);
+        List<ProductImageResponse> response = productService.createProductImages(productId, image, authUser);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("상품 이미지를 등록했습니다.", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("상품 이미지를 추가등록했습니다.", response));
+    }
+
+    @Operation(
+            summary = "대표 이미지 지정",
+            description = "상품의 대표 이미지를 지정합니다."
+    )
+    @PatchMapping("/{productId}/images/{imageId}/thumbnail")
+    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> updateThumbnailImage(
+            @PathVariable Long productId,
+            @PathVariable Long imageId,
+            @AuthenticationPrincipal AuthUser authUser) {
+        List<ProductImageResponse> response = productService.setThumbnailImage(productId, imageId, authUser);
+        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("대표 이미지 변경에 성공했습니다.", response);
+
+        return ResponseEntity.ok(apiResponse);
     }
 
     @Operation(
@@ -87,38 +101,6 @@ public class ProductController {
             @AuthenticationPrincipal AuthUser authUser) {
         ProductResponse response = productService.updateProduct(productId, request, authUser);
         ApiResponse<ProductResponse> apiResponse = ApiResponse.success("상품 정보 업데이트에 성공했습니다.", response);
-
-        return ResponseEntity.ok(apiResponse);
-    }
-
-    @Operation(
-            summary = "상품 이미지 추가 등록",
-            description = "기존 상품에 이미지를 추가로 등록합니다."
-    )
-    @PostMapping(
-            value = "/{productId}/images/append",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> appendProductImages(
-            @PathVariable Long productId,
-            @RequestPart("image") List<MultipartFile> image,
-            @AuthenticationPrincipal AuthUser authUser) {
-        List<ProductImageResponse> response = productService.appendProductImages(productId, image, authUser);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("상품 이미지를 추가등록했습니다.", response));
-    }
-
-    @Operation(
-            summary = "대표 이미지 변경",
-            description = "상품의 대표 이미지를 변경합니다."
-    )
-    @PatchMapping("/{productId}/images/{imageId}")
-    public ResponseEntity<ApiResponse<List<ProductImageResponse>>> updateThumbnailImage(
-            @PathVariable Long productId,
-            @PathVariable Long imageId,
-            @AuthenticationPrincipal AuthUser authUser) {
-        List<ProductImageResponse> response = productService.updateThumbnailImage(productId, imageId, authUser);
-        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("대표 이미지 변경에 성공했습니다.", response);
 
         return ResponseEntity.ok(apiResponse);
     }

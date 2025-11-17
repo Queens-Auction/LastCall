@@ -2,7 +2,6 @@ package org.example.lastcall.domain.product.service.command;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
-import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
@@ -14,27 +13,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
 public class ProductImageService {
     private final S3Service s3Service;
     private final ProductImageRepository productImageRepository;
-
-    private ProductImage createProductImageWithRequest(
-            Product product,
-            ProductImageCreateRequest request,
-            MultipartFile file,
-            String fileHash,
-            Long productId
-    ) {
-        String imageKey = s3Service.uploadToS3(file, "products/" + productId);
-        ImageType imageType = Boolean.TRUE.equals(request.getIsThumbnail())
-                ? ImageType.THUMBNAIL : ImageType.DETAIL;
-
-        return ProductImage.of(product, imageType, imageKey, fileHash);
-    }
 
     public ProductImage uploadAndCreateProductImage(
             Product product,
@@ -45,23 +29,6 @@ public class ProductImageService {
         String imageKey = s3Service.uploadToS3(file, "products/" + productId);
 
         return ProductImage.of(product, imageType, imageKey, fileHash);
-    }
-
-    public List<ProductImage> uploadAndGenerateImages(
-            Product product,
-            List<ProductImageCreateRequest> requests,
-            List<MultipartFile> images,
-            Long productId) {
-        Map<MultipartFile, String> fileToHash = validateAndGenerateHashes(images, productId);
-
-        return IntStream.range(0, requests.size())
-                .mapToObj(i -> createProductImageWithRequest(
-                        product,
-                        requests.get(i),
-                        images.get(i),
-                        fileToHash.get(images.get(i)),
-                        productId))
-                .toList();
     }
 
     public List<ProductImage> uploadAndGenerateDetailImages(Product product,

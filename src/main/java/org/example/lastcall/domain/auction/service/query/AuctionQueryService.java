@@ -59,10 +59,13 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
             canBid = isNotOwner && isOngoing;
         }
 
+        Long currentBid = bidQueryServiceApi.findCurrentBidAmount(auction.getId());
+
         return AuctionReadResponse.from(
                 auction,
                 auction.getProduct(),
                 imageUrl,
+                currentBid,
                 participated,
                 canBid
         );
@@ -129,7 +132,7 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
     public Auction findBiddableAuction(Long auctionId) {
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-        
+
         if (!auction.getStatus().equals(AuctionStatus.ONGOING)) {
             throw new BusinessException(AuctionErrorCode.CANNOT_BID_ON_NON_ONGOING_AUCTION);
         }

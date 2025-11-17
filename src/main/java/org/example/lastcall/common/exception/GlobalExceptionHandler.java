@@ -1,5 +1,6 @@
 package org.example.lastcall.common.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<ApiResponse<?>> handleBusinessException(BusinessException ex) {
@@ -27,7 +29,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ApiResponse<?>> handleSystemException(Exception ex) {
 		String internalErrorMsg = "예상치 못한 서버 오류가 발생했습니다.";
-
+		log.error("system exception : {} / {}", ex.toString(), ex);
 		ApiResponse<?> errorResponse = ApiResponse.error(internalErrorMsg);
 
 		return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);

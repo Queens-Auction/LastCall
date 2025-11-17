@@ -33,13 +33,7 @@ COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
 
 # JVM(TimeZone) 설정 포함한 실행 옵션
-ENV JAVA_OPTS="-Xms256m -Xmx512m -Duser.timezone=Asia/Seoul"
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseContainerSupport -Duser.timezone=Asia/Seoul"
 
 # Run app
 ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar app.jar"]
-
-# Set JVM options
-ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseContainerSupport"
-
-# Run application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

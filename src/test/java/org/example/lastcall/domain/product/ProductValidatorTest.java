@@ -2,7 +2,6 @@ package org.example.lastcall.domain.product;
 
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auth.enums.AuthUser;
-import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.exception.ProductErrorCode;
 import org.example.lastcall.domain.product.repository.ProductImageRepository;
@@ -20,8 +19,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -61,19 +58,5 @@ public class ProductValidatorTest {
                 () -> productValidatorService.validateImageCount(images));
 
         assertEquals(ProductErrorCode.TOO_MANY_IMAGES, exception.getErrorCode());
-    }
-
-    @Test
-    @DisplayName("썸네일 중복 시 예외 발생 -create")
-    void validateThumbnailConsistencyForCreate_썸네일_중복_시_예외가_발생한다() {
-        List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true),
-                new ProductImageCreateRequest(true));
-
-        when(productImageRepository.existsByProductIdAndImageTypeAndDeletedFalse(anyLong(), any()))
-                .thenReturn(true);
-
-        assertThrows(BusinessException.class,
-                () -> productValidatorService.validateThumbnailConsistencyForCreate(1L, requests));
     }
 }

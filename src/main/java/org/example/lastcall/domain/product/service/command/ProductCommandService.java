@@ -6,7 +6,6 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
-import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
@@ -51,37 +50,6 @@ public class ProductCommandService {
 
     public List<ProductImageResponse> createProductImages(
             Long productId,
-            List<ProductImageCreateRequest> requests,
-            List<MultipartFile> images,
-            AuthUser authUser) {
-        Product product = productRepository.findByIdAndDeletedFalse(productId)
-                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        productValidatorService.checkOwnership(product, authUser);
-        productValidatorService.validateImageCount(requests);
-        productValidatorService.validateThumbnailConsistencyForCreate(productId, requests);
-
-        List<ProductImage> imagesToSave = productImageService.uploadAndGenerateImages(product, requests, images, productId);
-
-        return productImageRepository.saveAll(imagesToSave).stream()
-                .map(image -> ProductImageResponse.from(image, s3Service))
-                .toList();
-    }
-
-    public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
-        Product product = productRepository.findByIdAndDeletedFalse(productId)
-                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
-        productValidatorService.checkOwnership(product, authUser);
-
-        product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
-
-        return ProductResponse.from(product);
-    }
-
-    public List<ProductImageResponse> appendProductImages(
-            Long productId,
             List<MultipartFile> images,
             AuthUser authUser) {
         Product product = productRepository.findByIdAndDeletedFalse(productId)
@@ -104,7 +72,19 @@ public class ProductCommandService {
                 .toList();
     }
 
-    public List<ProductImageResponse> updateThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
+    public ProductResponse updateProduct(Long productId, ProductUpdateRequest request, AuthUser authUser) {
+        Product product = productRepository.findByIdAndDeletedFalse(productId)
+                .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        auctionQueryServiceApi.validateAuctionStatusForModification(productId);
+        productValidatorService.checkOwnership(product, authUser);
+
+        product.updateProducts(request.getName(), request.getCategory(), request.getDescription());
+
+        return ProductResponse.from(product);
+    }
+
+    public List<ProductImageResponse> setThumbnailImage(Long productId, Long newThumbnailImageId, AuthUser authUser) {
         Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 

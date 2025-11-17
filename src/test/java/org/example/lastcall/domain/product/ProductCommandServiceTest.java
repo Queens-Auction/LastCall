@@ -128,94 +128,6 @@ class ProductCommandServiceTest {
     }
 
     @Test
-    @DisplayName("상품 이미지 등록 성공")
-    void createProductImages_상품_이미지_등록에_성공한다() {
-        AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
-        List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true),
-                new ProductImageCreateRequest(false));
-
-        List<MultipartFile> images = List.of(
-                new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "dummy content".getBytes()),
-                new MockMultipartFile("file1", "file2.jpg", "image/jpeg", "dummy content".getBytes()));
-
-        doNothing().when(productValidatorService).checkOwnership(product, authUser);
-        doNothing().when(productValidatorService).validateImageCount(requests);
-        doNothing().when(productValidatorService).validateThumbnailConsistencyForCreate(product.getId(), requests);
-
-        when(productRepository.findByIdAndDeletedFalse(product.getId())).thenReturn(Optional.of(product));
-
-        List<ProductImage> savedImages = new ArrayList<>();
-
-        for (int i = 0; i < requests.size(); i++) {
-            ProductImage img = ProductImage.of(
-                    product,
-                    ImageType.DETAIL,
-                    "dummy-key-" + i + ".jpg",
-                    "dummy-hash-" + i);
-            savedImages.add(img);
-        }
-
-        when(productImageRepository.saveAll(anyList())).thenReturn(savedImages);
-
-        List<ProductImageResponse> responses = productCommandService.createProductImages(
-                product.getId(),
-                requests,
-                images,
-                authUser
-        );
-
-        assertNotNull(responses);
-        assertEquals(savedImages.size(), responses.size());
-
-        for (int i = 0; i < responses.size(); i++) {
-            assertEquals(savedImages.get(i).getId(), responses.get(i).getId());
-            assertEquals(savedImages.get(i).getImageType(), responses.get(i).getImageType());
-        }
-
-        verify(productValidatorService, times(1)).checkOwnership(product, authUser);
-        verify(productValidatorService, times(1)).validateImageCount(requests);
-        verify(productValidatorService, times(1)).validateThumbnailConsistencyForCreate(product.getId(), requests);
-        verify(productRepository, times(1)).findByIdAndDeletedFalse(product.getId());
-        verify(productImageRepository, times(1)).saveAll(anyList());
-    }
-
-    @Test
-    @DisplayName("상품이 없으면 예외 발생")
-    void createProductImages_상품이_없으면_예외가_발생한다() {
-        Long productId = 1L;
-        AuthUser authUser = new AuthUser(1L, "user", "USER");
-        List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
-        List<MultipartFile> images = List.of(new MockMultipartFile("file", "file.jpg", "image/jpeg", "data".getBytes()));
-
-        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.empty());
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.createProductImages(productId, requests, images, authUser));
-
-        assertEquals(ProductErrorCode.PRODUCT_NOT_FOUND, exception.getErrorCode());
-    }
-
-    @Test
-    @DisplayName("이미지 개수 초과 시 BusinessException 발생")
-    void createProductImages_이미지_개수_초과_시_예외가_발생한다() {
-        Long productId = product.getId();
-        AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
-        List<ProductImageCreateRequest> requests = List.of(new ProductImageCreateRequest(true));
-        List<MultipartFile> images = List.of(new MockMultipartFile("file", "file.jpg", "image/jpeg", "data".getBytes()));
-
-        when(productRepository.findByIdAndDeletedFalse(productId)).thenReturn(Optional.of(product));
-
-        doThrow(new BusinessException(ProductErrorCode.TOO_MANY_IMAGES))
-                .when(productValidatorService).validateImageCount(requests);
-
-        BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.createProductImages(productId, requests, images, authUser));
-
-        assertEquals(ProductErrorCode.TOO_MANY_IMAGES, exception.getErrorCode());
-    }
-
-    @Test
     @DisplayName("상품 정보 수정 성공")
     void updateProduct_상품_정보_수정에_성공한다() {
         Long productId = product.getId();
@@ -320,7 +232,7 @@ class ProductCommandServiceTest {
 
         when(productImageRepository.saveAll(any())).thenReturn(List.of(newImage1, newImage2));
 
-        List<ProductImageResponse> responses = productCommandService.appendProductImages(product.getId(), inputImages, authUser);
+        List<ProductImageResponse> responses = productCommandService.createProductImages(product.getId(), inputImages, authUser);
 
         assertEquals(2, responses.size());
         assertEquals("test1.jpg", responses.get(0).getImageUrl());
@@ -350,7 +262,7 @@ class ProductCommandServiceTest {
                 .when(auctionQueryServiceApi).validateAuctionStatusForModification(product.getId());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.appendProductImages(product.getId(), images, authUser));
+                () -> productCommandService.createProductImages(product.getId(), images, authUser));
 
         assertEquals(AuctionErrorCode.CANNOT_MODIFY_PRODUCT_DURING_AUCTION, exception.getErrorCode());
 
@@ -384,7 +296,7 @@ class ProductCommandServiceTest {
                 .thenReturn(allImages);
         when(s3Service.generateImageUrl(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        List<ProductImageResponse> responses = productCommandService.updateThumbnailImage(productId, newThumbnailId, authUser);
+        List<ProductImageResponse> responses = productCommandService.setThumbnailImage(productId, newThumbnailId, authUser);
 
         assertNotNull(responses);
         assertEquals(allImages.size(), responses.size());
@@ -416,7 +328,7 @@ class ProductCommandServiceTest {
                 .thenReturn(Optional.empty());
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> productCommandService.updateThumbnailImage(productId, newThumbnailId, authUSer));
+                () -> productCommandService.setThumbnailImage(productId, newThumbnailId, authUSer));
 
         assertEquals(ProductErrorCode.IMAGE_NOT_FOUND, exception.getErrorCode());
     }

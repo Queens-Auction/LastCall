@@ -1,5 +1,11 @@
 package org.example.lastcall.domain.bid;
 
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import org.example.lastcall.common.AbstractIntegrationTest;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -14,12 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class BidCommandServiceIntegrationTest extends AbstractIntegrationTest {
@@ -41,26 +41,19 @@ public class BidCommandServiceIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("동시에 여러 번 입찰해도 모두 성공하며 순차적으로 금액 증가")
     @Test
     void createBid_동시에_입찰_등록_요청이_들어올_시_순차적으로_금액이_증가한다() throws InterruptedException {
-        // given
         User seller = testUserService.saveTestUser("seller@test.com", "판매자");
         User bidder = testUserService.saveTestUser("bidder@test.com", "입찰자");
 
-        testPointService.create(null, null, bidder, 100_000L);
+       testPointService.create(null, null, bidder, 100000L);
 
-        Auction auction = testAuctionService.createOngoingAuction(
-                seller, Category.ACCESSORY, 1000L, 100L
-        );
-
-        AuthUser authUser = new AuthUser(
-                bidder.getId(), bidder.getPublicId().toString(), bidder.getUserRole().name()
-        );
+        Auction auction = testAuctionService.createOngoingAuction(seller, Category.ACCESSORY, 1000L, 100L);
+        AuthUser authUser = new AuthUser(bidder.getId(), bidder.getPublicId().toString(), bidder.getUserRole().name());
 
         int threadCount = 5;
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        // when (동시 입찰 요청)
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
@@ -76,11 +69,9 @@ public class BidCommandServiceIntegrationTest extends AbstractIntegrationTest {
         latch.await();
         executor.shutdown();
 
-        // then
         assertThat(bidRepository.count()).isEqualTo(threadCount);
 
-        Auction updated = testAuctionService.findById(auction.getId());
-        assertThat(updated.getCurrentBid()).isEqualTo(
-                auction.getStartingBid() + auction.getBidStep() * threadCount);
+        Auction updatedAuction = testAuctionService.findById(auction.getId());
+        assertThat(updatedAuction.getCurrentBid()).isEqualTo(auction.getStartingBid() + auction.getBidStep() * threadCount);
     }
 }

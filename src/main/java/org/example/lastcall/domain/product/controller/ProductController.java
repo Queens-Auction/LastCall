@@ -58,7 +58,7 @@ public class ProductController {
             @AuthenticationPrincipal AuthUser authUser) {
         List<ProductImageResponse> response = productService.createProductImages(productId, image, authUser);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("상품 이미지를 추가등록했습니다.", response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("상품 이미지를 등록했습니다.", response));
     }
 
     @Operation(
@@ -71,7 +71,7 @@ public class ProductController {
             @PathVariable Long imageId,
             @AuthenticationPrincipal AuthUser authUser) {
         List<ProductImageResponse> response = productService.setThumbnailImage(productId, imageId, authUser);
-        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("대표 이미지 변경에 성공했습니다.", response);
+        ApiResponse<List<ProductImageResponse>> apiResponse = ApiResponse.success("대표 이미지로 지정되었습니다.", response);
 
         return ResponseEntity.ok(apiResponse);
     }
@@ -94,7 +94,7 @@ public class ProductController {
             summary = "상품 수정",
             description = "상품 정보를 수정합니다. (이미지 제외)"
     )
-    @PutMapping("/{productId}")
+    @PatchMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @PathVariable Long productId,
             @Valid @RequestBody ProductUpdateRequest request,

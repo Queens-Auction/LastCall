@@ -52,7 +52,7 @@ public class Point {
     }
 
     public void updateAvailablePoint(Long incomePoint) {
-		this.availablePoint = this.availablePoint + incomePoint;
+		this.availablePoint += incomePoint;
 	}
 
 	public void updateDepositPoint(Long amount) {

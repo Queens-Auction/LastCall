@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Schema(description = "API 공통 응답 포맷")
 @Getter
@@ -20,14 +20,14 @@ public class ApiResponse<T> {
     @JsonInclude(JsonInclude.Include.ALWAYS)
     private final T data;
 
-    @Schema(description = "응답 생성 시각 (UTC)", example = "2025-10-24T12:34:56Z")
-    private final Instant timestamp;
+    @Schema(description = "응답 생성 시각", example = "2025-10-24T12:34:56Z")
+    private final LocalDateTime timestamp;
 
     public ApiResponse(boolean success, String message, T data) {
         this.success = success;
         this.message = message;
         this.data = data;
-        this.timestamp = Instant.now();
+        this.timestamp = LocalDateTime.now();
     }
 
     public static <T> ApiResponse<T> success(String message, T data) {

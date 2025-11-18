@@ -35,6 +35,9 @@ public class AuctionReadResponse {
     @Schema(description = "입찰 단위 (입찰 시 증가 금액)", example = "1000")
     private final Long bidStep;
 
+    @Schema(description = "현재 입찰가", example = "35000")
+    private final Long currentBid;
+
     @Schema(description = "로그인 사용자가 해당 경매에 참여했는지 여부", example = "true")
     private final Boolean myParticipated;
 
@@ -45,7 +48,7 @@ public class AuctionReadResponse {
     private final Boolean canBid;
 
     private AuctionReadResponse(Long id, String imageUrl, String productName, String productDescription, LocalDateTime startTime,
-                                LocalDateTime endTime, Long startingBid, Long bidStep, Boolean myParticipated, AuctionStatus status, Boolean canBid) {
+                                LocalDateTime endTime, Long startingBid, Long bidStep, Long currentBid, Boolean myParticipated, AuctionStatus status, Boolean canBid) {
         this.id = id;
         this.imageUrl = imageUrl;
         this.productName = productName;
@@ -54,12 +57,13 @@ public class AuctionReadResponse {
         this.endTime = endTime;
         this.startingBid = startingBid;
         this.bidStep = bidStep;
+        this.currentBid = currentBid;
         this.myParticipated = myParticipated;
         this.status = status;
         this.canBid = canBid;
     }
 
-    public static AuctionReadResponse from(Auction auction, Product product, String imageUrl, Boolean myParticipated, Boolean canBid) {
+    public static AuctionReadResponse from(Auction auction, Product product, String imageUrl, Long currentBid, Boolean myParticipated, Boolean canBid) {
         return new AuctionReadResponse(
                 auction.getId(),
                 imageUrl,
@@ -69,6 +73,7 @@ public class AuctionReadResponse {
                 auction.getEndTime(),
                 auction.getStartingBid(),
                 auction.getBidStep(),
+                currentBid,
                 myParticipated,
                 auction.getDynamicStatus(),
                 canBid);

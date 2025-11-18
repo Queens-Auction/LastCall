@@ -43,7 +43,6 @@ public class ProductQueryService implements ProductQueryServiceApi {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ProductImageResponse findThumbnailImage(Long productId) {
         ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
@@ -52,7 +51,6 @@ public class ProductQueryService implements ProductQueryServiceApi {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ProductImageResponse> findAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 

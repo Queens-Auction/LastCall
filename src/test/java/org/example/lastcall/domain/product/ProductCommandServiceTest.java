@@ -5,7 +5,6 @@ import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
 import org.example.lastcall.domain.product.dto.request.ProductCreateRequest;
-import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.dto.request.ProductUpdateRequest;
 import org.example.lastcall.domain.product.dto.response.ProductImageResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
@@ -249,9 +248,6 @@ class ProductCommandServiceTest {
     @DisplayName("경매 진행 중인 이미지 추가 시 예외 발생")
     void appendProductImages_경매_진행중이면_예외가_발생한다() {
         AuthUser authUser = new AuthUser(product.getUser().getId(), product.getUser().getUsername(), "USER");
-
-        List<ProductImageCreateRequest> requests = List.of(
-                new ProductImageCreateRequest(true));
 
         List<MultipartFile> images = List.of(
                 new MockMultipartFile("file1", "file1.jpg", "image/jpeg", "data".getBytes()));

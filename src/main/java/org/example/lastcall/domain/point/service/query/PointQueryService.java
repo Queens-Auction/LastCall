@@ -27,7 +27,7 @@ public class PointQueryService implements PointQueryServiceApi {
 		User user = userQueryServiceApi.findById(authUser.userId());
 
 		Point point = pointRepository.findByUserId(authUser.userId()).orElseThrow(
-			() -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND));
+			() -> new BusinessException(PointErrorCode.POINT_ACCOUNT_NOT_FOUND));
 
 		return new PointResponse(
 			user.getId(),

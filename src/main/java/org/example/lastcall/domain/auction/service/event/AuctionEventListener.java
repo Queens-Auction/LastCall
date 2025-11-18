@@ -46,8 +46,8 @@ public class AuctionEventListener {
                     () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
             // 2. 버전 불일치 시 메시지 삭제(무시) - 중복 방지
-            if (!Objects.equals(auction.getVersion(), event.getVersion())) {
-                log.warn("[RabbitMQ] 무시된 이벤트 - 경매 버전 불일치 (이벤트 버전={}, 현재 버전={})", event.getVersion(), auction.getVersion());
+            if (!Objects.equals(auction.getEventVersion(), event.getVersion())) {
+                log.warn("[RabbitMQ] 무시된 이벤트 - 경매 버전 불일치 (이벤트 버전={}, 현재 버전={})", event.getVersion(), auction.getEventVersion());
                 ackMessage(channel, message);
 
                 return;

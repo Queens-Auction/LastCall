@@ -88,10 +88,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("*");  // 모든 Origin 허용
-        config.addAllowedMethod("*");         // GET, POST, PUT 등 모든 Method 허용
-        config.addAllowedHeader("*");         // 모든 Header 허용
-        config.setAllowCredentials(true);     // 쿠키/Authorization 허용
+        config.addAllowedOriginPattern("*");
+        config.addAllowedMethod("*");
+        config.addAllowedHeader("*");
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

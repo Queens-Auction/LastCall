@@ -20,17 +20,6 @@ public class ProductImageService {
     private final S3Service s3Service;
     private final ProductImageRepository productImageRepository;
 
-    public ProductImage uploadAndCreateProductImage(
-            Product product,
-            MultipartFile file,
-            String fileHash,
-            Long productId,
-            ImageType imageType) {
-        String imageKey = s3Service.uploadToS3(file, "products/" + productId);
-
-        return ProductImage.of(product, imageType, imageKey, fileHash);
-    }
-
     public List<ProductImage> uploadAndGenerateDetailImages(Product product,
                                                             List<MultipartFile> images,
                                                             Long productId) {
@@ -44,6 +33,17 @@ public class ProductImageService {
                         productId,
                         ImageType.DETAIL))
                 .toList();
+    }
+
+    public ProductImage uploadAndCreateProductImage(
+            Product product,
+            MultipartFile file,
+            String fileHash,
+            Long productId,
+            ImageType imageType) {
+        String imageKey = s3Service.uploadToS3(file, "products/" + productId);
+
+        return ProductImage.of(product, imageType, imageKey, fileHash);
     }
 
     public Map<MultipartFile, String> validateAndGenerateHashes(List<MultipartFile> files, Long productId) {

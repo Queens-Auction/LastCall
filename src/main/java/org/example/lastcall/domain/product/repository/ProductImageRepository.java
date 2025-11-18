@@ -15,8 +15,6 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     Optional<ProductImage> findByProductIdAndImageTypeAndDeletedFalse(Long productId, ImageType imageType);
 
-    long countByProductIdAndImageType(Long productId, ImageType imageType);
-
     @Modifying
     @Query("UPDATE ProductImage i SET i.deleted = true WHERE i.product.id = :productId")
     void softDeleteByProductId(Long productId);

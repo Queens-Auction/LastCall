@@ -126,7 +126,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                         p.name,
                         ExpressionUtils.as(
                                 JPAExpressions
-                                        .select(b.id.countDistinct())
+                                        .select(b.user.id.countDistinct())
                                         .from(b)
                                         .where(b.auction.id.eq(a.id)),
                                 "participantCount")))

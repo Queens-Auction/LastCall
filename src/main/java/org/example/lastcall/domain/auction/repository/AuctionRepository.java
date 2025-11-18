@@ -39,7 +39,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long>, Auction
                                 SELECT MAX(b.bidAmount)
                                 FROM Bid b
                                 WHERE b.auction.id = a.id
-                            ), 0),
+                            ), a.startingBid),
                             a.status,
                             a.startTime,
                             a.endTime

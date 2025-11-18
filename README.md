@@ -1709,13 +1709,13 @@ https://www.figma.com/design/MXc4uESnjz8e0S8crq0Qi1/%EA%B2%BD%EB%A7%A4?node-id=0
 ## 🧪테스트 <a id="테스트"></a>
 ### 서비스 단위 테스트
 - 각 도메인 별 서비스 단위 테스트 작성 후 검증
-   - 기준: Jacoco 커버리지 30% 이상
+   - 기준: Jacoco 커버리지 60% 이상
    - Mockito 기반 Mock 객체  
    - Redis/RabbitMQ 실제 의존성 제거
      
 ### 통합 테스트(분산락)
 - 분산락 적용한 Point, Bid, Auction 서비스는 통합 테스트로 추가 검증
-   - 기준: Jacoco 커버리지 30% 이상
+   - 기준: Jacoco 커버리지 60% 이상
  
 ### 주요 테스트 파일
 <img width="746" height="354" alt="스크린샷 2025-11-18 오후 2 33 32" src="https://github.com/user-attachments/assets/01c3b0cf-5048-4f22-91f2-cafd239e312d" />

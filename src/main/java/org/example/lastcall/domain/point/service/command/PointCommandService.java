@@ -59,7 +59,7 @@ public class PointCommandService implements PointCommandServiceApi {
         PointLogType type = request.getType();
 
         if (currentPoint == null) {
-            currentPoint = Point.of(user, type, incomePoint);
+            currentPoint = Point.of(user, incomePoint);
             currentPoint = pointRepository.save(currentPoint);
         } else {
             currentPoint.updateAvailablePoint(incomePoint);

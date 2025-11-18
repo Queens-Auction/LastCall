@@ -30,10 +30,6 @@ public class Point extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
-    private PointLogType type;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
@@ -47,14 +43,13 @@ public class Point extends BaseEntity {
     @Column(name = "settlement_point", nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     private Long settlementPoint = 0L;
 
-    private Point(User user, PointLogType type, Long incomePoint) {
+    private Point(User user, Long incomePoint) {
         this.user = user;
-        this.type = type;
 		this.availablePoint = incomePoint;
     }
 
-    public static Point of(User user, PointLogType type, Long incomePoint) {
-        return new Point(user, type, incomePoint);
+    public static Point of(User user, Long incomePoint) {
+        return new Point(user, incomePoint);
     }
 
     public void updateAvailablePoint(Long incomePoint) {

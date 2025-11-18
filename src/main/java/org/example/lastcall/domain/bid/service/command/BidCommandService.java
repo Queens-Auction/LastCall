@@ -55,7 +55,7 @@ public class BidCommandService {
         }
 
         pointQueryServiceApi.validateSufficientPoints(user.getId(), nextBidAmount);
-        log.debug("포인트 검증 완료 - userId={}, nextBidAmount={}", user.getId(), nextBidAmount);
+        log.debug("포인트 검증 완료: userId={}, nextBidAmount={}", user.getId(), nextBidAmount);
 
         Bid bid = Bid.of(nextBidAmount, auction, user);
         Bid savedBid = bidRepository.save(bid);
@@ -72,7 +72,7 @@ public class BidCommandService {
             throw e;
         }
 
-        log.debug("입찰 생성 완료 - auctionId={}, userId={}, nextBidAmount={}", auctionId, user.getId(), nextBidAmount);
+        log.debug("입찰 생성 완료: auctionId={}, userId={}, nextBidAmount={}", auctionId, user.getId(), nextBidAmount);
 
         return BidCreateResponse.from(savedBid);
     }

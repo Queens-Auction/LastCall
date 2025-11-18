@@ -37,22 +37,22 @@ public class AuctionEventScheduler {
 
         try {
             auctionEventPublisher.sendAuctionStartEvent(startEvent, startDelay);
-            log.info("경매 시작 이벤트 예약 완료 - auctionId={}, delay={}ms", auction.getId(), startDelay);
+            log.info("[RabbitMQ] 경매 시작 이벤트 예약 완료: auctionId={}, delay={}ms", auction.getId(), startDelay);
         } catch (Exception e) {
-            log.error("sendAuctionStartEvent exception ::: auctionId={}, message={}", auction.getId(), e.getMessage(), e);
+            log.error("[RabbitMQ] sendAuctionStartEvent exception: auctionId={}", auction.getId(), e);
         }
 
         try {
             auctionEventPublisher.sendAuctionEndEvent(endEvent, endDelay);
-            log.info("경매 종료 이벤트 예약 완료 - auctionId={}, delay={}ms", auction.getId(), endDelay);
+            log.info("[RabbitMQ] 경매 종료 이벤트 예약 완료: auctionId={}, delay={}ms", auction.getId(), endDelay);
         } catch (Exception e) {
-            log.error("sendAuctionEndEvent exception ::: auctionId={}, message={}", auction.getId(), e.getMessage(), e);
+            log.error("[RabbitMQ] sendAuctionEndEvent exception: auctionId={}", auction.getId(), e);
         }
     }
 
     // 수정 시 재발행 (기존 예약을 새로 덮어쓰기)
     public void rescheduleAuctionEvents(Auction auction) {
-        log.info("경매 수정으로 이벤트 재발행 시작 - auctionId={}", auction.getId());
+        log.info("[RabbitMQ] 경매 이벤트 재발행: auctionId={}", auction.getId());
         scheduleAuctionEvents(auction);
     }
 }

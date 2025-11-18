@@ -39,8 +39,6 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     private final QBid b = QBid.bid;
 
     // 내 최고 입찰가 서브쿼리
-    // 특정 유저의 특정 경매의 최고 입찰가
-    // 즉 내가 입찰한 특정 경매의 최고 입찰가를 찾기 위한 것.
     private Expression<Long> myMaxBidSubquery(Long userId) {
         return JPAExpressions.select(b.bidAmount.max())
                 .from(b)
@@ -66,21 +64,14 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
     }
 
     // null-safe PageImpl 생성
-    // 제네릭 : 어떤 타입이 오더라도 처리하기 위해 사용
-    // -> 조회 결과를 Page 형태로 감싸 반환하되, total count가 null이 되더라도 안전하게 처리(null-safe)
     private <T> Page<T> toPage(List<T> results, Pageable pageable, Long total) {
         return new PageImpl<>(results, pageable, total != null ? total : 0);
     }
 
     // 경매 전체 조회
-    // 정리하자면
-    // 1. 기본옵션 (sort 미지정) : 최신순 조회 (같으면 id순)
-    // 2. 마감임박순 (sort endTime, asc) : 마감임박순으로 조회 (최신순x)
-    // 3. 인기순 (sort participantCount, desc) : 인기순으로 조회 (최신순x)
-    // 4. 카테고리순 (카테고리는 필터, sort 미지정) : 해당 카테고리를 최신순으로 조회
     @Override
     public Page<AuctionReadAllResponse> findAllAuctionSummaries(Category category, Pageable pageable) {
-        // 1️. 동적 필터 구성 (카테고리 + 기본 조건)
+        // 동적 필터 구성 (카테고리 + 기본 조건)
         BooleanBuilder whereBuilder = defaultAuctionCondition()
                 .and(a.status.in(AuctionStatus.ONGOING, AuctionStatus.SCHEDULED));
 
@@ -99,9 +90,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                                 .where(b.auction.id.eq(a.id))
                 );
 
-        // 2️. 동적 정렬 조건 구성
-        // 여러 정렬 기준(endTime, participantCount 등)이 들어올 수 있기 때문에
-        // OrderSpecifier들을 List에 누적하여 관리한다.
+        // 동적 정렬 조건 구성
         List<OrderSpecifier<?>> orderSpecifiers = new ArrayList<>();
 
         pageable.getSort().forEach(order -> {
@@ -117,8 +106,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
             }
         });
 
-        // 4. 실제 데이터 조회
-        // 실제 경매에 참여한 참여자 수 조회 (중복 유저 제외)
+        // 실제 데이터 조회
         List<AuctionReadAllResponse> results = jpaQueryFactory
                 .select(Projections.constructor(AuctionReadAllResponse.class,
                         a.id,
@@ -138,7 +126,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // 5️. 전체 데이터 개수 조회 (페이징 total count)
+        // 전체 데이터 개수 조회 (페이징 total count)
         Long total = jpaQueryFactory
                 .select(a.count())
                 .from(a)
@@ -146,18 +134,13 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 .where(whereBuilder)
                 .fetchOne();
 
-        // 6️. PageImpl 반환
         return toPage(results, pageable, total);
     }
 
     // 내가 참여한 경매 목록 조회
     @Override
     public Page<MyParticipatedResponse> findMyParticipatedAuctions(Long userId, Pageable pageable) {
-        // 1️. 사용자가 입찰한 경매 ID 목록 (페이징 적용)
-        // 왜 1,2단계로 가져오는지 이유
-        // - 입찰 같은 1:n 구조는 join하면 레코드 중복 발생 (페이징 어긋남)
-        // - 그룹바이 통한 페이징은 성능 나빠짐
-        // 내가 입찰한 경매 목록을 id 기준으로 먼저 페이징 (비어있으면 빈페이지) - 1단계
+        // 사용자가 입찰한 경매 ID 목록 (페이징)
         List<Long> auctionIds = jpaQueryFactory
                 .selectDistinct(b.auction.id)
                 .from(b)
@@ -170,8 +153,7 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
             return Page.empty(pageable);
         }
 
-        // 2. 참여 경매 정보 조회
-        // id 목록 기반으로 실제 경매 정보 조회 - 2단계
+        // 참여 경매 정보 조회
         List<MyParticipatedResponse> results = jpaQueryFactory
                 .select(Projections.constructor(MyParticipatedResponse.class,
                         a.id,
@@ -206,21 +188,17 @@ public class AuctionQueryRepositoryImpl implements AuctionQueryRepository {
                 .orderBy(a.createdAt.desc())
                 .fetch();
 
-        // 3. 전체 데이터 개수 조회
+        // 전체 데이터 개수 조회
         Long total = jpaQueryFactory
                 .select(b.auction.id.countDistinct())
                 .from(b)
                 .where(b.user.id.eq(userId))
                 .fetchOne();
 
-        // 4. PageImpl 반환
         return toPage(results, pageable, total);
     }
 
-    // 내가 참여한 경매 단건 조회 (서브쿼리 + 조인 기반으로 해결)
-    // 경매 참여 여부는 이미 서비스 단에서 검증됨
-    // 메인 쿼리 : 경매 기본 정보 + 내가 참여한 경매 상세 조회
-    // 서브 쿼리 : 내가 참여한 경매에서 최고 입찰가 여부
+    // 내가 참여한 경매 단건 조회
     @Override
     public Optional<MyParticipatedResponse> findMyParticipatedAuctionDetail(Long auctionId, Long userId) {
 

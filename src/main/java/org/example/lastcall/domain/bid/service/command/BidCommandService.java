@@ -1,13 +1,11 @@
 package org.example.lastcall.domain.bid.service.command;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.lock.DistributedLock;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
-import org.example.lastcall.domain.bid.dto.response.BidResponse;
+import org.example.lastcall.domain.bid.dto.response.BidCreateResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;
 import org.example.lastcall.domain.bid.repository.BidRepository;
@@ -17,6 +15,9 @@ import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +31,7 @@ public class BidCommandService {
     private final PointQueryServiceApi pointQueryServiceApi;
 
     @DistributedLock(key = "'auction:' + #auctionId")
-    public BidResponse createBid(Long auctionId, AuthUser authUser, Long nextBidAmount) {
+    public BidCreateResponse createBid(Long auctionId, AuthUser authUser, Long nextBidAmount) {
         log.debug("락 획득 후 작업 실행: 입찰 요청 - auctionId={}, userId={}, nextBidAmount={}", auctionId, authUser.userId(), nextBidAmount);
 
         Auction auction = auctionQueryServiceApi.findBiddableAuction(auctionId);
@@ -43,9 +44,7 @@ public class BidCommandService {
 
         boolean alreadyParticipated = bidRepository.existsByAuctionIdAndUserId(auction.getId(), user.getId());
 
-        Long currentMaxBid =
-                bidRepository.findMaxBidAmountByAuction(auction)
-                        .orElse(auction.getStartingBid());
+        Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
 
         Long expectedNextBidAmount = currentMaxBid + auction.getBidStep();
 
@@ -75,6 +74,6 @@ public class BidCommandService {
 
         log.debug("입찰 생성 완료 - auctionId={}, userId={}, nextBidAmount={}", auctionId, user.getId(), nextBidAmount);
 
-        return BidResponse.from(savedBid);
+        return BidCreateResponse.from(savedBid);
     }
 }

@@ -1,5 +1,12 @@
 package org.example.lastcall.domain.bid;
 
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.example.lastcall.common.AbstractIntegrationTest;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -14,13 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class BidCommandServiceIntegrationTest extends AbstractIntegrationTest {
@@ -45,15 +45,12 @@ public class BidCommandServiceIntegrationTest extends AbstractIntegrationTest {
         User seller = testUserService.saveTestUser("seller@test.com", "판매자");
         User bidder = testUserService.saveTestUser("bidder@test.com", "입찰자");
 
-        testPointService.create(null, null, bidder, 100_000L);
+        testPointService.create(null, null, bidder, 100000L);
 
         Auction auction = testAuctionService.createOngoingAuction(
-                seller, Category.ACCESSORY, 1000L, 100L
-        );
+                seller, Category.ACCESSORY, 1000L, 100L);
 
-        AuthUser authUser = new AuthUser(
-                bidder.getId(), bidder.getPublicId().toString(), bidder.getUserRole().name()
-        );
+        AuthUser authUser = new AuthUser(bidder.getId(), bidder.getPublicId().toString(), bidder.getUserRole().name());
 
         Long expectedNextBidAmount = auction.getStartingBid() + auction.getBidStep();
 
@@ -86,7 +83,7 @@ public class BidCommandServiceIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(bidRepository.count()).isEqualTo(1);
 
-        Auction updated = testAuctionService.findById(auction.getId());
-        assertThat(updated.getCurrentBid()).isEqualTo(expectedNextBidAmount);
+        Auction updatedAuction = testAuctionService.findById(auction.getId());
+        assertThat(updatedAuction.getCurrentBid()).isEqualTo(expectedNextBidAmount);
     }
 }

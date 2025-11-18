@@ -26,7 +26,5 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     List<ProductImage> findByProductIdAndDeletedFalseOrderByIdAsc(Long productId);
 
-    boolean existsByProductIdAndImageTypeAndDeletedFalse(Long productId, ImageType imageType);
-
     Optional<ProductImage> findByIdAndDeletedFalse(Long newThumbnailImageId);
 }

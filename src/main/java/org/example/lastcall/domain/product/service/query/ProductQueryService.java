@@ -43,20 +43,23 @@ public class ProductQueryService implements ProductQueryServiceApi {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ProductImageResponse findThumbnailImage(Long productId) {
         ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
 
-        return ProductImageResponse.from(thumbnailImage, s3Service);
+        return ProductImageResponse.from(thumbnailImage, s3Service.generateImageUrl(thumbnailImage.getImageKey()));
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ProductImageResponse> findAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 
-        return ProductImageResponse.from(productImages, s3Service);
+        return productImages.stream()
+                .map(image -> {
+                    String url = s3Service.generateImageUrl(image.getImageKey());
+                    return ProductImageResponse.from(image, url);
+                })
+                .toList();
     }
 
     @Override

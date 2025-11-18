@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
 class PointCommandServiceIntegrationTest extends AbstractIntegrationTest {
-
     @Autowired
     private PointCommandService pointCommandService;
 

@@ -34,7 +34,7 @@ public class User extends BaseEntity {
     @Column(name = "password", nullable = false, length = 60)
     private String password;
 
-    @Column(name = "nickname", nullable = false, unique = true)
+    @Column(name = "nickname", nullable = false, unique = true, length = 10)
     private String nickname;
 
     @Column(name = "address", nullable = false, length = 50)
@@ -72,7 +72,8 @@ public class User extends BaseEntity {
 
     public static User of(UUID publicId, String username, String nickname, String email, String encodedPassword,
                           String address, String postcode, String detailAddress, String phoneNumber, Role userRole) {
-        return new User(publicId,
+        return new User(
+                publicId,
                 username,
                 nickname,
                 email,
@@ -96,9 +97,11 @@ public class User extends BaseEntity {
         if (address != null) {
             this.address = address;
         }
+
         if (postcode != null) {
             this.postcode = postcode;
         }
+
         if (detailAddress != null) {
             this.detailAddress = detailAddress;
         }

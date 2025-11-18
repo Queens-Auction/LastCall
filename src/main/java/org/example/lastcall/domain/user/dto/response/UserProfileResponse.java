@@ -1,10 +1,11 @@
 package org.example.lastcall.domain.user.dto.response;
 
-import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
+
 import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.enums.Role;
 
-import java.time.LocalDateTime;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "사용자 프로필 응답 DTO")
 public record UserProfileResponse(
@@ -33,8 +34,7 @@ public record UserProfileResponse(
         LocalDateTime createdAt,
 
         @Schema(description = "최근 수정 시각")
-        LocalDateTime modifiedAt
-) {
+        LocalDateTime modifiedAt) {
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(
                 user.getId(),
@@ -44,13 +44,11 @@ public record UserProfileResponse(
                 new AddressResponse(
                         user.getAddress(),
                         user.getPostcode(),
-                        user.getDetailAddress()
-                ),
+                        user.getDetailAddress()),
                 user.getPhoneNumber(),
                 user.getUserRole(),
                 user.getCreatedAt(),
-                user.getModifiedAt()
-        );
+                user.getModifiedAt());
     }
 
     @Schema(description = "주소 정보 DTO")

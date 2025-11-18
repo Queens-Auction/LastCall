@@ -34,20 +34,14 @@ public class EmailVerification extends BaseEntity {
     @Column(nullable = false)
     private String email;
 
-    private EmailVerification(
-            UUID publicId,
-            String verificationCode,
-            String email) {
+    private EmailVerification(UUID publicId, String verificationCode, String email) {
         this.publicId = publicId;
         this.verificationCode = verificationCode;
         this.status = EmailVerificationStatus.SENT;
         this.email = email;
     }
 
-    public static EmailVerification create(
-            UUID publicId,
-            String verificationCode,
-            String email) {
+    public static EmailVerification create(UUID publicId, String verificationCode, String email) {
         return new EmailVerification(publicId, verificationCode, email);
     }
 

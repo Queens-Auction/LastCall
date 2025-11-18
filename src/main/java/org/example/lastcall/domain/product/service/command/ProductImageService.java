@@ -2,7 +2,6 @@ package org.example.lastcall.domain.product.service.command;
 
 import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
-import org.example.lastcall.domain.product.dto.request.ProductImageCreateRequest;
 import org.example.lastcall.domain.product.entity.Product;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
@@ -21,13 +20,28 @@ public class ProductImageService {
     private final S3Service s3Service;
     private final ProductImageRepository productImageRepository;
 
-    public ProductImage uploadAndCreateProductImage(Product product,
-                                                    ProductImageCreateRequest request,
-                                                    MultipartFile file,
-                                                    String fileHash,
-                                                    Long productId) {
+    public List<ProductImage> uploadAndGenerateDetailImages(Product product,
+                                                            List<MultipartFile> images,
+                                                            Long productId) {
+        Map<MultipartFile, String> fileToHash = validateAndGenerateHashes(images, productId);
+
+        return images.stream()
+                .map(image -> uploadAndCreateProductImage(
+                        product,
+                        image,
+                        fileToHash.get(image),
+                        productId,
+                        ImageType.DETAIL))
+                .toList();
+    }
+
+    public ProductImage uploadAndCreateProductImage(
+            Product product,
+            MultipartFile file,
+            String fileHash,
+            Long productId,
+            ImageType imageType) {
         String imageKey = s3Service.uploadToS3(file, "products/" + productId);
-        ImageType imageType = Boolean.TRUE.equals(request.getIsThumbnail()) ? ImageType.THUMBNAIL : ImageType.DETAIL;
 
         return ProductImage.of(product, imageType, imageKey, fileHash);
     }
@@ -47,6 +61,7 @@ public class ProductImageService {
             if (!newHashes.add(hash)) {
                 throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_REQUEST);
             }
+
             if (existingHashes.contains(hash)) {
                 throw new BusinessException(ProductErrorCode.DUPLICATE_IMAGE_URL_IN_PRODUCT);
             }

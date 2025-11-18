@@ -26,6 +26,24 @@ jobs:
         ports:
           - 1025:1025   # SMTP
           - 8025:8025   # Web UI (디버깅용, 테스트에는 불필요)
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        env:
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
+          RABBITMQ_PLUGINS: "rabbitmq_management rabbitmq_delayed_message_exchange"
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -50,10 +68,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+
+
       - name: Build (tests included)
         env:
-          SPRING_PROFILES_ACTIVE: dev
+          SPRING_PROFILES_ACTIVE: test
           # DB
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/auction?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -65,4 +86,19 @@ jobs:
           # JWT
           JWT_SECRET: ${{  secrets.JWT_SECRET }}
           JWT_EXPIRATION: 86400000
+          # redis
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          # rabbitmq
+          RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
         run: ./gradlew clean build --no-daemon
+
+      - name: Upload problems report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: problems-report
+          path: build/reports/tests/test/

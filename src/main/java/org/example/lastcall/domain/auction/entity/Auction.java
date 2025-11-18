@@ -2,7 +2,6 @@ package org.example.lastcall.domain.auction.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.lastcall.common.entity.BaseEntity;
@@ -17,19 +16,13 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        name = "auctions",
-        indexes = {
-                @Index(name = "idx_auction_deleted", columnList = "deleted"),
-                // 아래 두 건은 인텔리제이에서 조회 속도 테스트 시 데이터가 적어 효과가 미비함
-                // -> nGrinder로 부하테스트에서 성능 확인 예정
-                // -> 부하 테스트에서도 효과가 미비하면 삭제 예정
-                @Index(name = "idx_auction_created_at", columnList = "created_at"),
-                @Index(name = "idx_auction_user_deleted_created", columnList = "user_id, deleted, created_at DESC"),
-                // FK 인덱스 : DB 호환성 위해 명시적 추가
-                @Index(name = "idx_auction_user_id", columnList = "user_id"),
-                @Index(name = "idx_auction_product_id", columnList = "product_id")
-        })
+@Table(name = "auctions", indexes = {
+        @Index(name = "idx_auction_deleted", columnList = "deleted"),
+        @Index(name = "idx_auction_created_at", columnList = "created_at"),
+        @Index(name = "idx_auction_user_deleted_created", columnList = "user_id, deleted, created_at DESC"),
+        @Index(name = "idx_auction_user_id", columnList = "user_id"),
+        @Index(name = "idx_auction_product_id", columnList = "product_id")
+})
 public class Auction extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,12 +40,9 @@ public class Auction extends BaseEntity {
     @Column(name = "bid_step", nullable = false)
     private Long bidStep;
 
-    @Column(name = "current_bid") // 등록값에서는 널 일수 있으므로 null 허용
+    @Column(name = "current_bid")
     private Long currentBid;
 
-    // Enum 매핑 명시 : 가독성 + 안정성
-    // -> 안 써주면 기본값이 EnumType.ORDINAL (숫자 저장)
-    // -> 나중에 Enum 순서 바뀌면 DB 꼬일 수 있음
     @Enumerated(EnumType.STRING)
     @Column(name = "auction_status", nullable = false)
     private AuctionStatus status;
@@ -71,49 +61,33 @@ public class Auction extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // 빌더
-    /* 엔티티의 @Builder는 생성자 단위로 붙이는 게 안전함
-         - 클래스 상단에 붙이면 자동생성되는 id 까지 포함되므로 @GeneratedValue 위반 발생
-         - @GeneratedValue : JPA 가 id를 자동 생성 (개발자 수동 세팅 금지)
-         - 개발자가 JPA 관리 영역 침범하므로 정책 위반이 됨
-    */
-    // 현재 of 메서드에서 간접적으로 사용중
-    @Builder
-    private Auction(User user,
-                    Product product,
-                    Long startingBid,
-                    Long bidStep,
-                    LocalDateTime startTime,
-                    LocalDateTime endTime) {
+    @Column(name = "version")
+    private Long eventVersion = 0L;
+
+    private Auction(User user, Product product, Long startingBid, Long bidStep, LocalDateTime startTime, LocalDateTime endTime) {
         this.user = user;
         this.product = product;
         this.startingBid = startingBid;
         this.bidStep = bidStep;
         this.startTime = startTime;
         this.endTime = endTime;
-        // null 이면 determineStatus 로 자동 계산, status 명시되면 그대로 사용(테스트, 스케줄러용 예외 케이스)
-        // this.status = (status != null) ? status : determineStatus();
-        // MQ 도입 후 : MQ가 상태 제어하므로 초기상태는 항상 등록 시점 기준
-        this.status = (LocalDateTime.now().isBefore(startTime))
-                ? AuctionStatus.SCHEDULED
-                : AuctionStatus.ONGOING;
+        this.status = (LocalDateTime.now().isBefore(startTime)) ? AuctionStatus.SCHEDULED : AuctionStatus.ONGOING;
+        this.currentBid = startingBid;
     }
 
-    // 정적 팩토리 메서드 (of)
     public static Auction of(User user, Product product, AuctionCreateRequest request) {
-        return Auction.builder()
-                .user(user)
-                .product(product)
-                .startingBid(request.getStartingBid())
-                .bidStep(request.getBidStep())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .build();
+        return new Auction(
+                user,
+                product,
+                request.getStartingBid(),
+                request.getBidStep(),
+                request.getStartTime(),
+                request.getEndTime());
     }
 
-    // 경매 상태 계산 (엔티티 내부에서 처리)
     private AuctionStatus determineStatus() {
         LocalDateTime now = LocalDateTime.now();
+
         if (this.status != null && status.equals(AuctionStatus.DELETED)) {
             return AuctionStatus.DELETED;
         } else if (now.isBefore(this.getStartTime())) {
@@ -125,24 +99,10 @@ public class Auction extends BaseEntity {
         }
     }
 
-    /*@Transient
-    public AuctionStatus getDynamicStatus() {
-        if (this.status == AuctionStatus.DELETED) {
-            return this.status;
-        }
-        this.status = determineStatus();
-        return this.status;
-    }*/
-
-    // DB 상태 직접 갱신 시 사용
-    // -> MQ 에서 상태 전환 시 명시적 호출
     public void updateStatus(AuctionStatus status) {
         this.status = status;
     }
 
-    // 동적 상태 조회용(표시용)
-    // -> 조회 시점 상태 계산 메서드
-    // MQ 전송 지연/예외 시에도 프론트에서 상태 맞게 표시 가능
     @Transient
     public AuctionStatus getDynamicStatus() {
         if (this.status == AuctionStatus.DELETED) {
@@ -151,25 +111,21 @@ public class Auction extends BaseEntity {
 
         LocalDateTime now = LocalDateTime.now();
 
-        // 아직 시작 전
         if (now.isBefore(startTime)) {
             return AuctionStatus.SCHEDULED;
         }
 
-        // 진행 중
         if (now.isBefore(endTime)) {
             return AuctionStatus.ONGOING;
         }
 
-        // 종료 시점 이후 → 낙찰자 존재 여부로 분기
         if (winnerId != null && currentBid != null && currentBid > 0) {
-            return AuctionStatus.CLOSED; // 낙찰 성공
+            return AuctionStatus.CLOSED;
         } else {
-            return AuctionStatus.CLOSED_FAILED; // 유찰 (입찰자 없음)
+            return AuctionStatus.CLOSED_FAILED;
         }
     }
 
-    // 내 경매 수정
     public void update(AuctionUpdateRequest request) {
         this.startingBid = request.getStartingBid();
         this.bidStep = request.getBidStep();
@@ -178,38 +134,36 @@ public class Auction extends BaseEntity {
         this.status = determineStatus();
     }
 
-    // 경매 삭제 시 status 반영
     public void markAsDeleted() {
         this.status = AuctionStatus.DELETED;
         this.softDelete();
     }
 
-    // 경매 종료 여부 확인
     public boolean canClose() {
         return this.status != AuctionStatus.CLOSED
                 && this.status != AuctionStatus.CLOSED_FAILED
                 && this.status != AuctionStatus.DELETED;
     }
 
-    // 경매 종료 처리 (유찰)
     public void closeAsFailed() {
         this.status = AuctionStatus.CLOSED_FAILED;
     }
 
-    // 경매 낙찰자 확정
     public void assignWinner(Long winnerId, Long winningBid) {
         this.winnerId = winnerId;
         this.currentBid = winningBid;
-        this.status = AuctionStatus.CLOSED; // 낙찰 성공
+        this.status = AuctionStatus.CLOSED;
     }
 
-    // 현재 최고 입찰가 갱신
     public void updateCurrentBid(Long currentBid) {
         this.currentBid = currentBid;
     }
 
-    // 참여자 수 1 증가 (중복 입찰자 제외 - 비드서비스)
     public void incrementParticipantCount() {
         this.participantCount++;
+    }
+
+    public void increaseVersion() {
+        this.eventVersion++;
     }
 }

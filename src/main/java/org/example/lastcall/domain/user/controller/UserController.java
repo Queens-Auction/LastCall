@@ -1,9 +1,5 @@
 package org.example.lastcall.domain.user.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -14,19 +10,28 @@ import org.example.lastcall.domain.user.dto.request.UserUpdateRequest;
 import org.example.lastcall.domain.user.dto.response.UserProfileResponse;
 import org.example.lastcall.domain.user.exception.UserErrorCode;
 import org.example.lastcall.domain.user.service.command.UserCommandService;
-import org.example.lastcall.domain.user.service.query.UserQueryService;
+import org.example.lastcall.domain.user.service.query.UserQueryQueryService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @Tag(name = "회원(User) API", description = "회원 정보 조회, 수정, 비밀번호 변경 기능 제공")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
 public class UserController {
-    private final UserQueryService userQueryService;
+    private final UserQueryQueryService userQueryService;
     private final UserCommandService userCommandService;
     private final CookieUtil cookieUtil;
 
@@ -39,6 +44,7 @@ public class UserController {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
+
         UserProfileResponse dto = userQueryService.getMyProfile(authUser.userId());
 
         return ApiResponse.success("내 정보 조회 성공", dto);
@@ -49,8 +55,9 @@ public class UserController {
             description = "닉네임, 주소, 전화번호 등 사용자의 정보를 수정합니다."
     )
     @PatchMapping("/me")
-    public ApiResponse<UserProfileResponse> updateMe(@AuthenticationPrincipal AuthUser authUser,
-                                                     @RequestBody(required = false) UserUpdateRequest request) {
+    public ApiResponse<UserProfileResponse> updateMe(
+        @AuthenticationPrincipal AuthUser authUser,
+        @RequestBody(required = false) UserUpdateRequest request) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
@@ -62,6 +69,7 @@ public class UserController {
         if (request.phoneNumber() != null) {
             String phone = request.phoneNumber();
             boolean valid = phone.matches("^(010|011|016|017|018|019)-?\\d{3,4}-?\\d{4}$");
+
             if (!valid) {
                 throw new BusinessException(UserErrorCode.INVALID_PHONE_FORMAT);
             }
@@ -83,6 +91,7 @@ public class UserController {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHORIZED_ACCESS);
         }
+
         userCommandService.changeMyPassword(authUser.userId(), request);
 
         ResponseCookie delAT = cookieUtil.deleteCookieOfAccessToken();

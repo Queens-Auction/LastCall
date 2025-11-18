@@ -9,7 +9,6 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.domain.auth.dto.request.LoginRequest;
 import org.example.lastcall.domain.auth.dto.request.SignupRequest;
-import org.example.lastcall.domain.auth.dto.request.TokenReissueRequest;
 import org.example.lastcall.domain.auth.dto.request.WithdrawRequest;
 import org.example.lastcall.domain.auth.dto.response.LoginResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
@@ -40,8 +39,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Object>> signup(@Valid @RequestBody SignupRequest request) {
         authCommandService.signup(request);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("회원가입이 완료되었습니다."));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("회원가입이 완료되었습니다."));
     }
 
     @Operation(
@@ -53,6 +51,7 @@ public class AuthController {
         if (request == null) {
             throw new BusinessException(AuthErrorCode.INVALID_EMPTY_EMAIL_OR_PASSWORD);
         }
+
         LoginResponse loginResponse = authCommandService.login(request);
 
         ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(loginResponse.accessToken());
@@ -68,13 +67,14 @@ public class AuthController {
             description = "사용자의 Refresh Token을 무효화하고, 인증 관련 쿠키를 삭제합니다."
     )
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(@CookieValue(name = CookieUtil.REFRESH_COOKIE,
-            required = false) String refreshToken) {
+    public ResponseEntity<ApiResponse<Void>> logout(@CookieValue(name = CookieUtil.REFRESH_COOKIE, required = false) String refreshToken) {
         authCommandService.logout(refreshToken);
+
         ResponseCookie deleteAccessCookie = cookieUtil.deleteCookieOfAccessToken();
         ResponseCookie deleteRefreshCookie = cookieUtil.deleteCookieOfRefreshToken();
 
         HttpHeaders headers = new HttpHeaders();
+
         headers.add(HttpHeaders.SET_COOKIE, deleteAccessCookie.toString());
         headers.add(HttpHeaders.SET_COOKIE, deleteRefreshCookie.toString());
 
@@ -88,8 +88,9 @@ public class AuthController {
             description = "로그인한 사용자가 본인 계정을 탈퇴합니다. 탈퇴 후 인증 쿠키는 삭제됩니다."
     )
     @PostMapping("/withdraw")
-    public ResponseEntity<ApiResponse<Void>> withdraw(@AuthenticationPrincipal AuthUser authUser,
-                                                      @RequestBody(required = false) WithdrawRequest withdrawRequest) {
+    public ResponseEntity<ApiResponse<Void>> withdraw(
+            @AuthenticationPrincipal AuthUser authUser,
+            @RequestBody(required = false) WithdrawRequest withdrawRequest) {
         if (authUser == null) {
             throw new BusinessException(AuthErrorCode.UNAUTHENTICATED);
         }
@@ -97,6 +98,7 @@ public class AuthController {
         if (withdrawRequest == null || withdrawRequest.password() == null || withdrawRequest.password().isBlank()) {
             throw new BusinessException(AuthErrorCode.MISSING_PASSWORD);
         }
+
         authCommandService.withdraw(authUser.userId(), withdrawRequest);
 
         ResponseCookie deleteAccess = cookieUtil.deleteCookieOfAccessToken();
@@ -108,10 +110,21 @@ public class AuthController {
                 .body(ApiResponse.success("정상적으로 회원 탈퇴 요청이 완료되었습니다."));
     }
 
+    @Operation(
+            summary = "refresh token 재발급",
+            description = "유효한 Refresh Token을 이용해 새로운 Access Token을 재발급합니다."
+    )
     @PostMapping("/tokens")
-    public ResponseEntity<LoginResponse> reissueToken(@RequestBody TokenReissueRequest request) {
-        LoginResponse response = authCommandService.reissueAccessToken(request.refreshToken());
+    public ResponseEntity<ApiResponse<Object>> reissueToken(
+            @CookieValue(name = CookieUtil.REFRESH_COOKIE, required = false) String refreshToken
+    ) {
+        LoginResponse response = authCommandService.reissueAccessToken(refreshToken);
 
-        return ResponseEntity.ok(response);
+        ResponseCookie accessCookie = cookieUtil.createAccessTokenCookie(response.accessToken());
+        ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(response.refreshToken());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString(), refreshCookie.toString())
+                .body(ApiResponse.success("토큰이 재발급되었습니다."));
     }
 }

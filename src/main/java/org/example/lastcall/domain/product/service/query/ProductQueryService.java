@@ -35,28 +35,31 @@ public class ProductQueryService implements ProductQueryServiceApi {
     public PageResponse<ProductReadAllResponse> getAllMyProducts(AuthUser authuser, int page, int size) {
         Page<Product> products = productRepository.findAllByUserIdAndDeletedFalse(
                 authuser.userId(),
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
-        );
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+
         Map<Long, String> thumbnailUrlMap = getThumbnailUrlMap(products);
 
         return ProductReadAllResponse.from(products, thumbnailUrlMap);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ProductImageResponse findThumbnailImage(Long productId) {
         ProductImage thumbnailImage = productImageRepository.findByProductIdAndImageTypeAndDeletedFalse(productId, ImageType.THUMBNAIL)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.THUMBNAIL_NOT_FOUND));
 
-        return ProductImageResponse.from(thumbnailImage, s3Service);
+        return ProductImageResponse.from(thumbnailImage, s3Service.generateImageUrl(thumbnailImage.getImageKey()));
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<ProductImageResponse> findAllProductImage(Long productId) {
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 
-        return ProductImageResponse.from(productImages, s3Service);
+        return productImages.stream()
+                .map(image -> {
+                    String url = s3Service.generateImageUrl(image.getImageKey());
+                    return ProductImageResponse.from(image, url);
+                })
+                .toList();
     }
 
     @Override
@@ -66,15 +69,16 @@ public class ProductQueryService implements ProductQueryServiceApi {
     }
 
     @Override
-    public void validateProductOwner(Long productId, Long userId) {
+    public Product validateProductOwner(Long productId, Long userId) {
         Product product = productRepository.findByIdWithUser(productId)
                 .orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         if (!Objects.equals(product.getUser().getId(), userId)) {
             throw new BusinessException(ProductErrorCode.UNAUTHORIZED_PRODUCT_OWNER);
         }
+        return product;
     }
-    
+
     private Map<Long, String> getThumbnailUrlMap(Page<Product> products) {
         List<Long> productIds = products.stream()
                 .map(Product::getId)
@@ -84,7 +88,6 @@ public class ProductQueryService implements ProductQueryServiceApi {
                 .stream()
                 .collect(Collectors.toMap(
                         pi -> pi.getProduct().getId(),
-                        pi -> s3Service.generateImageUrl(pi.getImageKey())
-                ));
+                        pi -> s3Service.generateImageUrl(pi.getImageKey())));
     }
 }

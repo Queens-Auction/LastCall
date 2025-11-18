@@ -4,10 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.example.lastcall.domain.product.entity.ProductImage;
 import org.example.lastcall.domain.product.enums.ImageType;
-import org.example.lastcall.domain.product.service.command.S3Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Schema(description = "상품 이미지 응답 DTO")
 @Getter
@@ -30,7 +28,8 @@ public class ProductImageResponse {
     @Schema(description = "이미지 수정일", example = "2025-10-24T13:00:00")
     private final LocalDateTime modifiedAt;
 
-    public ProductImageResponse(Long id, Long productId, ImageType imageType, String imageUrl, LocalDateTime createdAt, LocalDateTime modifiedAt) {
+    public ProductImageResponse(Long id, Long productId, ImageType imageType,
+                                String imageUrl, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
         this.productId = productId;
         this.imageType = imageType;
@@ -39,9 +38,7 @@ public class ProductImageResponse {
         this.modifiedAt = modifiedAt;
     }
 
-    public static ProductImageResponse from(ProductImage productImage, S3Service s3Service) {
-        String imageUrl = s3Service.generateImageUrl(productImage.getImageKey());
-
+    public static ProductImageResponse from(ProductImage productImage, String imageUrl) {
         return new ProductImageResponse(
                 productImage.getId(),
                 productImage.getProduct().getId(),
@@ -49,11 +46,5 @@ public class ProductImageResponse {
                 imageUrl,
                 productImage.getCreatedAt(),
                 productImage.getModifiedAt());
-    }
-
-    public static List<ProductImageResponse> from(List<ProductImage> productImages, S3Service s3Service) {
-        return productImages.stream()
-                .map(image -> from(image, s3Service))
-                .toList();
     }
 }

@@ -2,7 +2,9 @@ package org.example.lastcall.domain.point.service.command;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
+import org.example.lastcall.common.lock.DistributedLock;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.exception.AuctionErrorCode;
 import org.example.lastcall.domain.auction.repository.AuctionRepository;
@@ -20,32 +22,35 @@ import org.example.lastcall.domain.point.exception.PointErrorCode;
 import org.example.lastcall.domain.point.repository.PointLogRepository;
 import org.example.lastcall.domain.point.repository.PointRepository;
 import org.example.lastcall.domain.user.entity.User;
-import org.example.lastcall.domain.user.service.UserServiceApi;
+import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class PointCommandService implements PointCommandServiceApi {
     private final PointRepository pointRepository;
     private final PointLogRepository pointLogRepository;
-    private final UserServiceApi userServiceApi;
+    private final UserQueryServiceApi userQueryServiceApi;
     private final BidQueryServiceApi bidQueryServiceApi;
     private final AuctionFinder auctionFinder;
     private final AuctionRepository auctionRepository;
+    private final PointTransactionService pointTransactionService;
 
-    // 포인트 등록 (충전)
-    // @CacheEvict: 캐시 정보를 메모리상에 삭제하는 기능 수행
     @CacheEvict(value = "userPoints", key = "#authUser.userId()")
+    @DistributedLock(key = "'user:' + #authUser.userId()")
     public PointResponse createPoint(AuthUser authUser, @Valid PointCreateRequest request) {
-        User user = userServiceApi.findById(authUser.userId());
+        log.debug("락 획득 후 작업 실행: 포인트 충전 요청 - userId: {}, incomePoint: {}", authUser.userId(), request.getIncomePoint());
+
+        User user = userQueryServiceApi.findById(authUser.userId());
 
         Point currentPoint = pointRepository.findByUser(user).orElse(null);
 
@@ -54,16 +59,18 @@ public class PointCommandService implements PointCommandServiceApi {
         PointLogType type = request.getType();
 
         if (currentPoint == null) {
-            currentPoint = Point.create(user, type, incomePoint);
+            currentPoint = Point.of(user, incomePoint);
             currentPoint = pointRepository.save(currentPoint);
         } else {
             currentPoint.updateAvailablePoint(incomePoint);
         }
 
+        log.debug("락을 점유한 작업 종료: 포인트 충전 완료 - userId: {}, currentPoint: {}", authUser.userId(), currentPoint.getAvailablePoint());
+
         PointLog log = pointLogRepository.save(
-                PointLog.create(
+                PointLog.of(
                         currentPoint,
-                        user,
+                        user.getId(),
                         PointLogType.EARN,
                         PointLogType.EARN.getDescription(),
                         incomePoint));
@@ -73,186 +80,114 @@ public class PointCommandService implements PointCommandServiceApi {
                 currentPoint.getId(),
                 currentPoint.getAvailablePoint(),
                 currentPoint.getDepositPoint(),
-                currentPoint.getSettlementPoint()
-        );
+                currentPoint.getSettlementPoint());
     }
 
-    // 입찰 발생 시 포인트 예치 관련 변경 메서드
     @Override
     @CacheEvict(value = "userPoints", key = "#userId")
+    @DistributedLock(key = "'user:' + #userId")
     public void updateDepositPoint(Long auctionId, Long bidId, Long bidAmount, Long userId) {
-        // 포인트 조회
-        Point point = pointRepository.findByUserId(userId).orElseThrow(
-                () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
-        );
+        log.debug("락 획득 후 작업 실행: 입찰 포인트 예치 - userId: {}, auctionId: {}, bidAmount: {}", userId, auctionId, bidAmount);
 
-        // 이전 입찰 조회 (해당 유저가 이미 입찰했는지)
+        Point point = pointRepository.findByUserId(userId).orElseThrow(
+                () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND));
+
+        boolean alreadyProcessed = pointLogRepository.existsByBidIdAndTypeIn(bidId, List.of(PointLogType.DEPOSIT, PointLogType.ADDITIONAL_DEPOSIT));
+
+        if (alreadyProcessed) {
+            throw new BusinessException(PointErrorCode.ALREADY_PROCESSED_DEPOSIT);
+        }
+
         Optional<Bid> existingBid = bidQueryServiceApi.findLastBidExceptBidId(auctionId, userId, bidId);
 
-		Bid currentBid = Optional.ofNullable(bidQueryServiceApi.findById(bidId)).orElseThrow(
-				() -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
-		);
+        if (existingBid.isPresent()) {
+            Bid previousBid = existingBid.get();
+            Long previousBidAmount = previousBid.getBidAmount();
 
-		if (existingBid.isPresent()) {
-			Bid previousBid = existingBid.get();
-			Long previousBidAmount = previousBid.getBidAmount();
-
-            // 새 금액이 이전 금액보다 큰 경우(금액 올릴 때)
             if (bidAmount > previousBidAmount) {
                 Long difference = bidAmount - previousBidAmount;
 
-                // 근데 추가하려는 금액보다 가용 포인트가 적을 경우
                 if (point.getAvailablePoint() < difference) {
                     throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
                 }
 
-                // 그렇지 않다면 가용 포인트에서 차액만큼 차감
                 point.decreaseAvailablePoint(difference);
 
-                // 예치 포인트에 차액만큼 추가
                 point.increaseDepositPoint(difference);
 
-				// 포인트 로그에 기록
-				PointLog log = PointLog.create(
-					point,
-					point.getUser(),
-					PointLogType.ADDITIONAL_DEPOSIT,
-					"입찰 금액 증가로 인한 추가 예치 처리",
-					difference,
-					auctionFinder.findById(auctionId)
-				);
+                PointLog log = PointLog.of(
+                        point,
+                        userId,
+                        PointLogType.ADDITIONAL_DEPOSIT,
+                        "입찰 금액 증가로 인한 추가 예치 처리",
+                        difference,
+                        auctionId,
+                        bidId);
 
                 // 포인트 로그에 저장
                 pointLogRepository.save(log);
             }
         } else {
-            // 처음 입찰하는 경우 (전체 금액 예치)
             if (point.getAvailablePoint() < bidAmount) {
                 throw new BusinessException(PointErrorCode.INSUFFICIENT_POINT);
             }
 
-            // 포인트 이동 (가용 -> 예치)
             point.updateDepositPoint(bidAmount);
 
-			// 포인트 로그에 기록
-			PointLog log = PointLog.create(
-				point,
-				point.getUser(),
-				PointLogType.DEPOSIT,
-				"입찰금 예치 처리",
-				bidAmount,
-				auctionFinder.findById(auctionId),
-					currentBid
-			);
-			pointLogRepository.save(log);
-		}
-	}
-
-    // 경매 종료 후 입찰 확정시 예치 포인트를 정산 포인트로 이동
-    @Override
-    @CacheEvict(value = "userPoints", key = "#userId")
-    public void depositToSettlement(Long userId, Long auctionId, Long amount) {
-        // 경매 및 최고 입찰 조회
-        Auction auction = auctionFinder.findById(auctionId);
-        Bid highestBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
-                () -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
-        );
-
-        Long winnerUserId = highestBid.getUser().getId();
-        Long winnerBidAmount = highestBid.getBidAmount();
-
-        // 낙찰자의 포인트 계좌 조회
-        Point point = pointRepository.findByUserId(winnerUserId).orElseThrow(
-                () -> new BusinessException(PointErrorCode.POINT_ACCOUNT_NOT_FOUND)
-        );
-
-        // 예치 포인트 -> 정산 포인트로 이동
-        point.depositToSettlement(winnerBidAmount);
-
-        // 변경사항 저장
-        pointRepository.save(point);
-
-        // 포인트 로그에 기록
-        PointLog log = PointLog.create(
-                point,
-                point.getUser(),
-                PointLogType.SETTLEMENT,
-                "입찰 확정으로 인한 정산 포인트 이동",
-                winnerBidAmount,
-                auction
-        );
-
-        // 포인트 로그에 저장
-        pointLogRepository.save(log);
-    }
-
-    // 경매 종료 후 입찰에 실패한 사용자들의 예치 포인트를 가용 포인트로 이동
-    @Override
-    @CacheEvict(value = "userPoints", key = "#userId")
-    public void depositToAvailablePoint(Long userId, Long auctionId, Long amount) {
-        // 경매 조회
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
-                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND)
-        );
-
-        // 해당 경매의 최고 입찰자 조회
-        Bid highestBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
-                () -> new BusinessException(BidErrorCode.BID_NOT_FOUND)
-        );
-        Long winnerUserId = highestBid.getUser().getId();
-
-        // 경매에 참여한 전체 입찰자 목록 조회
-        List<Bid> allBids = bidQueryServiceApi.findAllByAuctionId(auction.getId());
-
-        // 중복 입찰자는 최고 입찰가만 반영 (추가)
-        Map<Long, Bid> latestBidsByUser = new HashMap<>();
-
-        for (Bid bid : allBids) {
-            Long bidderId = bid.getUser().getId();
-            Bid currentHighestBid = latestBidsByUser.get(bidderId);
-
-            if (currentHighestBid == null || bid.getBidAmount() > currentHighestBid.getBidAmount()) {
-                latestBidsByUser.put(bidderId, bid);
-            }
-        }
-
-        // 낙찰 실패자만 처리
-        for (Map.Entry<Long, Bid> entry : latestBidsByUser.entrySet()) {
-            Long loserId = entry.getKey();
-            Bid finalBid = entry.getValue();
-
-            // 낙찰자면 스킵
-            if (loserId.equals(winnerUserId)) {
-                continue;
-            }
-
-            Long bidAmount = finalBid.getBidAmount();
-
-            // 포인트 계좌 조회
-            Point point = pointRepository.findByUserId(loserId).orElseThrow(
-                    () -> new BusinessException(PointErrorCode.POINT_RECORD_NOT_FOUND)
+            PointLog log = PointLog.of(
+                    point,
+                    userId,
+                    PointLogType.DEPOSIT,
+                    "입찰금 예치 처리",
+                    bidAmount,
+                    auctionId,
+                    bidId
             );
 
-            // 이동 가능 여부 조회
-            if (!point.canMoveDepositToAvailable(bidAmount)) {
-                throw new BusinessException(PointErrorCode.INSUFFICIENT_DEPOSIT_POINT);
-            }
-
-            // 포인트 이동 (예치 -> 가용)
-            point.moveDepositToAvailable(bidAmount);
-            pointRepository.save(point);
-
-            // 유저 참조 가져오기
-            User user = userServiceApi.getReferenceById(loserId);
-
-            // 포인트 로그에 기록
-            pointLogRepository.save(PointLog.of(
-                    point,      // 추가
-                    user,
-                    auction,
-                    bidAmount,
-                    PointLogType.DEPOSIT_TO_AVAILABLE
-            ));
+            pointLogRepository.save(log);
         }
+        log.debug("락을 점유한 작업 종료: 포인트 예치 완료 - userId: {}, availablePoint: {}, depositPoint: {}", userId, point.getAvailablePoint(), point.getDepositPoint());
+    }
+
+    @Override
+    public void depositToSettlement(Long auctionId) {
+        Auction auction = auctionFinder.findById(auctionId);
+
+        Bid highestBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
+                () -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
+
+        pointTransactionService.depositToSettlementToUser(auction, highestBid.getUser().getId(), highestBid.getBidAmount());
+    }
+
+    @Override
+    public void depositToAvailablePoint(Long auctionId) {
+        Auction auction = auctionRepository.findById(auctionId).orElseThrow(
+                () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
+
+        Bid highestBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
+                () -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
+
+        Long winnerUserId = highestBid.getUser().getId();
+
+        List<Bid> allBids = bidQueryServiceApi.findAllByAuctionId(auction.getId());
+
+        Set<Bid> filteredBids = allBids.stream()
+                .filter(bid -> !bid.getUser().getId().equals(winnerUserId)) // 낙찰자 제외
+                .collect(Collectors.toMap(
+                        bid -> bid.getUser().getId(),                       // key: 사용자 ID
+                        bid -> bid,                                         // value: 해당 사용자의 bid
+                        (existing, replacement) ->                      // merge: 더 높은 금액의 bid 선택
+                                replacement.getBidAmount() > existing.getBidAmount() ? replacement : existing
+                ))
+                .values()                              // Map<Long, Bid> → Collection<Bid>
+                .stream()
+                .collect(Collectors.toSet());          // Set<Bid> 으로 변환
+
+        // 낙찰 실패자만 처리
+        filteredBids.forEach(bid -> {
+            Long loserId = bid.getUser().getId();
+            System.out.println("loserId : " + loserId + " / winnerUserId : " + winnerUserId);
+            pointTransactionService.depositToAvailablePointToUser(auction, loserId, winnerUserId, bid);
+        });
     }
 }

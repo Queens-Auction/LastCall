@@ -6,10 +6,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.lastcall.common.response.ApiResponse;
 import org.example.lastcall.common.response.PageResponse;
 import org.example.lastcall.domain.auth.enums.AuthUser;
+import org.example.lastcall.domain.bid.dto.request.BidCreateRequest;
+import org.example.lastcall.domain.bid.dto.response.BidCreateResponse;
 import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
-import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.service.command.BidCommandService;
 import org.example.lastcall.domain.bid.service.query.BidQueryService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -32,9 +34,11 @@ public class BidController {
                     "경매 진행 중일 경우에만 가능하며, 이전 최고가보다 높은 금액으로 자동 계산됩니다."
     )
     @PostMapping
-    public ResponseEntity<ApiResponse<BidResponse>> createBid(@PathVariable Long auctionId,
-                                                              @AuthenticationPrincipal AuthUser authUser) {
-        BidResponse bid = bidCommandService.createBid(auctionId, authUser);
+    public ResponseEntity<ApiResponse<BidCreateResponse>> createBid(
+            @PathVariable Long auctionId,
+            @AuthenticationPrincipal AuthUser authUser,
+            @RequestBody BidCreateRequest request) {
+        BidCreateResponse bid = bidCommandService.createBid(auctionId, authUser, request.getNextBidAmount());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("입찰이 완료되었습니다.", bid));
     }
@@ -45,8 +49,10 @@ public class BidController {
                     "페이징이 적용되며, 기본 5개씩 반환됩니다."
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<BidGetAllResponse>>> getAllBids(@PathVariable Long auctionId,
-                                                                                   @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<ApiResponse<PageResponse<BidGetAllResponse>>> getAllBids(
+            @PathVariable Long auctionId,
+            @ParameterObject
+            @PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<BidGetAllResponse> bids = bidQueryService.getAllBids(auctionId, pageable);
 
         return ResponseEntity.ok(ApiResponse.success("해당 경매의 입찰 내역을 조회합니다.", bids));

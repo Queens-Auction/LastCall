@@ -69,8 +69,7 @@ public class ProductQueryServiceTest {
                 "12345",
                 "Apt 101",
                 "010-0000-0000",
-                Role.USER
-        );
+                Role.USER);
 
         authUser = new AuthUser(1L, "test@example.com", "ROLE_USER");
 
@@ -78,8 +77,7 @@ public class ProductQueryServiceTest {
                 user,
                 "제가 그린 기린 그림",
                 Category.ART_PAINTING,
-                "제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다."
-        );
+                "제가 그린 기린 그림입니다. 저는 여섯살 때부터 신바람 영재 미술 교실을 다닌 바가 있으며 계속 취미 생활을 유지중입니다.");
 
         product2 = Product.of(
                 user,

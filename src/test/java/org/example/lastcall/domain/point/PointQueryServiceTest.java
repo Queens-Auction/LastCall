@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.point.service;
+package org.example.lastcall.domain.point;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;

@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.point.service;
+package org.example.lastcall.domain.point;
 
 import org.example.lastcall.common.AbstractIntegrationTest;
 import org.example.lastcall.domain.auction.entity.Auction;

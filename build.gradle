@@ -66,13 +66,12 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // ✅ H2 in-memory DB for tests
+    // H2 in-memory DB for tests
     testImplementation 'com.h2database:h2'
     testImplementation 'com.mysql:mysql-connector-j'
 
     // Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
-    // developmentOnly 'org.springframework.boot:spring-boot-devtools' // Swagger 문서(자동 반영) - 협의 후 넣기
 
     // QueryDSL
     implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'

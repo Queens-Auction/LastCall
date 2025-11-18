@@ -1,10 +1,15 @@
 package org.example.lastcall.domain.bid;
 
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.BDDMockito.*;
+
+import java.util.Optional;
+
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.domain.auction.entity.Auction;
 import org.example.lastcall.domain.auction.service.query.AuctionQueryServiceApi;
 import org.example.lastcall.domain.auth.enums.AuthUser;
-import org.example.lastcall.domain.bid.dto.response.BidResponse;
+import org.example.lastcall.domain.bid.dto.response.BidCreateResponse;
 import org.example.lastcall.domain.bid.entity.Bid;
 import org.example.lastcall.domain.bid.exception.BidErrorCode;
 import org.example.lastcall.domain.bid.repository.BidRepository;
@@ -20,12 +25,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class BidCommandServiceTest {
@@ -80,7 +79,7 @@ class BidCommandServiceTest {
         ReflectionTestUtils.setField(savedBid, "id", bidId);
         given(bidRepository.save(any(Bid.class))).willReturn(savedBid);
 
-        BidResponse bid = bidCommandService.createBid(auctionId, authUser, expectedNextBidAmount);
+        BidCreateResponse bid = bidCommandService.createBid(auctionId, authUser, expectedNextBidAmount);
 
         assertThat(bid).isNotNull();
         assertThat(bid.getBidAmount()).isEqualTo(expectedNextBidAmount);
@@ -124,7 +123,7 @@ class BidCommandServiceTest {
         ReflectionTestUtils.setField(savedBid, "id", bidId);
         given(bidRepository.save(any(Bid.class))).willReturn(savedBid);
 
-        BidResponse bid = bidCommandService.createBid(auctionId, authUser, expectedNextBidAmount);
+        BidCreateResponse bid = bidCommandService.createBid(auctionId, authUser, expectedNextBidAmount);
 
         assertThat(bid).isNotNull();
         assertThat(bid.getBidAmount()).isEqualTo(expectedNextBidAmount);

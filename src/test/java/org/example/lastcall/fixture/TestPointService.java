@@ -21,7 +21,7 @@ public class TestPointService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Point create(Long auctionId, Long bidId, User user, Long point) {
-        Point savedPoint = repository.save(Point.of(user, PointLogType.EARN, point));
+        Point savedPoint = repository.save(Point.of(user, point));
 
         pointLogRepository.save(PointLog.of(
                 savedPoint,
@@ -59,7 +59,7 @@ public class TestPointService {
     public Point createForBid(Long auctionId, Long bidId, User user, Long depositPoint) {
 
         Point savedPoint = repository.save(
-                Point.of(user, PointLogType.EARN, depositPoint)
+                Point.of(user, depositPoint)
         );
 
         savedPoint.updateDepositPoint(depositPoint);

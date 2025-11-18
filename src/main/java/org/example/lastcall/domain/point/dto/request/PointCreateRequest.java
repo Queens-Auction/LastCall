@@ -8,7 +8,7 @@ import lombok.Getter;
 @Schema(description = "포인트 충전 요청 DTO")
 @Getter
 public class PointCreateRequest {
-	@Schema(description = "입찰 ID (입찰 관련 포인트 적립 시 사용)", example = "202")
+	@Schema(description = "입찰 ID (입찰 관련 포인트 적립 시 사용)", example = "EARN")
 	private PointLogType type;
 
 	@Schema(description = "포인트 변동 사유", example = "경매 낙찰 리워드 적립")

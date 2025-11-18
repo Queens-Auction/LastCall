@@ -59,7 +59,7 @@ public class PointCommandService implements PointCommandServiceApi {
         PointLogType type = request.getType();
 
         if (currentPoint == null) {
-            currentPoint = Point.of(user, type, incomePoint);
+            currentPoint = Point.of(user, incomePoint);
             currentPoint = pointRepository.save(currentPoint);
         } else {
             currentPoint.updateAvailablePoint(incomePoint);
@@ -150,7 +150,7 @@ public class PointCommandService implements PointCommandServiceApi {
     }
 
     @Override
-    public void depositToSettlement(Long auctionId) { // TODO <-- userId를 빼는 순간 @CacheEvict 를 사용할 수 없기 때문에 메서드 내에서 CacheManager 를 이용해서 처리해야 함.
+    public void depositToSettlement(Long auctionId) {
         Auction auction = auctionFinder.findById(auctionId);
 
         Bid highestBid = bidQueryServiceApi.findTopByAuctionOrderByBidAmountDesc(auction).orElseThrow(
@@ -171,8 +171,6 @@ public class PointCommandService implements PointCommandServiceApi {
 
         List<Bid> allBids = bidQueryServiceApi.findAllByAuctionId(auction.getId());
 
-        // 중복 입찰자는 최고 입찰가만 반영해서 Set으로 만들기
-        // 일단 주석 달아둘테니, 추후 이해되시면 삭제해주셔도 됩니다.
         Set<Bid> filteredBids = allBids.stream()
                 .filter(bid -> !bid.getUser().getId().equals(winnerUserId)) // 낙찰자 제외
                 .collect(Collectors.toMap(

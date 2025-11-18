@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.point.service;
+package org.example.lastcall.domain.point;
 
 import org.example.lastcall.common.AbstractIntegrationTest;
 import org.example.lastcall.domain.auction.entity.Auction;
@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Transactional
 class PointCommandServiceIntegrationTest extends AbstractIntegrationTest {
-
     @Autowired
     private PointCommandService pointCommandService;
 

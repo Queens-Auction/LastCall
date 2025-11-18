@@ -1,9 +1,55 @@
 spring:
+  cloud:
+    aws:
+      credentials:
+        profile-name: dev
+      region:
+        static: ap-northeast-2
+      parameter-store:
+        enabled: false
+      s3:
+        bucket: ${AWS_S3_BUCKET_NAME}
   datasource:
-    url: jdbc:mysql://localhost:3306/{DB이름}
-    username:
-    password:
+    url: jdbc:mysql://localhost:3306/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+  data:
+    redis:
+      host: localhost   # 🔥 Redis Docker 컨테이너 로컬 실행 중
+      port: 6379
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600s        # 1시간
+      cache-null-values: false   # null 결과 캐싱 방지
+
+  mail:
+    username: ${EMAIL}
+    password: ${PASSWORD}
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    transport:
+      protocol: smtp
+    smtp:
+      auth: true
+      starttls:
+        enable: true
+      connectiontimeout: 5s  # 연결 타임아웃 (5초)
+      timeout: 5s           # 읽기 타임아웃 (5초)
+      writetimeout: 5s      # 쓰기 타임아웃 (5초)
+
+  #RabbitMQ
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: manual # ACK 수동 설정
 
   jpa:
     hibernate:
@@ -13,10 +59,24 @@ spring:
       hibernate:
         format_sql: true
 jwt:
-  secret:
-    key:
-  expiration: 86400000
+  secret: ${JWT_SECRET}
+
+auth:
+  base-url: "http://localhost:8080"
+  server:
+    ssl:
+      enabled: false  # 로컬 개발환경은 HTTP 사용
+  security:
+    cookie:
+      secure: false  # HTTP 환경에서는 Secure 속성 불필요
 
 logging:
   level:
     org.hibernate.SQL: debug
+
+springdoc:
+  api-docs.enabled: true
+  swagger-ui:
+    enabled: true
+    display-request-duration: true
+    tryItOutEnabled: true

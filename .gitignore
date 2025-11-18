@@ -35,4 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
-application-*.yml
+
+# macOS 시스템 파일
+.DS_Store
+**/.DS_Store

@@ -1,27 +1,23 @@
 name: CI (Build & Test)
 
 on:
-  push:
-    branches: [ "dev", "main" ]
   pull_request:
-    branches: [ "dev", "main" ]
+    branches: [ "dev" ]
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     services:
       mysql:
         image: mysql:8
         env:
-          MYSQL_ROOT_PASSWORD: root1123
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_PASSWORD }}
           MYSQL_DATABASE: auction
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot1123"
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
@@ -30,6 +26,24 @@ jobs:
         ports:
           - 1025:1025   # SMTP
           - 8025:8025   # Web UI (디버깅용, 테스트에는 불필요)
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        env:
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
+          RABBITMQ_PLUGINS: "rabbitmq_management rabbitmq_delayed_message_exchange"
+        options: >-
+          --health-cmd="rabbitmq-diagnostics -q ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -41,22 +55,50 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+
+
       - name: Build (tests included)
         env:
-          SPRING_PROFILES_ACTIVE: local
+          SPRING_PROFILES_ACTIVE: test
           # DB
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
           SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/auction?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
           SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root1123
+          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
           # MAIL (MailHog)
           SPRING_MAIL_HOST: 127.0.0.1
           SPRING_MAIL_PORT: 1025
           SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
           SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
           # JWT
-          JWT_SECRET: ijdD7QDEK0qa1UXs5uMgcGNmmYNObF+6DkMSVWV/d6edXjnDDILwAY1ZZcrwpQcszNMMiF6ZG6rszF2UwIyMNg==
+          JWT_SECRET: ${{  secrets.JWT_SECRET }}
           JWT_EXPIRATION: 86400000
+          # redis
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          # rabbitmq
+          RABBITMQ_HOST: localhost
+          RABBITMQ_PORT: 5672
+          RABBITMQ_USERNAME: guest
+          RABBITMQ_PASSWORD: guest
         run: ./gradlew clean build --no-daemon
+
+      - name: Upload problems report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: problems-report
+          path: build/reports/tests/test/

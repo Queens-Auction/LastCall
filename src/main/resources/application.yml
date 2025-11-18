@@ -1,3 +1,34 @@
 spring:
+  application:
+    name: aws-demo
   profiles:
     active: local
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: spring-app
+
+logging:
+  level:
+    root: info
+    org.springframework.web: warn
+    org.springframework.core.env: warn
+    org.springframework.boot.context.config: warn
+    com.zaxxer.hikari: error
+    org.example.lastcall: debug

@@ -1,51 +1,71 @@
 package org.example.lastcall.common.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.response.ApiResponse;
+import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.Map;
-import java.util.stream.Collectors;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
+	@ExceptionHandler(BusinessException.class)
+	public ResponseEntity<ApiResponse<?>> handleBusinessException(BusinessException ex) {
+		ex.printStackTrace();
+		ErrorCode errorCode = ex.getErrorCode();
 
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<?>> handleBusinessException(BusinessException ex) {
-        ErrorCode errorCode = ex.getErrorCode();
+		ApiResponse<?> errorResponse = ApiResponse.error(errorCode.getMessage());
 
-        ApiResponse<?> errorResponse = ApiResponse.error(errorCode.getMessage());
+		return new ResponseEntity<>(errorResponse, errorCode.getStatus());
+	}
 
-        return new ResponseEntity<>(errorResponse, errorCode.getStatus());
-    }
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ApiResponse<?>> handleSystemException(Exception ex) {
+		String internalErrorMsg = "예상치 못한 서버 오류가 발생했습니다.";
+		log.error("system exception : {} / {}", ex.toString(), ex);
+		ApiResponse<?> errorResponse = ApiResponse.error(internalErrorMsg);
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleSystemException(Exception ex) {
-        String internalErrorMsg = "예상치 못한 서버 오류가 발생했습니다.";
+		return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 
-        ApiResponse<?> errorResponse = ApiResponse.error(internalErrorMsg);
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiResponse<?>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+		String message = ex.getBindingResult().getFieldErrors().stream()
+			.findFirst()
+			.map(FieldError::getDefaultMessage)
+			.orElse("잘못된 요청입니다.");
 
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR); // 500
-    }
+		ApiResponse<?> response = ApiResponse.error(message);
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+		return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+	}
 
-        Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(
-                        FieldError::getField,
-                        FieldError::getDefaultMessage,
-                        (existing, replacement) -> existing // 같은 필드 중복 메시지는 하나만
-                ));
-        String detailedMessage = errors.entrySet().stream()
-                .map(entry -> entry.getKey() + ": " + entry.getValue())
-                .collect(Collectors.joining(", "));
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ApiResponse<?>> handleInvalidJson(HttpMessageNotReadableException ex,
+		HttpServletRequest request) {
+		String rootCause = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : "";
+		String uri = request.getRequestURI();
+		String message;
 
-        ApiResponse<Map<String, String>> response = ApiResponse.error(detailedMessage);
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-    }
+		if (rootCause.contains("UUID")) {
+			message = EmailErrorCode.INVALID_UUID_FORMAT.getMessage();
+		} else if (uri.contains("/login")) {
+			message = "이메일 또는 비밀번호가 비어 있습니다.";
+		} else if (uri.contains("/withdraw")) {
+			return null;
+		} else {
+			message = "요청 본문이 비어 있거나 형식이 잘못되었습니다.";
+		}
+
+		ApiResponse<?> errorResponse = ApiResponse.error(message);
+
+		return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+	}
 }

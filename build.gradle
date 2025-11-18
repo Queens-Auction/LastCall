@@ -1,6 +1,8 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.6'
+    // id 'org.springframework.boot' version '3.5.6' 기존 작성 버전
+    id 'org.springframework.boot' version '3.2.5'
+    // 버전 내리는 이유 : 현재 3.5.6은 아직 미정식(미출시) 버전 -> Swagger(Springdoc)와 호환 때문
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -24,18 +26,87 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        // Spring Cloud AWS의 버전을 관리해주는 BOM
+        // Spring Boot 3.5.x 와 호환
+        mavenBom "io.awspring.cloud:spring-cloud-aws-dependencies:3.4.0"
+    }
+}
+
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // Bcrypt
+    implementation 'at.favre.lib:bcrypt:0.10.2'
+
+    // Email Sender
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // AWS
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store'
+    implementation platform('software.amazon.awssdk:bom:2.20.27')
+    implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:auth'
+    implementation 'software.amazon.awssdk:regions'
+
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.mysql:mysql-connector-j'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // H2 in-memory DB for tests
+    testImplementation 'com.h2database:h2'
+    testImplementation 'com.mysql:mysql-connector-j'
+
+    // Swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    // QueryDSL
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+
+    // Actuator // 애플리케이션의 상태 (Health, Metrics, 환경정보, Thread Dump 등)를 관찰하고 관리할 수 있도록 도와주는 모듈
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Actuator가 Prometheus와 연동되도록 해주는 의존성
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // cache
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // RabbitMQ
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'com.rabbitmq:amqp-client:5.21.0'
+
+    // redisson
+    implementation 'org.redisson:redisson-spring-boot-starter:3.21.1'
+
+    // aop
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    reports {
+        junitXml.required = true
+        html.required = true
+    }
 }

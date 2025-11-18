@@ -24,13 +24,12 @@ public class AuctionEventListener {
     private final AuctionCommandService auctionCommandService;
     private final AuctionRepository auctionRepository;
 
-    // 경매 시작 이벤트 처리 메서드
+    // 이벤트 처리 메서드
     @RabbitListener(queues = AuctionConfig.START_QUEUE_NAME)
     public void handleAuctionStart(AuctionEvent event, Message message, Channel channel) {
         processEvent(event, message, channel, auctionCommandService::startAuction, "[RabbitMQ] 경매 시작");
     }
 
-    // 경매 종료 이벤트 처리 메서드
     @RabbitListener(queues = AuctionConfig.END_QUEUE_NAME)
     public void handleAuctionEnd(AuctionEvent event, Message message, Channel channel) {
         processEvent(event, message, channel, auctionCommandService::closeAuction, "[RabbitMQ] 경매 종료");
@@ -41,11 +40,9 @@ public class AuctionEventListener {
         try {
             log.info("[RabbitMQ] {} 이벤트 수신: {}", eventType, event);
 
-            // 1. 이벤트의 auctionId로 경매 조회
             Auction auction = auctionRepository.findById(event.getAuctionId()).orElseThrow(
                     () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
 
-            // 2. 버전 불일치 시 메시지 삭제(무시) - 중복 방지
             if (!Objects.equals(auction.getEventVersion(), event.getVersion())) {
                 log.warn("[RabbitMQ] 무시된 이벤트 - 경매 버전 불일치 (이벤트 버전={}, 현재 버전={})", event.getVersion(), auction.getEventVersion());
                 ackMessage(channel, message);
@@ -53,10 +50,9 @@ public class AuctionEventListener {
                 return;
             }
 
-            // 3. 정상적인 경우 비즈니스 로직 실행 (경매 시작 or 종료)
             auctionAuction.accept(event.getAuctionId());
 
-            // 4. 성공 처리 시 ACK
+            // 성공 처리 시 ACK
             ackMessage(channel, message);
             log.info("[RabbitMQ] {} 이벤트 처리 완료 - auctionId={}", eventType, event.getAuctionId());
 
@@ -65,8 +61,36 @@ public class AuctionEventListener {
             ackMessage(channel, message);
         } catch (Exception e) {
             log.error("[RabbitMQ] {} 처리 중 시스템 예외 발생 - auctionId={}", eventType, event.getAuctionId(), e);
+            // 재시도 횟수 설정
+            int retryCount = getRetryCount(message);
+
+            if (retryCount >= 3) {
+                log.error("[RabbitMQ] {} 처리 중 시스템 예외 3회 초과 - auctionId={}", eventType, event.getAuctionId(), e);
+
+                ackMessage(channel, message);
+                return;
+            }
+            log.error("[RabbitMQ] {} 처리 중 시스템 예외 발생 - auctionId={}, retryCount={}", eventType, event.getAuctionId(), retryCount, e);
+
             nackMessage(channel, message, false);
         }
+    }
+
+    // 재시도 메서드
+    private int getRetryCount(Message message) {
+        try {
+            Object death = message.getMessageProperties().getHeaders().get("x-death");
+            if (death instanceof java.util.List<?> list && !list.isEmpty()) {
+                Object first = list.get(0);
+                if (first instanceof java.util.Map<?, ?> map) {
+                    Object count = map.get("count");
+                    if (count instanceof Long c) return c.intValue();
+                }
+            }
+        } catch (Exception ignored) { // retryCount = 0 처리
+        }
+
+        return 0;
     }
 
     // 공용 ACK 헬퍼 메서드

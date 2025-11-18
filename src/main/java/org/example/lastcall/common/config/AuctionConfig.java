@@ -19,6 +19,11 @@ public class AuctionConfig {
     public static final String START_ROUTING_KEY = "auction.start.key";
     public static final String END_ROUTING_KEY = "auction.end.key";
 
+    public static final String DLX_NAME = "auction.dlx";
+    public static final String START_RETRY_QUEUE = "start.retry.queue";
+    public static final String END_RETRY_QUEUE = "end.retry.queue";
+    public static final String DLX_RETRY_ROUTING_KEY = "auction.retry.key";
+
     @Bean
     public CustomExchange delayExchange() {
         Map<String, Object> args = new HashMap<>();
@@ -42,7 +47,18 @@ public class AuctionConfig {
 
     @Bean
     public Queue startQueue() {
-        return new Queue(START_QUEUE_NAME, true);
+        return QueueBuilder.durable(START_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", DLX_RETRY_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    public Queue endQueue() {
+        return QueueBuilder.durable(END_QUEUE_NAME)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", DLX_RETRY_ROUTING_KEY)
+                .build();
     }
 
     @Bean
@@ -51,12 +67,49 @@ public class AuctionConfig {
     }
 
     @Bean
-    public Queue endQueue() {
-        return new Queue(END_QUEUE_NAME, true);
+    public Binding endBinding(Queue endQueue, CustomExchange delayExchange) {
+        return BindingBuilder.bind(endQueue).to(delayExchange).with(END_ROUTING_KEY).noargs();
+    }
+
+    // Dead Letter Exchange (DLX)
+    @Bean
+    public DirectExchange auctionDLX() {
+        return new DirectExchange(DLX_NAME);
+    }
+
+    // Retry Queue (지연 재시도용)
+    @Bean
+    public Queue startRetryQueue() {
+        return QueueBuilder.durable(START_RETRY_QUEUE)
+                .withArgument("x-dead-letter-exchange", EXCHANGE_NAME)
+                .withArgument("x-dead-letter-routing-key", START_ROUTING_KEY)
+                .withArgument("x-message-ttl", 5000) // 첫 재시도 5초 후 실행
+                .build();
     }
 
     @Bean
-    public Binding endBinding(Queue endQueue, CustomExchange delayExchange) {
-        return BindingBuilder.bind(endQueue).to(delayExchange).with(END_ROUTING_KEY).noargs();
+    public Queue endRetryQueue() {
+        return QueueBuilder.durable(END_RETRY_QUEUE)
+                .withArgument("x-dead-letter-exchange", EXCHANGE_NAME)
+                .withArgument("x-dead-letter-routing-key", END_ROUTING_KEY)
+                .withArgument("x-message-ttl", 5000)
+                .build();
+    }
+
+    // Retry Queue Binding
+    @Bean
+    public Binding startRetryBinding(Queue startRetryQueue, DirectExchange auctionDLX) {
+        return BindingBuilder
+                .bind(startRetryQueue)
+                .to(auctionDLX)
+                .with(DLX_RETRY_ROUTING_KEY);
+    }
+
+    @Bean
+    public Binding endRetryBinding(Queue endRetryQueue, DirectExchange auctionDLX) {
+        return BindingBuilder
+                .bind(endRetryQueue)
+                .to(auctionDLX)
+                .with(DLX_RETRY_ROUTING_KEY);
     }
 }

@@ -1,5 +1,7 @@
 package org.example.lastcall.domain.bid.service.command;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.lock.DistributedLock;
 import org.example.lastcall.domain.auction.entity.Auction;
@@ -16,73 +18,63 @@ import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
 public class BidCommandService {
-	private final BidRepository bidRepository;
-	private final AuctionQueryServiceApi auctionQueryServiceApi;
-	private final UserQueryServiceApi userQueryServiceApi;
-	private final PointCommandServiceApi pointCommandServiceApi;
-	private final PointQueryServiceApi pointQueryServiceApi;
+    private final BidRepository bidRepository;
+    private final AuctionQueryServiceApi auctionQueryServiceApi;
+    private final UserQueryServiceApi userQueryServiceApi;
+    private final PointCommandServiceApi pointCommandServiceApi;
+    private final PointQueryServiceApi pointQueryServiceApi;
 
-	// 입찰 등록
-	@DistributedLock(key = "'auction:' + #auctionId")
-	public BidResponse createBid(Long auctionId, AuthUser authUser) {
-		log.debug("[RedissonLock] 락 획득 후 입찰 처리 시작 - auctionId={}, userId={}", auctionId, authUser.userId());
-		log.debug("[RedissonLock] 입찰 가능한 경매 조회 시작 - auctionId={}", auctionId);
+    @DistributedLock(key = "'auction:' + #auctionId")
+    public BidResponse createBid(Long auctionId, AuthUser authUser, Long nextBidAmount) {
+        log.debug("락 획득 후 작업 실행: 입찰 요청 - auctionId={}, userId={}, nextBidAmount={}", auctionId, authUser.userId(), nextBidAmount);
 
-		Auction auction = auctionQueryServiceApi.findBiddableAuction(auctionId);
+        Auction auction = auctionQueryServiceApi.findBiddableAuction(auctionId);
 
-		if (auction.getUser().getId().equals(authUser.userId())) {
-			log.warn("판매자가 본인 경매에 입찰 시도 - auctionId={}, userId={}", auctionId, authUser.userId());
-			throw new BusinessException(BidErrorCode.SELLER_CANNOT_BID);
-		}
+        if (auction.getUser().getId().equals(authUser.userId())) {
+            throw new BusinessException(BidErrorCode.SELLER_CANNOT_BID);
+        }
 
-		User user = userQueryServiceApi.findById(authUser.userId());
-		log.debug("[RedissonLock] 입찰자 조회 완료 - userId={}, nickname={}", user.getId(), user.getNickname());
+        User user = userQueryServiceApi.findById(authUser.userId());
 
-		boolean alreadyParticipated = bidRepository.existsByAuctionIdAndUserId(auction.getId(), user.getId());
-		log.debug("기존 입찰자 여부 확인 - auctionId={}, userId={}, alreadyParticipated={}", auctionId, user.getId(), alreadyParticipated);
+        boolean alreadyParticipated = bidRepository.existsByAuctionIdAndUserId(auction.getId(), user.getId());
 
-		Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
-		Long bidAmount = currentMaxBid + auction.getBidStep();
-		log.debug("[RedissonLock] 현재가 기반 입찰가 계산 완료 - auctionId={}, currentMaxBid={}, newBid={}", auctionId, currentMaxBid, bidAmount);
+        Long currentMaxBid =
+                bidRepository.findMaxBidAmountByAuction(auction)
+                        .orElse(auction.getStartingBid());
 
-		if (bidAmount <= currentMaxBid) {
-			log.warn("입찰 금액이 현재 최고가 이하임 - auctionId={}, bidAmount={}, currentMaxBid={}", auctionId, bidAmount, currentMaxBid);
-			throw new BusinessException(BidErrorCode.BID_AMOUNT_TOO_LOW);
-		}
+        Long expectedNextBidAmount = currentMaxBid + auction.getBidStep();
 
-		pointQueryServiceApi.validateSufficientPoints(user.getId(), bidAmount);
-		log.debug("포인트 충분 검증 완료 - userId={}, bidAmount={}", user.getId(), bidAmount);
+        if (nextBidAmount < expectedNextBidAmount) {
+            throw new BusinessException(BidErrorCode.CONCURRENCY_BID_FAILED);
+        } else if (!nextBidAmount.equals(expectedNextBidAmount)) {
+            throw new BusinessException(BidErrorCode.INVALID_BID_AMOUNT);
+        }
 
-		Bid bid = Bid.of(bidAmount, auction, user);
-		Bid savedBid = bidRepository.save(bid);
-		log.info("[Bid] 입찰 생성 완료 - bidId={}, auctionId={}, userId={}, bidAmount={}", savedBid.getId(), auctionId, user.getId(), bidAmount);
+        pointQueryServiceApi.validateSufficientPoints(user.getId(), nextBidAmount);
+        log.debug("포인트 검증 완료 - userId={}, nextBidAmount={}", user.getId(), nextBidAmount);
 
-		if (!alreadyParticipated) {
-			auction.incrementParticipantCount();
-			log.debug("[Bid] 신규 입찰자 참여 카운트 증가 - auctionId={}, participants={}", auctionId, auction.getParticipantCount());
-		}
+        Bid bid = Bid.of(nextBidAmount, auction, user);
+        Bid savedBid = bidRepository.save(bid);
 
-		auction.updateCurrentBid(bidAmount);
-		log.debug("[Bid] 경매 현재 입찰가 갱신 - auctionId={}, currentBid={}", auctionId, bidAmount);
+        if (!alreadyParticipated) {
+            auction.incrementParticipantCount();
+        }
 
-		try {
-			pointCommandServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), bidAmount, user.getId());
-			log.debug("[Bid] 포인트 예치 완료 - auctionId={}, userId={}, bidAmount={}", auctionId, user.getId(), bidAmount);
-		} catch (BusinessException e) {
-			log.error("[Bid] 포인트 예치 중 예외 발생 - auctionId={}, userId={}, message={}", auctionId, user.getId(), e.getMessage());
-			throw e;
-		}
+        auction.updateCurrentBid(nextBidAmount);
 
-		log.info("[RedissonLock] 입찰 처리 완료 및 락 해제 - auctionId={}, userId={}, bidAmount={}", auctionId, user.getId(), bidAmount);
+        try {
+            pointCommandServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), nextBidAmount, user.getId());
+        } catch (BusinessException e) {
+            throw e;
+        }
 
-		return BidResponse.from(savedBid);
-	}
+        log.debug("입찰 생성 완료 - auctionId={}, userId={}, nextBidAmount={}", auctionId, user.getId(), nextBidAmount);
+
+        return BidResponse.from(savedBid);
+    }
 }

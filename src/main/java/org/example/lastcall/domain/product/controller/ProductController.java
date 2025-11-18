@@ -14,6 +14,7 @@ import org.example.lastcall.domain.product.dto.response.ProductReadAllResponse;
 import org.example.lastcall.domain.product.dto.response.ProductResponse;
 import org.example.lastcall.domain.product.service.command.ProductCommandService;
 import org.example.lastcall.domain.product.service.query.ProductQueryService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -83,7 +84,7 @@ public class ProductController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<PageResponse<ProductReadAllResponse>>> getAllMyProducts(
             @AuthenticationPrincipal AuthUser authUser,
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
         PageResponse<ProductReadAllResponse> pageResponse = productQueryService.getAllMyProducts(authUser, pageable.getPageNumber(), pageable.getPageSize());
         ApiResponse<PageResponse<ProductReadAllResponse>> apiResponse = ApiResponse.success("상품을 전체 조회했습니다.", pageResponse);
 

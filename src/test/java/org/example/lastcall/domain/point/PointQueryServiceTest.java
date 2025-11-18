@@ -1,4 +1,4 @@
-package org.example.lastcall.domain.point.service;
+package org.example.lastcall.domain.point;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
@@ -82,7 +82,7 @@ class PointQueryServiceTest {
 
         assertThatThrownBy(() -> pointQueryService.getUserPoint(authUser))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(PointErrorCode.POINT_RECORD_NOT_FOUND.getMessage());
+            .hasMessageContaining(PointErrorCode.POINT_ACCOUNT_NOT_FOUND.getMessage());
     }
 
     @Test

@@ -61,7 +61,8 @@ public class Auction extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private Long version = 0L;
+    @Column(name = "version")
+    private Long eventVersion = 0L;
 
     private Auction(User user, Product product, Long startingBid, Long bidStep, LocalDateTime startTime, LocalDateTime endTime) {
         this.user = user;
@@ -163,6 +164,6 @@ public class Auction extends BaseEntity {
     }
 
     public void increaseVersion() {
-        this.version++;
+        this.eventVersion++;
     }
 }

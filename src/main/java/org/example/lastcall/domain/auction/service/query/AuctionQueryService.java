@@ -42,10 +42,9 @@ public class AuctionQueryService implements AuctionQueryServiceApi {
     // 경매 단건 상세 조회 //
     // 로그인 하지 않은 사용자도 접근 가능
     public AuctionReadResponse getAuction(Long auctionId, Long userId) {
-        // 1. 경매 조회
         Auction auction = auctionRepository.findActiveById(auctionId).orElseThrow(
                 () -> new BusinessException(AuctionErrorCode.AUCTION_NOT_FOUND));
-        // 2. 상품 이미지 조회
+
         List<ProductImageResponse> images = productQueryServiceApi.findAllProductImage(auction.getProduct().getId());
         String imageUrl = images.isEmpty() ? null : images.get(0).getImageUrl();
 

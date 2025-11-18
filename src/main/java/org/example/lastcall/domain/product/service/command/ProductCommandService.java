@@ -68,7 +68,10 @@ public class ProductCommandService {
         productValidatorService.validateImageCount(allImages);
 
         return productImageRepository.saveAll(newImages).stream()
-                .map(image -> ProductImageResponse.from(image, s3Service))
+                .map(image -> {
+                    String url = s3Service.generateImageUrl(image.getImageKey());
+                    return ProductImageResponse.from(image, url);
+                })
                 .toList();
     }
 
@@ -101,7 +104,12 @@ public class ProductCommandService {
 
         List<ProductImage> productImages = productImageRepository.findAllByProductIdAndDeletedFalse(productId);
 
-        return ProductImageResponse.from(productImages, s3Service);
+        return productImages.stream()
+                .map(image -> {
+                    String url = s3Service.generateImageUrl(image.getImageKey());
+                    return ProductImageResponse.from(image, url);
+                })
+                .toList();
     }
 
     public void deleteProduct(Long productId, AuthUser authUser) {

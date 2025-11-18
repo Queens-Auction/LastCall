@@ -46,7 +46,7 @@ public class PointLog {
     private Long userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "auction_id", insertable = false, updatable = false) // TODO insertable, updatale 추가
+    @JoinColumn(name = "auction_id", insertable = false, updatable = false)
     private Auction auction;
 
     @Column(name = "auction_id")
@@ -107,18 +107,6 @@ public class PointLog {
         applyAfterValues(log, point);
         return log;
     }
-
-// 서영님 확인 후 삭제 필요
-//    public static PointLog of(Point point, Long userId, PointLogType type, String description, Long change, Long auctionId, Long bidId) {
-//        return new PointLog(
-//                point,
-//                userId,
-//                type,
-//                description,
-//                change,
-//                auctionId,
-//                bidId);
-//    }
 
     public static PointLog of(Point point, Long userId, PointLogType type, String description, Long change,
                               Long auctionId, Long bidId) {

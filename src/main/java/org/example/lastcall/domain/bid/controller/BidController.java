@@ -7,6 +7,7 @@ import org.example.lastcall.domain.bid.dto.response.BidGetAllResponse;
 import org.example.lastcall.domain.bid.dto.response.BidResponse;
 import org.example.lastcall.domain.bid.service.command.BidCommandService;
 import org.example.lastcall.domain.bid.service.query.BidQueryService;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -53,6 +54,7 @@ public class BidController {
 	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<BidGetAllResponse>>> getAllBids(
 		@PathVariable Long auctionId,
+		@ParameterObject
 		@PageableDefault(size = 5, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 		PageResponse<BidGetAllResponse> bids = bidQueryService.getAllBids(auctionId, pageable);
 

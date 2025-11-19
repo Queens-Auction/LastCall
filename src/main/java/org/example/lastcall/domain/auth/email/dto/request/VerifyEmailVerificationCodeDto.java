@@ -13,7 +13,7 @@ public class VerifyEmailVerificationCodeDto {
             @Email
             String email,
 
-            @Schema(description = "이메일로 발송된 인증 코드", example = "482910")
+            @Schema(description = "이메일로 발송된 인증 코드", example = "482910", required = true)
             @NotBlank
             String verificationCode) {
     }

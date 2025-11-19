@@ -1155,7 +1155,7 @@ Content-Type: application/json
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | Y | JWT 토큰 |
+| Cookie | String | Y | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함  |
 | Content-Type | String | Y | application/json |
 
 #### 🔐 Role Requirement
@@ -1165,15 +1165,14 @@ Content-Type: application/json
 #### 📌 Request Elements
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| startingBid | Long | Y | 경매 시작가 |
-| bidStep | Long | Y | 입찰 단위 |
+| startingBid | Long | Y | 경매 시작 가격 |
+| bidStep | Long | Y | 경매 입찰 단위 |
 | startTime | LocalDateTime | Y | 경매 시작 시간 |
 | endTime | LocalDateTime | Y | 경매 종료 시간 |
 
 #### 📌 요청 예시
 ```json
 POST http://localhost:8080/api/v1/auctions/{productId}
-Authorization: Bearer jwt_token_string
 Content-Type: application/json
 
 {
@@ -1187,16 +1186,20 @@ Content-Type: application/json
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| id | Long | Y | 경매 ID |
-| productId | Long | Y | 상품 ID |
-| userId | Long | Y | 판매자 ID |
-| startingBid | Long | Y | 시작가 |
-| bidStep | Long | Y | 입찰 단위 |
-| startTime | LocalDateTime | Y | 시작 시간 |
-| endTime | LocalDateTime | Y | 종료 시간 |
-| status | Enum | Y | SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
-| createdAt | LocalDateTime | Y | 등록일 |
-| modifiedAt | LocalDateTime | N | 수정일 |
+| success | Boolean | Y | 응답 성공 여부 |
+| message | String | Y | 응답 메세지 |
+| data | Object | Y | 응답 데이터 |
+| ⌙id | Long | Y | 경매 ID |
+| ⌙productId | Long | Y | 상품 ID |
+| ⌙userId | Long | Y | 판매자 ID |
+| ⌙startingBid | Long | Y | 시작가 |
+| ⌙bidStep | Long | Y | 입찰 단위 |
+| ⌙startTime | LocalDateTime | Y | 시작 시간 |
+| ⌙endTime | LocalDateTime | Y | 종료 시간 |
+| ⌙status | Enum | Y | 경매 상태 SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
+| ⌙createdAt   | LocalDateTime | Y | 생성 시간 |
+| ⌙modifiedAt  | LocalDateTime | Y | 수정 시간 |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 예시
 
@@ -1215,8 +1218,10 @@ Content-Type: application/json
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | N | JWT 토큰 (선택, 참여 여부 판단용) |
-| Content-Type | String | N | application/json |
+| sort | String | N | latest / endTime / participantCount (기본 latest) |
+| page | Integer | N | 페이지 번호 (기본 0) |
+| size | Integer | N | 페이지 크기 (기본 10) |
+| category | Enum | N | FASHION_MEN / FASHION_WOMEN / FASHION_KIDS … |
 
 #### 🔐 Role Requirement
 - 모든 사용자 가능 (비로그인 OK)
@@ -1224,10 +1229,6 @@ Content-Type: application/json
 #### 📌 Request Elements
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| sort | String | N | latest / endTime / participantCount (기본 latest) |
-| page | Integer | N | 페이지 번호 (기본 0) |
-| size | Integer | N | 페이지 크기 (기본 10) |
-| category | Enum | N | FASHION_MEN / FASHION_WOMEN / FASHION_KIDS … |
 
 #### 📌 요청 예시
 ```json
@@ -1247,10 +1248,19 @@ GET /api/v1/auctions?category=ACCESSORY
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| id | Long | Y | 경매 ID |
-| imageUrl | String | Y | 대표 이미지 |
-| productName | String | Y | 상품명 |
-| participantCount | Integer | Y | 참여자 수 |
+| success | Boolean | Y | 응답 성공 여부 |
+| message | String | Y | 응답 메세지 |
+| data | Object | Y | 응답 데이터 |
+| ⌙content | Object | Y | 페이지 컨텐츠 |
+| ⌙⌙id | Long | Y | 경매 ID |
+| ⌙⌙imageUrl | String | Y | 대표 이미지 |
+| ⌙⌙productName | String | Y | 상품명 |
+| ⌙⌙participantCount | Integer | Y | 참여자 수 |
+| ⌙totalElements  | Long 	   	  | Y | 결과 수		 |
+| ⌙totalPages 	  | Long	 	  | Y | 총 페이지 수	 |
+| ⌙size 		  | Long	 	  | Y | 페이지 사이즈 |
+| ⌙number 		  | Long	 	  | Y | 페이지 넘버	 |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 예시
 
@@ -1268,8 +1278,7 @@ GET /api/v1/auctions?category=ACCESSORY
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | N | JWT 토큰 (참여 여부/입찰 가능 여부 판단용) |
-| Content-Type | String | N | application/json |
+| Cookie | String | N | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함 - 사용자 참여 여부 판단에 사용 |
 
 #### 🔐 Role Requirement
 - 모든 사용자 조회 가능  
@@ -1282,15 +1291,18 @@ GET /api/v1/auctions?category=ACCESSORY
 
 #### 📌 요청 예시
 ```json
-GET /api/v1/auctions/3
-Authorization: Bearer jwt_token_string   // 로그인 시
+GET /api/v1/auctions/{auctionId}
 ```
 
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| id | Long | Y | 경매 ID |
-| imageUrl | String | Y | 대표 이미지 URL |
+| success | Boolean | Y | 경매 ID |
+| message | String | Y | 상품 ID |
+| data | Object | Y | 판매자 ID |
+| ⌙id | Long | Y | 경매 ID |
+| ⌙productId | Long | Y | 상품 ID |
+| ⌙imageUrl | String | Y | 대표 이미지 URL |
 | productName | String | Y | 상품명 |
 | productDescription | String | Y | 상품 설명 |
 | startTime | LocalDateTime | Y | 경매 시작 시간 |
@@ -1298,8 +1310,9 @@ Authorization: Bearer jwt_token_string   // 로그인 시
 | startingBid | Long | Y | 시작가 |
 | bidStep | Long | Y | 입찰 단위 |
 | myParticipated | Boolean | Y | 로그인 사용자의 참여 여부 |
-| status | Enum | Y | SCHEDULED / ONGOING / CLOSED 등 |
+| status | Enum | Y | 경매 상태 SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
 | canBid | Boolean | Y | 로그인 여부(입찰 가능 여부) |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 표
 
@@ -1315,11 +1328,12 @@ Authorization: Bearer jwt_token_string   // 로그인 시
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | Y | JWT 토큰 |
+| Cookie | String | Y | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함  |
 | Content-Type | String | Y | application/json |
 
 #### 🔐 Role Requirement
-- 판매자 본인만 수정 가능
+- 로그인한 사용자  
+- **시작되지 않은 본인의 경매만 수정정 가능**
 
 #### 📌 Request Elements
 | 파라미터 | 타입 | 필수 | 설명 |
@@ -1328,12 +1342,10 @@ Authorization: Bearer jwt_token_string   // 로그인 시
 | bidStep | Long | N | 입찰 단위 |
 | startTime | LocalDateTime | N | 경매 시작 시간 |
 | endTime | LocalDateTime | N | 경매 종료 시간 |
-- 모든 필드는 선택이지만 **최소 1개 이상 포함 필수**
 
 #### 📌 요청 예시
 ```json
 PATCH /api/v1/my/auctions/{auctionId}
-Authorization: Bearer jwt_token_string
 Content-Type: application/json
 
 {
@@ -1347,15 +1359,20 @@ Content-Type: application/json
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| auctionId | Long | Y | 경매 ID |
-| productId | Long | Y | 상품 ID |
-| userId | Long | Y | 유저 ID |
-| startingBid | Long | Y | 경매 시작가 |
-| bidStep | Long | Y | 입찰 단가 |
-| startTime | LocalDateTime | Y | 시작 시간 |
-| endTime | LocalDateTime | Y | 종료 시간 |
-| status | Enum | Y | 경매 상태 |
-| updatedAt | LocalDateTime | Y | 수정일 |
+| success | Boolean | Y | 응답 성공 여부 |
+| message | String | Y | 응답 메세지 |
+| data | Object | Y | 응답 데이터 |
+| ⌙id | Long | Y | 경매 ID |
+| ⌙productId | Long | Y | 상품 ID |
+| ⌙userId | Long | Y | 유저 ID |
+| ⌙startingBid | Long | Y | 경매 시작가 |
+| ⌙bidStep | Long | Y | 입찰 단가 |
+| ⌙startTime | LocalDateTime | Y | 시작 시간 |
+| ⌙endTime | LocalDateTime | Y | 종료 시간 |
+| ⌙status | Enum | Y | 경매 상태 SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
+| ⌙createdAt   | LocalDateTime | Y | 생성 시간 |
+| ⌙modifiedAt  | LocalDateTime | Y | 수정 시간 |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 표
 
@@ -1374,7 +1391,7 @@ Content-Type: application/json
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | Y | JWT 토큰 |
+| Cookie | String | Y | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함  |
 
 #### 🔐 Role Requirement
 - 로그인한 사용자  
@@ -1388,7 +1405,6 @@ Content-Type: application/json
 #### 📌 요청 예시
 ```json
 DELETE /api/v1/my/auctions/{auctionId}
-Authorization: Bearer jwt_token_string
 ```
 
 #### 📌 Response Elements
@@ -1411,7 +1427,7 @@ Authorization: Bearer jwt_token_string
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | Y | JWT 토큰 |
+| Cookie | String | Y | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함  |
 
 #### 🔐 Role Requirement
 - 로그인한 사용자  
@@ -1420,27 +1436,32 @@ Authorization: Bearer jwt_token_string
 #### 📌 Request Elements
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| sort | String | N | 정렬 기준 (기본값: 최신순) |
-| page | Integer | N | 페이지 번호 |
-| size | Integer | N | 페이지 크기 (기본값: 2) |
 
 #### 📌 요청 예시
 ```json
 GET /api/v1/my/auctions/selling
-Authorization: Bearer jwt_token_string
 ```
 
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| auctionId | Long | Y | 경매 ID |
-| imageUrl | String | Y | 상품 대표 이미지 |
-| productName | String | Y | 상품명 |
-| productDescription | String | Y | 상품 설명 |
-| currentBid | Long | Y | 현재 최고 입찰가 |
-| status | Enum | Y | 경매 상태 |
-| startTime | LocalDateTime | Y | 시작 시간 |
-| endTime | LocalDateTime | Y | 종료 시간 |
+| success | Boolean | Y | 응답 성공 여부 |
+| message | String | Y | 응답 메세지 |
+| data | Object | Y | 응답 데이터 |
+| ⌙content | Object | Y | 페이지 컨텐츠 |
+| ⌙⌙id | Long | Y | 경매 ID |
+| ⌙⌙imageUrl | String | Y | 상품 대표 이미지 |
+| ⌙⌙productName | String | Y | 상품명 |
+| ⌙⌙productDescription | String | Y | 상품 설명 |
+| ⌙⌙currentBid | Long | Y | 현재 최고 입찰가 |
+| ⌙⌙status | Enum | Y | 경매 상태 SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
+| ⌙⌙startTime | LocalDateTime | Y | 시작 시간 |
+| ⌙⌙endTime | LocalDateTime | Y | 종료 시간 |
+| ⌙totalElements  | Long 	   	  | Y | 결과 수		 |
+| ⌙totalPages 	  | Long	 	  | Y | 총 페이지 수	 |
+| ⌙size 		  | Long	 	  | Y | 페이지 사이즈 |
+| ⌙number 		  | Long	 	  | Y | 페이지 넘버	 |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 표
 
@@ -1456,7 +1477,7 @@ Authorization: Bearer jwt_token_string
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | Y | JWT 토큰 |
+| Cookie | String | Y | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함  |
 
 #### 🔐 Role Requirement
 - 로그인한 사용자  
@@ -1470,20 +1491,23 @@ Authorization: Bearer jwt_token_string
 #### 📌 요청 예시
 ```json
 GET /api/v1/my/auctions/selling/{auctionId}
-Authorization: Bearer jwt_token_string
 ```
 
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| auctionId | Long | Y | 경매 ID |
-| imageUrl | String | Y | 대표 이미지 URL |
-| productName | String | Y | 상품명 |
-| productDescription | String | Y | 상품 설명 |
-| currentBid | Long | Y | 현재 최고 입찰가 |
-| status | Enum | Y | 경매 상태 |
-| startTime | LocalDateTime | Y | 경매 시작 시간 |
-| endTime | LocalDateTime | Y | 경매 종료 시간 |
+| success | Boolean | Y | 응답 성공 여부 |
+| message | String | Y | 응답 메세지 |
+| data | Object | Y | 응답 데이터 |
+| ⌙id | Long | Y | 경매 ID |
+| ⌙imageUrl | String | Y | 대표 이미지 URL |
+| ⌙productName | String | Y | 상품명 |
+| ⌙productDescription | String | Y | 상품 설명 |
+| ⌙currentBid | Long | Y | 현재 최고 입찰가 |
+| ⌙status | Enum | Y | 경매 상태 SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
+| ⌙startTime | LocalDateTime | Y | 경매 시작 시간 |
+| ⌙endTime | LocalDateTime | Y | 경매 종료 시간 |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 표
 
@@ -1499,7 +1523,7 @@ Authorization: Bearer jwt_token_string
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | Y | JWT 토큰 |
+| Cookie | String | Y | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함  |
 
 #### 🔐 Role Requirement
 - 로그인한 사용자  
@@ -1508,29 +1532,34 @@ Authorization: Bearer jwt_token_string
 #### 📌 Request Elements
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| sort | String | N | 정렬 기준 (최신순) |
-| page | Integer | N | 페이지 번호 |
-| size | Integer | N | 페이지 당 항목 수 (기본값: 2) |
 
 #### 📌 요청 예시
 ```json
 GET /api/v1/my/auctions/participated
-Authorization: Bearer jwt_token_string
 ```
 
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| Id | Long | Y | 경매 ID |
-| imageUrl | String | Y | 상품 대표 이미지 URL |
-| productName | String | Y | 상품명 |
-| productDescription | String | Y | 상품 설명 |
-| currentBid | Long | Y | 현재 최고 입찰가 |
-| status | Enum | Y | 경매 상태 |
-| startTime | LocalDateTime | Y | 경매 시작 시간 |
-| endTime | LocalDateTime | Y | 경매 종료 시간 |
-| isLeading | Boolean | Y | 최고 입찰 여부 / 낙찰 여부 |
-| myBidAmount | Long | N | 나의 최고 입찰가 (참여 전체 조회 시 null) |
+| success | Boolean | Y | 응답 성공 여부 |
+| message | String | Y | 응답 메세지 |
+| data | Object | Y | 응답 데이터 |
+| ⌙content | Object | Y | 페이지 컨텐츠 |
+| ⌙⌙id | Long | Y | 경매 ID |
+| ⌙⌙imageUrl | String | Y | 상품 대표 이미지 URL |
+| ⌙⌙productName | String | Y | 상품명 |
+| ⌙⌙productDescription | String | Y | 상품 설명 |
+| ⌙⌙currentBid | Long | Y | 현재 최고 입찰가 |
+| ⌙⌙status | Enum | Y | 경매 상태 SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
+| ⌙⌙startTime | LocalDateTime | Y | 경매 시작 시간 |
+| ⌙⌙endTime | LocalDateTime | Y | 경매 종료 시간 |
+| ⌙⌙isLeading | Boolean | Y | 최고 입찰 여부 / 낙찰 여부 |
+| ⌙⌙myBidAmount | Long | N | 나의 최고 입찰가 (참여 전체 조회 시 null) |
+| ⌙totalElements  | Long 	   	  | Y | 결과 수		 |
+| ⌙totalPages 	  | Long	 	  | Y | 총 페이지 수	 |
+| ⌙size 		  | Long	 	  | Y | 페이지 사이즈 |
+| ⌙number 		  | Long	 	  | Y | 페이지 넘버	 |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 표
 
@@ -1545,7 +1574,7 @@ Authorization: Bearer jwt_token_string
 #### 📌 Request Header
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| Authorization | String | Y | JWT 토큰 |
+| Cookie | String | Y | HttpOnly 쿠키로 전달되는 access_token, refresh_token 자동 포함  |
 
 #### 🔐 Role Requirement
 - 로그인한 사용자  
@@ -1554,27 +1583,29 @@ Authorization: Bearer jwt_token_string
 #### 📌 Request Elements
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| 없음 | - | - | - |
 
 #### 📌 요청 예시
 ```json
 GET /api/v1/my/auctions/participated/{auctionId}
-Authorization: Bearer jwt_token_string
 ```
 
 #### 📌 Response Elements
 | 필드 | 타입 | 필수 여부 | 설명 |
 |------|------|------------|-------|
-| auctionId | Long | Y | 경매 ID |
-| imageUrl | String | Y | 상품 대표 이미지 URL |
-| productName | String | Y | 상품명 |
-| productDescription | String | Y | 상품 설명 |
-| currentBid | Long | Y | 현재 최고 입찰가 |
-| status | Enum | Y | 경매 상태 |
-| startTime | LocalDateTime | Y | 경매 시작 시간 |
-| endTime | LocalDateTime | Y | 경매 종료 시간 |
-| myBidAmount | Long | Y | 내가 해당 경매에 넣은 최고 입찰가 |
-| isLeading | Boolean | Y | 최고 입찰 여부 / 낙찰 여부 |
+| success | Boolean | Y | 응답 성공 여부 |
+| message | String | Y | 응답 메세지 |
+| data | Object | Y | 응답 데이터 |
+| ⌙id | Long | Y | 경매 ID |
+| ⌙imageUrl | String | Y | 상품 대표 이미지 URL |
+| ⌙productName | String | Y | 상품명 |
+| ⌙productDescription | String | Y | 상품 설명 |
+| ⌙currentBid | Long | Y | 현재 최고 입찰가 |
+| ⌙status | Enum | Y | 경매 상태 SCHEDULED / ONGOING / CLOSED / CLOSED_FAILED / DELETE |
+| ⌙startTime | LocalDateTime | Y | 경매 시작 시간 |
+| ⌙endTime | LocalDateTime | Y | 경매 종료 시간 |
+| ⌙isLeading | Boolean | Y | 최고 입찰 여부 / 낙찰 여부 |
+| ⌙myBidAmount | Long | Y | 내가 해당 경매에 넣은 최고 입찰가 |
+| timestamp	   | LocalDateTime | Y | 응답 시간 |
 
 #### 📌 응답 표
 

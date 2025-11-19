@@ -33,7 +33,7 @@ public class AuthController {
 
     @Operation(
             summary = "회원가입",
-            description = "사용자가 이메일, 비밀번호, 닉네임 등을 입력해 회원가입을 진행합니다."
+            description = "사용자는 회원가입 전 이메일 인증 API를 통해 인증을 완료하신 뒤 요청해야 합니다."
     )
     @PostMapping
     public ResponseEntity<ApiResponse<Object>> signup(@Valid @RequestBody SignupRequest request) {

@@ -6,7 +6,7 @@ import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.util.GeneratorUtil;
 import org.example.lastcall.domain.auth.email.config.EmailConfig;
 import org.example.lastcall.domain.auth.email.dto.request.EmailVerificationSendRequest;
-import org.example.lastcall.domain.auth.email.dto.request.VerifyEmailVerificationCodeDto;
+import org.example.lastcall.domain.auth.email.dto.request.VerifyEmailVerificationCodeRequest;
 import org.example.lastcall.domain.auth.email.entity.EmailVerification;
 import org.example.lastcall.domain.auth.email.enums.EmailVerificationStatus;
 import org.example.lastcall.domain.auth.email.exception.EmailErrorCode;
@@ -72,9 +72,11 @@ public class EmailVerificationService {
     }
 
     @Transactional
-    public VerifyEmailVerificationCodeDto.Response verifyEmailVerificationCode(final VerifyEmailVerificationCodeDto.Request request) {
+    public org.example.lastcall.domain.auth.email.dto.response.VerifyEmailVerificationCodeResponse verifyEmailVerificationCode(
+            final VerifyEmailVerificationCodeRequest request
+    ) {
         EmailVerification emailVerification = emailVerificationRepository
-                .findFirstByEmailOrderByCreatedAtDesc(request.email())
+                .findFirstByEmailOrderByCreatedAtDesc(request.getEmail())
                 .orElseThrow(() -> new BusinessException(EmailErrorCode.EMAIL_VERIFICATION_NOT_FOUND));
 
         LocalDateTime createdAt = emailVerification.getCreatedAt();
@@ -82,11 +84,12 @@ public class EmailVerificationService {
 
         validateExpiredVerificationCode(createdAt);
 
-        emailVerification.validateVerificationCode(request.verificationCode());
+        emailVerification.validateVerificationCode(request.getVerificationCode());
         emailVerification.updateStatus(EmailVerificationStatus.VERIFIED);
 
-        return new VerifyEmailVerificationCodeDto.Response(verificationPublicId);
+        return new org.example.lastcall.domain.auth.email.dto.response.VerifyEmailVerificationCodeResponse(verificationPublicId);
     }
+
 
     private void validateExpiredVerificationCode(final LocalDateTime createdAt) {
         long compareRequestTime = Duration.between(createdAt, LocalDateTime.now()).getSeconds();

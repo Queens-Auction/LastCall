@@ -27,4 +27,6 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 
     @Query("SELECT b FROM Bid b JOIN FETCH b.user WHERE b.auction.id = :auctionId")
     List<Bid> findAllByAuctionId(@Param("auctionId") Long auctionId);
+
+    long countByAuctionId(Long auctionId);
 }

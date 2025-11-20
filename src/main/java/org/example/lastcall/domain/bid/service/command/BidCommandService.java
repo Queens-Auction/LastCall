@@ -1,5 +1,7 @@
 package org.example.lastcall.domain.bid.service.command;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.lastcall.common.exception.BusinessException;
 import org.example.lastcall.common.lock.DistributedLock;
 import org.example.lastcall.domain.auction.entity.Auction;
@@ -15,9 +17,6 @@ import org.example.lastcall.domain.user.entity.User;
 import org.example.lastcall.domain.user.service.query.UserQueryServiceApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -44,9 +43,18 @@ public class BidCommandService {
 
         boolean alreadyParticipated = bidRepository.existsByAuctionIdAndUserId(auction.getId(), user.getId());
 
+        long bidCount = bidRepository.countByAuctionId(auctionId);
+        boolean isFirstBid = bidCount == 0;
+
         Long currentMaxBid = bidRepository.findMaxBidAmountByAuction(auction).orElse(auction.getStartingBid());
 
         Long expectedNextBidAmount = currentMaxBid + auction.getBidStep();
+
+        if (isFirstBid && (nextBidAmount < auction.getStartingBid())) {
+            throw new BusinessException(BidErrorCode.FIRST_BID_TOO_LOW);
+        } else if (isFirstBid && (!nextBidAmount.equals(expectedNextBidAmount))) {
+            throw new BusinessException(BidErrorCode.INVALID_BID_AMOUNT);
+        }
 
         if (nextBidAmount < expectedNextBidAmount) {
             throw new BusinessException(BidErrorCode.CONCURRENCY_BID_FAILED);
@@ -68,7 +76,9 @@ public class BidCommandService {
 
         try {
             pointCommandServiceApi.updateDepositPoint(auction.getId(), savedBid.getId(), nextBidAmount, user.getId());
+            log.debug("[Bid] 포인트 예치 완료 - auctionId={}, userId={}, nextBidAmount={}", auctionId, user.getId(), nextBidAmount);
         } catch (BusinessException e) {
+            log.error("[Bid] 포인트 예치 중 예외 발생 - auctionId={}, userId={}, message={}", auctionId, user.getId(), e.getMessage());
             throw e;
         }
 

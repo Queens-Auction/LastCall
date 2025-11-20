@@ -13,7 +13,8 @@ public enum BidErrorCode implements ErrorCode {
     BID_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 비드가 존재하지 않습니다."),
     INVALID_BID_AMOUNT(HttpStatus.BAD_REQUEST, "요청한 입찰 금액이 유효하지 않습니다."),
 
-    CONCURRENCY_BID_FAILED(HttpStatus.CONFLICT, "이미 다른 사용자가 먼저 입찰했습니다. 다시 시도해주세요.");
+    CONCURRENCY_BID_FAILED(HttpStatus.CONFLICT, "이미 다른 사용자가 먼저 입찰했습니다. 다시 시도해주세요."),
+    FIRST_BID_TOO_LOW(HttpStatus.BAD_REQUEST, "첫 입찰 금액이 시작가보다 낮습니다.");
 
     private final HttpStatus status;
     private final String message;
